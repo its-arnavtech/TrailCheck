@@ -1,4 +1,14 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateReportDto } from './dto/create_report.dto';
 
 @Injectable()
-export class ReportsService {}
+export class ReportsService {
+  constructor(private prisma: PrismaService) {}
+
+  async create(dto: CreateReportDto) {
+    return this.prisma.trailReport.create({
+      data: dto,
+    });
+  }
+}
