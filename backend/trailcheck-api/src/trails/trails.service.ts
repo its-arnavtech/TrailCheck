@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class TrailsService {
   }
 
   async findOne(id: number) {
-    return this.prisma.trail.findUnique({
+    const trail = await this.prisma.trail.findUnique({
       where: { id },
       include: {
         park: true,
@@ -27,5 +27,11 @@ export class TrailsService {
         },
       },
     });
+
+    if (!trail) {
+      throw new NotFoundException(`Trail ${id} not found`);
+    }
+
+    return trail;
   }
 }

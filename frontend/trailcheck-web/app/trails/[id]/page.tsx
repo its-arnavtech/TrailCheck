@@ -1,44 +1,12 @@
 import { notFound } from 'next/navigation';
 import ReportForm from '@/components/reportform';
-
-type TrailReport = {
-  id: number;
-  note: string | null;
-  surfaceCondition: string;
-  conditionRating: number;
-};
-
-type Trail = {
-  id: number;
-  name: string;
-  park?: {
-    name: string;
-  } | null;
-  reports?: TrailReport[];
-};
+import { getTrail } from '@/lib/api';
 
 type TrailPageProps = {
   params: Promise<{
     id: string;
   }>;
 };
-
-async function getTrail(id: string): Promise<Trail | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000';
-  const response = await fetch(`${baseUrl}/trails/${id}`, {
-    cache: 'no-store',
-  });
-
-  if (response.status === 404) {
-    return null;
-  }
-
-  if (!response.ok) {
-    throw new Error(`Failed to load trail ${id}`);
-  }
-
-  return response.json();
-}
 
 export default async function TrailPage({ params }: TrailPageProps) {
   const { id } = await params;
