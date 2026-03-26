@@ -7,6 +7,12 @@ export type TrailSummary = {
   } | null;
 };
 
+export type ParkSummary = {
+  name: string;
+  slug: string;
+  trails: TrailSummary[];
+};
+
 export type TrailReport = {
   id: number;
   note: string | null;
@@ -76,6 +82,37 @@ export async function getTrails(): Promise<TrailSummary[]> {
   const res = await fetch(`${API_BASE_URL}/trails`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to load trails');
   return res.json();
+}
+
+export async function getParks(): Promise<ParkSummary[]> {
+  const trails = await getTrails();
+  const parks = new Map<string, ParkSummary>();
+
+  for (const trail of trails) {
+    if (!trail.park?.slug || !trail.park.name) {
+      continue;
+    }
+
+    const existingPark = parks.get(trail.park.slug);
+
+    if (existingPark) {
+      existingPark.trails.push(trail);
+      continue;
+    }
+
+    parks.set(trail.park.slug, {
+      name: trail.park.name,
+      slug: trail.park.slug,
+      trails: [trail],
+    });
+  }
+
+  return Array.from(parks.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function getPark(slug: string): Promise<ParkSummary | null> {
+  const parks = await getParks();
+  return parks.find((park) => park.slug === slug) ?? null;
 }
 
 export async function getTrail(id: string): Promise<TrailDetail | null> {

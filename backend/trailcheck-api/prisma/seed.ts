@@ -1,59 +1,197 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
+
+type SeedTrail = {
+  name: string;
+  slug: string;
+  difficulty: 'EASY' | 'MODERATE' | 'HARD';
+  lengthMiles: number;
+};
+
+const parkTrails: Record<string, SeedTrail[]> = {
+  yosemite: [
+    { name: 'Half Dome', slug: 'half-dome', difficulty: 'HARD', lengthMiles: 14.2 },
+    { name: 'Mist Trail', slug: 'mist-trail', difficulty: 'MODERATE', lengthMiles: 7 },
+    { name: 'Yosemite Falls Trail', slug: 'yosemite-falls-trail', difficulty: 'HARD', lengthMiles: 7.2 },
+    { name: 'Mirror Lake Loop', slug: 'mirror-lake-loop', difficulty: 'EASY', lengthMiles: 5 },
+    { name: 'Four Mile Trail', slug: 'four-mile-trail', difficulty: 'HARD', lengthMiles: 9.6 },
+    { name: 'Panorama Trail', slug: 'panorama-trail', difficulty: 'HARD', lengthMiles: 11 },
+    { name: 'Sentinel Dome Trail', slug: 'sentinel-dome-trail', difficulty: 'EASY', lengthMiles: 2.2 },
+    { name: 'Taft Point Trail', slug: 'taft-point-trail', difficulty: 'EASY', lengthMiles: 2.3 },
+    { name: 'Clouds Rest', slug: 'clouds-rest', difficulty: 'HARD', lengthMiles: 14.5 },
+    { name: 'Vernal Fall Footbridge', slug: 'vernal-fall-footbridge', difficulty: 'MODERATE', lengthMiles: 2 },
+    { name: 'Nevada Fall Loop', slug: 'nevada-fall-loop', difficulty: 'HARD', lengthMiles: 6.6 },
+    { name: 'Bridalveil Fall Trail', slug: 'bridalveil-fall-trail', difficulty: 'EASY', lengthMiles: 0.8 },
+    { name: 'Lower Yosemite Fall Trail', slug: 'lower-yosemite-fall-trail', difficulty: 'EASY', lengthMiles: 1 },
+    { name: 'Mariposa Grove Arrival Area Trail', slug: 'mariposa-grove-arrival-area-trail', difficulty: 'EASY', lengthMiles: 2 },
+    { name: 'Grizzly Giant Loop', slug: 'grizzly-giant-loop', difficulty: 'MODERATE', lengthMiles: 2 },
+    { name: 'Cathedral Lakes Trail', slug: 'cathedral-lakes-trail', difficulty: 'MODERATE', lengthMiles: 8.5 },
+    { name: 'Gaylor Lakes Trail', slug: 'gaylor-lakes-trail', difficulty: 'MODERATE', lengthMiles: 3.4 },
+    { name: 'Glen Aulin Trail', slug: 'glen-aulin-trail', difficulty: 'MODERATE', lengthMiles: 5.6 },
+    { name: 'Mono Meadow Trail', slug: 'mono-meadow-trail', difficulty: 'MODERATE', lengthMiles: 4 },
+    { name: 'Wapama Falls Trail', slug: 'wapama-falls-trail', difficulty: 'MODERATE', lengthMiles: 5 },
+  ],
+  zion: [
+    { name: 'Angels Landing', slug: 'angels-landing', difficulty: 'HARD', lengthMiles: 5.4 },
+    { name: 'The Narrows', slug: 'the-narrows', difficulty: 'MODERATE', lengthMiles: 9 },
+    { name: 'Observation Point via East Mesa', slug: 'observation-point-east-mesa', difficulty: 'MODERATE', lengthMiles: 7 },
+    { name: 'Watchman Trail', slug: 'watchman-trail', difficulty: 'MODERATE', lengthMiles: 3.3 },
+    { name: 'Emerald Pools Trail', slug: 'emerald-pools-trail', difficulty: 'EASY', lengthMiles: 3 },
+    { name: 'Canyon Overlook Trail', slug: 'canyon-overlook-trail', difficulty: 'EASY', lengthMiles: 1 },
+    { name: "Pa'rus Trail", slug: 'parus-trail', difficulty: 'EASY', lengthMiles: 3.5 },
+    { name: 'Riverside Walk', slug: 'riverside-walk', difficulty: 'EASY', lengthMiles: 2.2 },
+    { name: 'Hidden Canyon', slug: 'hidden-canyon', difficulty: 'HARD', lengthMiles: 3.2 },
+    { name: 'West Rim Trail', slug: 'west-rim-trail', difficulty: 'HARD', lengthMiles: 14.5 },
+    { name: 'Kayenta Trail', slug: 'kayenta-trail', difficulty: 'MODERATE', lengthMiles: 2 },
+    { name: 'Taylor Creek Trail', slug: 'taylor-creek-trail', difficulty: 'MODERATE', lengthMiles: 5 },
+    { name: 'Northgate Peaks Trail', slug: 'northgate-peaks-trail', difficulty: 'MODERATE', lengthMiles: 4.2 },
+    { name: 'Timber Creek Overlook Trail', slug: 'timber-creek-overlook-trail', difficulty: 'EASY', lengthMiles: 1 },
+    { name: 'Sand Bench Trail', slug: 'sand-bench-trail', difficulty: 'MODERATE', lengthMiles: 7.6 },
+    { name: 'Many Pools Trail', slug: 'many-pools-trail', difficulty: 'EASY', lengthMiles: 2.4 },
+    { name: 'Lower Pine Creek Trail', slug: 'lower-pine-creek-trail', difficulty: 'MODERATE', lengthMiles: 0.8 },
+    { name: 'La Verkin Creek Trail', slug: 'la-verkin-creek-trail', difficulty: 'HARD', lengthMiles: 14 },
+    { name: 'Wildcat Canyon Trail', slug: 'wildcat-canyon-trail', difficulty: 'MODERATE', lengthMiles: 4.4 },
+    { name: 'East Rim Trail', slug: 'east-rim-trail', difficulty: 'HARD', lengthMiles: 10.8 },
+  ],
+  yellowstone: [
+    { name: 'Fairy Falls', slug: 'fairy-falls', difficulty: 'EASY', lengthMiles: 5 },
+    { name: 'Mount Washburn', slug: 'mount-washburn', difficulty: 'MODERATE', lengthMiles: 6 },
+    { name: 'Avalanche Peak', slug: 'avalanche-peak', difficulty: 'HARD', lengthMiles: 4.5 },
+    { name: 'Uncle Toms Trail', slug: 'uncle-toms-trail', difficulty: 'MODERATE', lengthMiles: 1.2 },
+    { name: 'Grand Prismatic Overlook Trail', slug: 'grand-prismatic-overlook-trail', difficulty: 'EASY', lengthMiles: 1.6 },
+    { name: 'Mystic Falls Trail', slug: 'mystic-falls-trail', difficulty: 'MODERATE', lengthMiles: 3.5 },
+    { name: 'Storm Point Trail', slug: 'storm-point-trail', difficulty: 'EASY', lengthMiles: 2.3 },
+    { name: 'Bunsen Peak Trail', slug: 'bunsen-peak-trail', difficulty: 'MODERATE', lengthMiles: 4.4 },
+    { name: 'Trout Lake Trail', slug: 'trout-lake-trail', difficulty: 'EASY', lengthMiles: 1.2 },
+    { name: 'Lone Star Geyser Trail', slug: 'lone-star-geyser-trail', difficulty: 'EASY', lengthMiles: 4.8 },
+    { name: 'Elephant Back Mountain Trail', slug: 'elephant-back-mountain-trail', difficulty: 'MODERATE', lengthMiles: 3.6 },
+    { name: 'Ribbon Lake Trail', slug: 'ribbon-lake-trail', difficulty: 'MODERATE', lengthMiles: 6 },
+    { name: 'Seven Mile Hole Trail', slug: 'seven-mile-hole-trail', difficulty: 'HARD', lengthMiles: 10.6 },
+    { name: 'Mount Sheridan Trail', slug: 'mount-sheridan-trail', difficulty: 'HARD', lengthMiles: 10.4 },
+    { name: 'Beaver Ponds Loop', slug: 'beaver-ponds-loop', difficulty: 'MODERATE', lengthMiles: 5.4 },
+    { name: 'Artists Point Trail', slug: 'artists-point-trail', difficulty: 'EASY', lengthMiles: 1 },
+    { name: 'Yellowstone River Picnic Trail', slug: 'yellowstone-river-picnic-trail', difficulty: 'EASY', lengthMiles: 3.7 },
+    { name: 'Pelican Valley Trail', slug: 'pelican-valley-trail', difficulty: 'MODERATE', lengthMiles: 6 },
+    { name: 'Slough Creek Trail', slug: 'slough-creek-trail', difficulty: 'MODERATE', lengthMiles: 6.8 },
+    { name: 'Washburn Hot Springs Overlook', slug: 'washburn-hot-springs-overlook', difficulty: 'EASY', lengthMiles: 2.1 },
+  ],
+  'grand-canyon': [
+    { name: 'Bright Angel Trail', slug: 'bright-angel', difficulty: 'HARD', lengthMiles: 12 },
+    { name: 'South Kaibab Trail', slug: 'south-kaibab', difficulty: 'HARD', lengthMiles: 7 },
+    { name: 'Rim Trail', slug: 'rim-trail', difficulty: 'EASY', lengthMiles: 13 },
+    { name: 'North Kaibab Trail', slug: 'north-kaibab-trail', difficulty: 'HARD', lengthMiles: 14 },
+    { name: 'Grandview Trail', slug: 'grandview-trail', difficulty: 'HARD', lengthMiles: 6 },
+    { name: 'Hermit Trail', slug: 'hermit-trail', difficulty: 'HARD', lengthMiles: 17 },
+    { name: 'Cape Final Trail', slug: 'cape-final-trail', difficulty: 'EASY', lengthMiles: 4.2 },
+    { name: 'Shoshone Point Trail', slug: 'shoshone-point-trail', difficulty: 'EASY', lengthMiles: 2.2 },
+    { name: 'Widforss Trail', slug: 'widforss-trail', difficulty: 'MODERATE', lengthMiles: 10 },
+    { name: 'Cliff Springs Trail', slug: 'cliff-springs-trail', difficulty: 'EASY', lengthMiles: 1 },
+    { name: 'Ken Patrick Trail', slug: 'ken-patrick-trail', difficulty: 'MODERATE', lengthMiles: 9.4 },
+    { name: 'Uncle Jim Trail', slug: 'uncle-jim-trail', difficulty: 'EASY', lengthMiles: 5 },
+    { name: 'Point Imperial Trail', slug: 'point-imperial-trail', difficulty: 'EASY', lengthMiles: 4 },
+    { name: 'Dripping Springs Trail', slug: 'dripping-springs-trail', difficulty: 'MODERATE', lengthMiles: 3.2 },
+    { name: 'Tonto Trail', slug: 'tonto-trail', difficulty: 'HARD', lengthMiles: 13 },
+    { name: 'Clear Creek Trail', slug: 'clear-creek-trail', difficulty: 'HARD', lengthMiles: 9.4 },
+    { name: 'New Hance Trail', slug: 'new-hance-trail', difficulty: 'HARD', lengthMiles: 15 },
+    { name: 'South Bass Trail', slug: 'south-bass-trail', difficulty: 'HARD', lengthMiles: 6.4 },
+    { name: 'Mesa Arch Vista Trail', slug: 'mesa-arch-vista-trail', difficulty: 'EASY', lengthMiles: 1.8 },
+    { name: 'Transept Trail', slug: 'transept-trail', difficulty: 'EASY', lengthMiles: 3 },
+  ],
+  acadia: [
+    { name: 'Beehive Trail', slug: 'beehive', difficulty: 'MODERATE', lengthMiles: 1.5 },
+    { name: 'Cadillac Summit', slug: 'cadillac-summit', difficulty: 'EASY', lengthMiles: 2 },
+    { name: 'Precipice Trail', slug: 'precipice-trail', difficulty: 'HARD', lengthMiles: 2.5 },
+    { name: 'Jordan Pond Path', slug: 'jordan-pond-path', difficulty: 'EASY', lengthMiles: 3.3 },
+    { name: 'Gorham Mountain Trail', slug: 'gorham-mountain-trail', difficulty: 'MODERATE', lengthMiles: 3.5 },
+    { name: 'Bubble Rock Trail', slug: 'bubble-rock-trail', difficulty: 'EASY', lengthMiles: 1 },
+    { name: 'South Bubble Trail', slug: 'south-bubble-trail', difficulty: 'EASY', lengthMiles: 2.2 },
+    { name: 'North Bubble and Conners Nubble', slug: 'north-bubble-conners-nubble', difficulty: 'MODERATE', lengthMiles: 3.6 },
+    { name: 'Ship Harbor Trail', slug: 'ship-harbor-trail', difficulty: 'EASY', lengthMiles: 1.3 },
+    { name: 'Ocean Path', slug: 'ocean-path', difficulty: 'EASY', lengthMiles: 4.4 },
+    { name: 'Pemetic Mountain Trail', slug: 'pemetic-mountain-trail', difficulty: 'HARD', lengthMiles: 4.6 },
+    { name: 'Sargent Mountain Loop', slug: 'sargent-mountain-loop', difficulty: 'HARD', lengthMiles: 5.5 },
+    { name: 'Acadia Mountain Trail', slug: 'acadia-mountain-trail', difficulty: 'MODERATE', lengthMiles: 2.5 },
+    { name: 'Flying Mountain Trail', slug: 'flying-mountain-trail', difficulty: 'MODERATE', lengthMiles: 1.6 },
+    { name: 'Wonderland Trail', slug: 'wonderland-trail', difficulty: 'EASY', lengthMiles: 1.4 },
+    { name: 'Bar Island Trail', slug: 'bar-island-trail', difficulty: 'EASY', lengthMiles: 1.9 },
+    { name: 'Great Head Trail', slug: 'great-head-trail', difficulty: 'MODERATE', lengthMiles: 1.8 },
+    { name: 'Bowl Trail', slug: 'bowl-trail', difficulty: 'MODERATE', lengthMiles: 1.4 },
+    { name: 'Mansell Mountain Trail', slug: 'mansell-mountain-trail', difficulty: 'MODERATE', lengthMiles: 2.8 },
+    { name: 'Bernard Mountain Trail', slug: 'bernard-mountain-trail', difficulty: 'MODERATE', lengthMiles: 3.2 },
+  ],
+  'big-bend': [
+    { name: 'Lost Mine Trail', slug: 'lost-mine', difficulty: 'MODERATE', lengthMiles: 4.8 },
+    { name: 'Santa Elena Canyon', slug: 'santa-elena', difficulty: 'EASY', lengthMiles: 1.7 },
+    { name: 'South Rim Trail', slug: 'south-rim-trail', difficulty: 'HARD', lengthMiles: 12.6 },
+    { name: 'Window Trail', slug: 'window-trail', difficulty: 'MODERATE', lengthMiles: 5.6 },
+    { name: 'Balanced Rock Trail', slug: 'balanced-rock-trail', difficulty: 'EASY', lengthMiles: 2.2 },
+    { name: 'Boquillas Canyon Trail', slug: 'boquillas-canyon-trail', difficulty: 'EASY', lengthMiles: 1.4 },
+    { name: 'Emory Peak Trail', slug: 'emory-peak-trail', difficulty: 'HARD', lengthMiles: 10.5 },
+    { name: 'The Chimneys Trail', slug: 'the-chimneys-trail', difficulty: 'MODERATE', lengthMiles: 4.8 },
+    { name: 'Marufo Vega Trail', slug: 'marufo-vega-trail', difficulty: 'HARD', lengthMiles: 14 },
+    { name: 'Grapevine Hills Trail', slug: 'grapevine-hills-trail', difficulty: 'EASY', lengthMiles: 2.2 },
+    { name: 'Hot Springs Historic Trail', slug: 'hot-springs-historic-trail', difficulty: 'EASY', lengthMiles: 0.8 },
+    { name: 'Ernst Tinaja Trail', slug: 'ernst-tinaja-trail', difficulty: 'EASY', lengthMiles: 1.4 },
+    { name: 'Mule Ears Spring Trail', slug: 'mule-ears-spring-trail', difficulty: 'MODERATE', lengthMiles: 3.8 },
+    { name: 'Dog Canyon Trail', slug: 'dog-canyon-trail', difficulty: 'MODERATE', lengthMiles: 4.4 },
+    { name: 'Pine Canyon Trail', slug: 'pine-canyon-trail', difficulty: 'MODERATE', lengthMiles: 4 },
+    { name: 'Tuff Canyon Trail', slug: 'tuff-canyon-trail', difficulty: 'EASY', lengthMiles: 1 },
+    { name: 'Burro Mesa Pouroff Trail', slug: 'burro-mesa-pouroff-trail', difficulty: 'EASY', lengthMiles: 1 },
+    { name: 'Ward Spring Trail', slug: 'ward-spring-trail', difficulty: 'MODERATE', lengthMiles: 2.8 },
+    { name: 'Outer Mountain Loop', slug: 'outer-mountain-loop', difficulty: 'HARD', lengthMiles: 30 },
+    { name: 'Mesa de Anguila Trail', slug: 'mesa-de-anguila-trail', difficulty: 'HARD', lengthMiles: 14.5 },
+  ],
+};
 
 async function main() {
-  //Parks
   const yosemite = await prisma.park.create({
-    data: { name: "Yosemite", state: "CA", slug: "yosemite" }
-  })
+    data: { name: 'Yosemite', state: 'CA', slug: 'yosemite' },
+  });
 
   const zion = await prisma.park.create({
-    data: { name: "Zion", state: "UT", slug: "zion" }
-  })
+    data: { name: 'Zion', state: 'UT', slug: 'zion' },
+  });
 
   const yellowstone = await prisma.park.create({
-    data: { name: "Yellowstone", state: "WY", slug: "yellowstone" }
-  })
+    data: { name: 'Yellowstone', state: 'WY', slug: 'yellowstone' },
+  });
 
   const grandCanyon = await prisma.park.create({
-    data: { name: "Grand Canyon", state: "AZ", slug: "grand-canyon" }
-  })
+    data: { name: 'Grand Canyon', state: 'AZ', slug: 'grand-canyon' },
+  });
 
   const acadia = await prisma.park.create({
-    data: { name: "Acadia", state: "ME", slug: "acadia" }
-  })
+    data: { name: 'Acadia', state: 'ME', slug: 'acadia' },
+  });
 
   const bigBend = await prisma.park.create({
-    data: { name: "Big Bend", state: "TX", slug: "big-bend" }
-  })
+    data: { name: 'Big Bend', state: 'TX', slug: 'big-bend' },
+  });
 
-  //Trails (1–2 per park)
+  const parkIds = {
+    yosemite: yosemite.id,
+    zion: zion.id,
+    yellowstone: yellowstone.id,
+    'grand-canyon': grandCanyon.id,
+    acadia: acadia.id,
+    'big-bend': bigBend.id,
+  };
+
+  const trails = Object.entries(parkTrails).flatMap(([parkSlug, entries]) =>
+    entries.map((trail) => ({
+      ...trail,
+      parkId: parkIds[parkSlug as keyof typeof parkIds],
+    })),
+  );
+
   await prisma.trail.createMany({
-    data: [
-      { name: "Half Dome", slug: "half-dome", parkId: yosemite.id, difficulty: "HARD", lengthMiles: 14.2 },
-      { name: "Mist Trail", slug: "mist-trail", parkId: yosemite.id, difficulty: "MODERATE", lengthMiles: 7 },
+    data: trails,
+  });
 
-      { name: "Angels Landing", slug: "angels-landing", parkId: zion.id, difficulty: "HARD", lengthMiles: 5.4 },
-      { name: "The Narrows", slug: "the-narrows", parkId: zion.id, difficulty: "MODERATE", lengthMiles: 9 },
-
-      { name: "Fairy Falls", slug: "fairy-falls", parkId: yellowstone.id, difficulty: "EASY", lengthMiles: 5 },
-      { name: "Mount Washburn", slug: "mount-washburn", parkId: yellowstone.id, difficulty: "MODERATE", lengthMiles: 6 },
-
-      { name: "Bright Angel Trail", slug: "bright-angel", parkId: grandCanyon.id, difficulty: "HARD", lengthMiles: 12 },
-      { name: "South Kaibab Trail", slug: "south-kaibab", parkId: grandCanyon.id, difficulty: "HARD", lengthMiles: 7 },
-
-      { name: "Beehive Trail", slug: "beehive", parkId: acadia.id, difficulty: "MODERATE", lengthMiles: 1.5 },
-      { name: "Cadillac Summit", slug: "cadillac-summit", parkId: acadia.id, difficulty: "EASY", lengthMiles: 2 },
-
-      { name: "Lost Mine Trail", slug: "lost-mine", parkId: bigBend.id, difficulty: "MODERATE", lengthMiles: 4.8 },
-      { name: "Santa Elena Canyon", slug: "santa-elena", parkId: bigBend.id, difficulty: "EASY", lengthMiles: 1.7 },
-    ]
-  })
-
-  console.log("Seeded successfully")
+  console.log(`Seeded successfully with ${trails.length} trails`);
 }
 
 main()
-  .catch(e => console.error(e))
-  .finally(() => prisma.$disconnect())
+  .catch((e) => console.error(e))
+  .finally(() => prisma.$disconnect());

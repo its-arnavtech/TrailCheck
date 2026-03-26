@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { getTrails } from '../lib/api';
+import { getParks } from '../lib/api';
 
 export default async function Home() {
-  const trails = await getTrails();
+  const parks = await getParks();
+  const trailCount = parks.reduce((count, park) => count + park.trails.length, 0);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-5 py-8 sm:px-8 lg:px-10">
@@ -13,18 +14,18 @@ export default async function Home() {
           <p className="mb-3 inline-flex rounded-full border border-white/60 bg-white/45 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-950/80 backdrop-blur">
             Trail conditions at a glance
           </p>
-          <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-emerald-950 sm:text-5xl">
-            TrailPulse makes current trail conditions easier to scan.
+          <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-blue-950 sm:text-5xl">
+            TrailCheck makes current trail conditions easier to scan.
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-emerald-950/75 sm:text-base">
             Browse trails, check park context, and jump into reports without changing anything about the current workflow.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 text-sm text-emerald-950/80">
             <div className="rounded-full border border-white/65 bg-white/45 px-4 py-2 backdrop-blur">
-              {trails.length} active trail{trails.length === 1 ? '' : 's'}
+              {parks.length} park{parks.length === 1 ? '' : 's'}
             </div>
             <div className="rounded-full border border-white/65 bg-white/45 px-4 py-2 backdrop-blur">
-              Park alerts and weather on each detail page
+              {trailCount} trail{trailCount === 1 ? '' : 's'} across all parks
             </div>
           </div>
         </div>
@@ -37,31 +38,31 @@ export default async function Home() {
               Explore
             </p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">
-              Available trails
+              National parks
             </h2>
           </div>
           <p className="text-sm text-[var(--foreground)]/60">
-            Same data, clearer layout.
+            Choose a park to browse its trails.
           </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {trails.map((trail: any) => (
-            <Link key={trail.id} href={`/trails/${trail.id}`} className="group">
+          {parks.map((park) => (
+            <Link key={park.slug} href={`/parks/${park.slug}`} className="group">
               <article className="h-full rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur transition duration-200 hover:-translate-y-1 hover:border-[var(--accent)]/35 hover:bg-[var(--surface-strong)]">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
-                    Trail
+                    Park
                   </span>
                   <span className="text-sm text-[var(--foreground)]/45 transition group-hover:text-[var(--accent-strong)]">
-                    View details
+                    Browse trails
                   </span>
                 </div>
                 <h3 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">
-                  {trail.name}
+                  {park.name}
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-[var(--foreground)]/68">
-                  {trail.park?.name ?? 'Unknown park'}
+                  {park.trails.length} available trail{park.trails.length === 1 ? '' : 's'}
                 </p>
               </article>
             </Link>
