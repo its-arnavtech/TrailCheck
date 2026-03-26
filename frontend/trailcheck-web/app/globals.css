@@ -1,8 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f6fbf7;
+  --foreground: #123129;
+  --surface: rgba(255, 255, 255, 0.82);
+  --surface-strong: #ffffff;
+  --surface-muted: #e4f1ea;
+  --border: rgba(25, 91, 67, 0.12);
+  --accent: #1c8c68;
+  --accent-strong: #12664a;
+  --accent-soft: #d8f3e6;
+  --hero-start: #d8f3e6;
+  --hero-end: #b4e6f8;
+  --shadow-soft: 0 18px 50px rgba(18, 74, 58, 0.12);
 }
 
 @theme inline {
@@ -14,13 +24,57 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #081712;
+    --foreground: #ebfff7;
+    --surface: rgba(8, 27, 21, 0.82);
+    --surface-strong: #0d221b;
+    --surface-muted: #11352a;
+    --border: rgba(173, 241, 214, 0.14);
+    --accent: #67ddb1;
+    --accent-strong: #a6f1d6;
+    --accent-soft: rgba(103, 221, 177, 0.12);
+    --hero-start: #11352a;
+    --hero-end: #103648;
+    --shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.35);
   }
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background: var(--background);
+  min-height: 100vh;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(149, 224, 190, 0.28), transparent 28%),
+    radial-gradient(circle at top right, rgba(120, 208, 240, 0.22), transparent 24%),
+    linear-gradient(180deg, var(--background), color-mix(in srgb, var(--background) 78%, white 22%));
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(18, 102, 74, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(18, 102, 74, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.4), transparent 85%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 28%, white 72%);
+  color: var(--foreground);
 }
