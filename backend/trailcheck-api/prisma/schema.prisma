@@ -34,6 +34,11 @@ enum HazardSeverity {
   HIGH
 }
 
+enum HazardSource{
+  USER
+  NPS
+}
+
 model Park {
   id        Int      @id @default(autoincrement())
   name      String
@@ -67,6 +72,8 @@ model Hazard {
   title       String
   description String?
   isActive    Boolean        @default(true)
+  source      HazardSource   @default(USER)
+  externalId  String?
   reportedAt  DateTime       @default(now())
 
   trail       Trail          @relation(fields: [trailId], references: [id])

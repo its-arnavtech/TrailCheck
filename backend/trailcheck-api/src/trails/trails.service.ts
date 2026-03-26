@@ -1,9 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NpsService } from 'src/nps/nps.service';
+import { WeatherService } from 'src/weather/weather.service';
 
 @Injectable()
 export class TrailsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private nps: NpsService,
+    private weather: WeatherService,  
+  ) {}
 
   async findAll() {
     return this.prisma.trail.findMany({
@@ -32,6 +38,16 @@ export class TrailsService {
       throw new NotFoundException(`Trail ${id} not found`);
     }
 
-    return trail;
+    //fetch live data. return null if sm fails.
+    const[NpsAlerts, weather] = await Promise.allSettled([
+      this.nps.getAlertsForPark(trail.park.slug),
+      this.weather.getWeatherForPark(trail.park.slug),
+    ]);
+
+    return {
+      ...trail,
+      NpsAlerts: NpsAlerts.status === 'fulfilled' ? NpsAlerts.value : [],
+      weather: weather.status === 'fulfilled' ? weather.value : null,
+    };
   }
 }
