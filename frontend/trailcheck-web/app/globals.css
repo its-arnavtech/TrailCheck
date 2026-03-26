@@ -1,40 +1,40 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6fbf7;
-  --foreground: #123129;
-  --surface: rgba(255, 255, 255, 0.82);
+  --background: #dbe0e6;
+  --foreground: #27323d;
+  --surface: rgba(245, 247, 250, 0.82);
   --surface-strong: #ffffff;
-  --surface-muted: #e4f1ea;
-  --border: rgba(25, 91, 67, 0.12);
-  --accent: #1c8c68;
-  --accent-strong: #12664a;
-  --accent-soft: #d8f3e6;
-  --hero-start: #d8f3e6;
-  --hero-end: #b4e6f8;
-  --shadow-soft: 0 18px 50px rgba(18, 74, 58, 0.12);
+  --surface-muted: #dbe2ea;
+  --border: rgba(65, 79, 96, 0.14);
+  --accent: #58728c;
+  --accent-strong: #3b5064;
+  --accent-soft: #dbe6f2;
+  --hero-start: #cbd3dc;
+  --hero-end: #aeb9c6;
+  --shadow-soft: 0 18px 50px rgba(45, 58, 74, 0.14);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-mono: "Cascadia Code", "Courier New", monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #081712;
-    --foreground: #ebfff7;
-    --surface: rgba(8, 27, 21, 0.82);
-    --surface-strong: #0d221b;
-    --surface-muted: #11352a;
-    --border: rgba(173, 241, 214, 0.14);
-    --accent: #67ddb1;
-    --accent-strong: #a6f1d6;
-    --accent-soft: rgba(103, 221, 177, 0.12);
-    --hero-start: #11352a;
-    --hero-end: #103648;
+    --background: #11161d;
+    --foreground: #ecf2f8;
+    --surface: rgba(20, 27, 36, 0.84);
+    --surface-strong: #161d26;
+    --surface-muted: #202a36;
+    --border: rgba(196, 210, 226, 0.12);
+    --accent: #8ea7bf;
+    --accent-strong: #cad8e6;
+    --accent-soft: rgba(142, 167, 191, 0.14);
+    --hero-start: #2b3642;
+    --hero-end: #1c2732;
     --shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.35);
   }
 }
@@ -50,11 +50,13 @@ html {
 body {
   min-height: 100vh;
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background:
-    radial-gradient(circle at top left, rgba(149, 224, 190, 0.28), transparent 28%),
-    radial-gradient(circle at top right, rgba(120, 208, 240, 0.22), transparent 24%),
-    linear-gradient(180deg, var(--background), color-mix(in srgb, var(--background) 78%, white 22%));
+    radial-gradient(circle at top left, rgba(187, 218, 233, 0.34), transparent 28%),
+    radial-gradient(circle at top right, rgba(185, 197, 211, 0.38), transparent 26%),
+    linear-gradient(180deg, color-mix(in srgb, var(--background) 86%, white 14%), var(--background));
 }
 
 body::before {
@@ -63,10 +65,15 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(18, 102, 74, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(18, 102, 74, 0.03) 1px, transparent 1px);
-  background-size: 32px 32px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.4), transparent 85%);
+    linear-gradient(rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 58%),
+    repeating-linear-gradient(
+      102deg,
+      rgba(112, 127, 144, 0.08) 0px,
+      rgba(112, 127, 144, 0.08) 2px,
+      transparent 2px,
+      transparent 16px
+    );
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.34), transparent 92%);
 }
 
 a {
