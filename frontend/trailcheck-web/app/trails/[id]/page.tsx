@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import AuthPanel from '@/components/auth-panel';
 import ReportForm from '@/components/reportform';
 import { getTrail } from '@/lib/api';
 import type { Hazard, NpsAlert, TrailReport, WeatherPeriod } from '@/lib/api';
@@ -209,12 +210,15 @@ export default async function TrailPage({ params }: TrailPageProps) {
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">Submit a report</h2>
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                Anonymous
+                Protected route
               </span>
             </div>
             <p className="mb-4 text-sm leading-6 text-[var(--foreground)]/64">
-              Share a quick surface update so the next visitor has fresher context.
+              Sign in with a TrailCheck account, then share a quick surface update so the next visitor has fresher context.
             </p>
+            <div className="mb-4">
+              <AuthPanel compact />
+            </div>
             <ReportForm trailId={trail.id} />
           </section>
         </div>

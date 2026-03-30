@@ -75,8 +75,63 @@ export type CreateReportInput = {
   reporterName?: string;
 };
 
+export type AuthInput = {
+  email: string;
+  password: string;
+};
+
+export type AuthenticatedUser = {
+  id: number;
+  email: string;
+};
+
+export type AuthResponse = {
+  access_token: string;
+  user: AuthenticatedUser;
+};
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001';
+
+function getStoredAuthToken() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return window.localStorage.getItem('trailcheck.auth.token');
+}
+
+function buildHeaders(
+  headers?: HeadersInit,
+  options?: { json?: boolean; auth?: boolean },
+) {
+  const nextHeaders = new Headers(headers);
+
+  if (options?.json) {
+    nextHeaders.set('Content-Type', 'application/json');
+  }
+
+  if (options?.auth) {
+    const token = getStoredAuthToken();
+    if (token) {
+      nextHeaders.set('Authorization', `Bearer ${token}`);
+    }
+  }
+
+  return nextHeaders;
+}
+
+async function parseError(response: Response, fallbackMessage: string) {
+  try {
+    const data = (await response.json()) as { message?: string | string[] };
+    if (Array.isArray(data.message)) {
+      return data.message.join(', ');
+    }
+    return data.message ?? fallbackMessage;
+  } catch {
+    return fallbackMessage;
+  }
+}
 
 export async function getTrails(): Promise<TrailSummary[]> {
   const res = await fetch(`${API_BASE_URL}/trails`, { cache: 'no-store' });
@@ -124,12 +179,60 @@ export async function getTrail(id: string): Promise<TrailDetail | null> {
   return response.json();
 }
 
+export async function signup(input: AuthInput): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+    method: 'POST',
+    headers: buildHeaders(undefined, { json: true }),
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, 'Failed to create account.'));
+  }
+
+  return response.json();
+}
+
+export async function signin(input: AuthInput): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE_URL}/auth/signin`, {
+    method: 'POST',
+    headers: buildHeaders(undefined, { json: true }),
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, 'Failed to sign in.'));
+  }
+
+  return response.json();
+}
+
+export async function getCurrentUser(token?: string): Promise<AuthenticatedUser> {
+  const response = await fetch(`${API_BASE_URL}/auth/me`, {
+    headers: buildHeaders(
+      token ? { Authorization: `Bearer ${token}` } : undefined,
+      { auth: !token },
+    ),
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, 'Failed to load profile.'));
+  }
+
+  return response.json();
+}
+
 export async function createReport(input: CreateReportInput) {
   const response = await fetch(`${API_BASE_URL}/reports`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: buildHeaders(undefined, { json: true, auth: true }),
     body: JSON.stringify(input),
   });
-  if (!response.ok) throw new Error('Failed to submit report');
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, 'Failed to submit report.'));
+  }
+
   return response.json();
 }
