@@ -31,7 +31,10 @@ export default async function ParkPage({ params }: ParkPageProps) {
             {park.name}
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-white/82 sm:text-base">
-            {visual.tagline} Pick a trail to view its latest reports, hazards, weather, and park alerts.
+            {visual.tagline}{' '}
+            {park.trails.length > 0
+              ? 'Pick a trail to view its latest reports, hazards, weather, and park alerts.'
+              : 'Trail detail pages are coming soon for this park.'}
           </p>
           <div className="mt-5 flex flex-wrap gap-3 text-sm text-white">
             <div className="rounded-full border border-white/30 bg-white/14 px-4 py-2 backdrop-blur">
@@ -57,28 +60,34 @@ export default async function ParkPage({ params }: ParkPageProps) {
           </h2>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
-          {park.trails.map((trail) => (
-            <Link key={trail.id} href={`/trails/${trail.id}`} className="group">
-              <article className="h-full rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur transition duration-200 hover:-translate-y-1 hover:border-[var(--accent)]/35 hover:bg-[var(--surface-strong)]">
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
-                    Trail
-                  </span>
-                  <span className="text-sm text-[var(--foreground)]/45 transition group-hover:text-[var(--accent-strong)]">
-                    View conditions
-                  </span>
-                </div>
-                <h3 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">
-                  {trail.name}
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-[var(--foreground)]/68">
-                  Open the trail page for reports and current conditions.
-                </p>
-              </article>
-            </Link>
-          ))}
-        </div>
+        {park.trails.length > 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+            {park.trails.map((trail) => (
+              <Link key={trail.id} href={`/trails/${trail.id}`} className="group">
+                <article className="h-full rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur transition duration-200 hover:-translate-y-1 hover:border-[var(--accent)]/35 hover:bg-[var(--surface-strong)]">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
+                      Trail
+                    </span>
+                    <span className="text-sm text-[var(--foreground)]/45 transition group-hover:text-[var(--accent-strong)]">
+                      View conditions
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">
+                    {trail.name}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-[var(--foreground)]/68">
+                    Open the trail page for reports and current conditions.
+                  </p>
+                </article>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] p-5 text-sm leading-6 text-[var(--foreground)]/65 shadow-[var(--shadow-soft)]">
+            Trail coverage is coming soon for this park. For now, you can still browse the full national park directory from the homepage.
+          </div>
+        )}
       </section>
     </main>
   );

@@ -33,6 +33,9 @@ export default async function TrailPage({ params }: TrailPageProps) {
 
   if (!trail) notFound();
 
+  const forecastPeriods = trail.weather?.forecast ?? [];
+  const hasOddForecastCount = forecastPeriods.length % 2 === 1;
+
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-5 py-8 sm:px-8 lg:px-10">
       <section className="overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[linear-gradient(145deg,var(--hero-start),color-mix(in_srgb,var(--hero-end)_72%,white_28%))] p-6 shadow-[var(--shadow-soft)] sm:p-8">
@@ -176,17 +179,22 @@ export default async function TrailPage({ params }: TrailPageProps) {
         </div>
 
         <div className="space-y-8">
-          <section className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6">
+          <section className="self-start rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">Weather forecast</h2>
               <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
                 Short range
               </span>
             </div>
-            {trail.weather && trail.weather.forecast.length > 0 ? (
+            {forecastPeriods.length > 0 ? (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {trail.weather.forecast.map((period: WeatherPeriod) => (
-                  <div key={period.name} className="rounded-2xl border border-sky-200 bg-[linear-gradient(180deg,#eff8ff,#dff1ff)] p-4 text-center">
+                {forecastPeriods.map((period: WeatherPeriod, index: number) => (
+                  <div
+                    key={period.name}
+                    className={`rounded-2xl border border-sky-200 bg-[linear-gradient(180deg,#eff8ff,#dff1ff)] p-4 text-center ${
+                      hasOddForecastCount && index === forecastPeriods.length - 1 ? 'sm:col-span-2' : ''
+                    }`}
+                  >
                     <p className="font-semibold text-sky-950">{period.name}</p>
                     <img
                       src={period.icon}
@@ -205,24 +213,24 @@ export default async function TrailPage({ params }: TrailPageProps) {
               <p className="text-sm text-[var(--foreground)]/60">Weather data is not available right now.</p>
             )}
           </section>
-
-          <section className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">Submit a report</h2>
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                Protected route
-              </span>
-            </div>
-            <p className="mb-4 text-sm leading-6 text-[var(--foreground)]/64">
-              Sign in with a TrailCheck account, then share a quick surface update so the next visitor has fresher context.
-            </p>
-            <div className="mb-4">
-              <AuthPanel compact />
-            </div>
-            <ReportForm trailId={trail.id} />
-          </section>
         </div>
       </div>
+
+      <section className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">Submit a report</h2>
+          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+            Protected route
+          </span>
+        </div>
+        <p className="mb-4 max-w-4xl text-sm leading-6 text-[var(--foreground)]/64">
+          Sign in with a TrailCheck account, then share a quick surface update so the next visitor has fresher context.
+        </p>
+        <div className="mb-4">
+          <AuthPanel compact />
+        </div>
+        <ReportForm trailId={trail.id} />
+      </section>
     </main>
   );
 }

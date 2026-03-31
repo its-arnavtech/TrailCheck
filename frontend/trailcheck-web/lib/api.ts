@@ -1,3 +1,5 @@
+import { PARK_CATALOG } from './park-catalog';
+
 export type TrailSummary = {
   id: number;
   name: string;
@@ -9,6 +11,7 @@ export type TrailSummary = {
 
 export type ParkSummary = {
   name: string;
+  state: string;
   slug: string;
   trails: TrailSummary[];
 };
@@ -134,35 +137,42 @@ async function parseError(response: Response, fallbackMessage: string) {
 }
 
 export async function getTrails(): Promise<TrailSummary[]> {
-  const res = await fetch(`${API_BASE_URL}/trails`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Failed to load trails');
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE_URL}/trails`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to load trails');
+    return res.json();
+  } catch (error) {
+    console.error('Unable to load trails from API.', error);
+    return [];
+  }
 }
 
 export async function getParks(): Promise<ParkSummary[]> {
-  const trails = await getTrails();
-  const parks = new Map<string, ParkSummary>();
+  try {
+    const res = await fetch(`${API_BASE_URL}/parks`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to load parks');
+    return res.json();
+  } catch (error) {
+    console.error('Unable to load parks from API.', error);
 
-  for (const trail of trails) {
-    if (!trail.park?.slug || !trail.park.name) {
-      continue;
+    const trails = await getTrails();
+    const trailsByParkSlug = new Map<string, TrailSummary[]>();
+
+    for (const trail of trails) {
+      if (!trail.park?.slug) {
+        continue;
+      }
+
+      const existingTrails = trailsByParkSlug.get(trail.park.slug) ?? [];
+      existingTrails.push(trail);
+      trailsByParkSlug.set(trail.park.slug, existingTrails);
     }
 
-    const existingPark = parks.get(trail.park.slug);
-
-    if (existingPark) {
-      existingPark.trails.push(trail);
-      continue;
-    }
-
-    parks.set(trail.park.slug, {
-      name: trail.park.name,
-      slug: trail.park.slug,
-      trails: [trail],
-    });
+    return PARK_CATALOG.map((park) => ({
+      ...park,
+      trails: trailsByParkSlug.get(park.slug) ?? [],
+    })).sort((a, b) => a.name.localeCompare(b.name));
   }
-
-  return Array.from(parks.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function getPark(slug: string): Promise<ParkSummary | null> {
