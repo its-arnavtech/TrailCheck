@@ -9,6 +9,7 @@ export type TrailSummary = {
 
 export type ParkSummary = {
   name: string;
+  state: string;
   slug: string;
   trails: TrailSummary[];
 };
@@ -140,29 +141,9 @@ export async function getTrails(): Promise<TrailSummary[]> {
 }
 
 export async function getParks(): Promise<ParkSummary[]> {
-  const trails = await getTrails();
-  const parks = new Map<string, ParkSummary>();
-
-  for (const trail of trails) {
-    if (!trail.park?.slug || !trail.park.name) {
-      continue;
-    }
-
-    const existingPark = parks.get(trail.park.slug);
-
-    if (existingPark) {
-      existingPark.trails.push(trail);
-      continue;
-    }
-
-    parks.set(trail.park.slug, {
-      name: trail.park.name,
-      slug: trail.park.slug,
-      trails: [trail],
-    });
-  }
-
-  return Array.from(parks.values()).sort((a, b) => a.name.localeCompare(b.name));
+  const res = await fetch(`${API_BASE_URL}/parks`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to load parks');
+  return res.json();
 }
 
 export async function getPark(slug: string): Promise<ParkSummary | null> {
