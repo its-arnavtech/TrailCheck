@@ -3,6 +3,7 @@ import { parks } from './data/parks';
 import { parkTrails } from './data/park-trails';
 
 const prisma = new PrismaClient();
+const obsoleteParkSlugs = ['yellowstone'];
 
 async function main() {
   const parkRecords = await Promise.all(
@@ -40,6 +41,14 @@ async function main() {
       }),
     ),
   );
+
+  await prisma.park.deleteMany({
+    where: {
+      slug: {
+        in: obsoleteParkSlugs,
+      },
+    },
+  });
 
   console.log(`Seeded successfully with ${parkRecords.length} parks and ${trails.length} trails`);
 }
