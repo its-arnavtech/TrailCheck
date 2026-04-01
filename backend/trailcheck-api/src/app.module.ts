@@ -11,6 +11,7 @@ import { NpsModule } from './nps/nps.module';
 import { WeatherService } from './weather/weather.service';
 import { WeatherModule } from './weather/weather.module';
 import { AuthModule } from './auth/auth.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import { AuthModule } from './auth/auth.module';
     TrailsModule, 
     ReportsModule, 
     HazardsModule, 
-    ParksModule, NpsModule, WeatherModule, AuthModule],
+    ParksModule, NpsModule, WeatherModule, AuthModule, AiModule],
   controllers: [AppController],
   providers: [AppService, NpsService, WeatherService],
 })

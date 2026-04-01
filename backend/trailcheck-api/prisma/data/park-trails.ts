@@ -73,9 +73,7 @@ export const parkTrails: Record<string, SeedTrail[]> = {
     { name: 'Wildcat Canyon Trail', slug: 'wildcat-canyon-trail', difficulty: 'MODERATE', lengthMiles: 4.4 },
     { name: 'East Rim Trail', slug: 'east-rim-trail', difficulty: 'HARD', lengthMiles: 10.8 },
   ],
-  'yellowstone-idaho': [],
-  'yellowstone-montana': [],
-  'yellowstone-wyoming': yellowstoneTrails,
+  yellowstone: yellowstoneTrails,
   'grand-canyon': [
     { name: 'Bright Angel Trail', slug: 'bright-angel', difficulty: 'HARD', lengthMiles: 12 },
     { name: 'South Kaibab Trail', slug: 'south-kaibab', difficulty: 'HARD', lengthMiles: 7 },

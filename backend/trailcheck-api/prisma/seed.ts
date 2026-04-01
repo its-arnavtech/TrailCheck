@@ -3,7 +3,7 @@ import { parks } from './data/parks';
 import { parkTrails } from './data/park-trails';
 
 const prisma = new PrismaClient();
-const obsoleteParkSlugs = ['yellowstone'];
+const obsoleteParkSlugs = ['yellowstone-idaho', 'yellowstone-montana', 'yellowstone-wyoming'];
 
 async function main() {
   const parkRecords = await Promise.all(

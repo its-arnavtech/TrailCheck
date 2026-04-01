@@ -64,9 +64,7 @@ export const PARK_CATALOG: ParkCatalogEntry[] = [
   { name: 'White Sands', state: 'New Mexico', slug: 'white-sands' },
   { name: 'Wind Cave', state: 'South Dakota', slug: 'wind-cave' },
   { name: 'Wrangell-St. Elias', state: 'Alaska', slug: 'wrangell-st-elias' },
-  { name: 'Yellowstone', state: 'Idaho', slug: 'yellowstone-idaho' },
-  { name: 'Yellowstone', state: 'Montana', slug: 'yellowstone-montana' },
-  { name: 'Yellowstone', state: 'Wyoming', slug: 'yellowstone-wyoming' },
+  { name: 'Yellowstone', state: 'Idaho, Montana, Wyoming', slug: 'yellowstone' },
   { name: 'Yosemite', state: 'California', slug: 'yosemite' },
   { name: 'Zion', state: 'Utah', slug: 'zion' },
 ];

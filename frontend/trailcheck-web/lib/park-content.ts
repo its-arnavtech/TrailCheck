@@ -80,10 +80,6 @@ const STATIC_VISUALS: Record<string, Pick<ParkVisual, 'imageUrl' | 'imageAlt'>> 
 };
 
 function getVisualKey(slug: string) {
-  if (slug.startsWith('yellowstone-')) {
-    return 'yellowstone';
-  }
-
   return slug;
 }
 
@@ -93,10 +89,6 @@ function toWikipediaTitle(slug: string, parkName: string) {
     'hot-springs': 'Hot_Springs_National_Park',
     'virgin-islands': 'Virgin_Islands_National_Park',
   };
-
-  if (slug.startsWith('yellowstone-')) {
-    return 'Yellowstone_National_Park';
-  }
 
   return specialTitles[slug] ?? `${parkName.replaceAll('.', '')}_National_Park`.replaceAll(' ', '_');
 }
