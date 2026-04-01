@@ -59,6 +59,27 @@ export type ParkWeather = {
   forecast: WeatherPeriod[];
 };
 
+export type ParkConditionHazard = {
+  id: string;
+  title: string;
+  severity: 'low' | 'moderate' | 'high';
+  source: 'nps' | 'nws' | 'combined';
+  summary: string;
+  evidence: string[];
+  tags: string[];
+};
+
+export type ParkDigest = {
+  parkSlug: string;
+  shortSummary: string;
+  notification: string;
+  generationSource: 'gemini' | 'fallback';
+  generationError: string | null;
+  hazards: ParkConditionHazard[];
+  alerts: NpsAlert[];
+  weather: ParkWeather | null;
+};
+
 export type TrailDetail = TrailSummary & {
   difficulty?: string | null;
   status?: string;
@@ -156,6 +177,18 @@ export async function getParks(): Promise<ParkSummary[]> {
 export async function getPark(slug: string): Promise<ParkSummary | null> {
   const parks = await getParks();
   return parks.find((park) => park.slug === slug) ?? null;
+}
+
+export async function getParkDigest(slug: string): Promise<ParkDigest> {
+  const response = await fetch(`${API_BASE_URL}/ai/parks/${slug}/digest`, {
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, 'Failed to load park conditions.'));
+  }
+
+  return response.json();
 }
 
 export async function getTrail(id: string): Promise<TrailDetail | null> {

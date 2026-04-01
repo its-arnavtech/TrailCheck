@@ -37,6 +37,8 @@ lerna-debug.log*
 
 # dotenv environment variable files
 .env
+.env.*
+!.env.example
 .env.development.local
 .env.test.local
 .env.production.local
@@ -58,3 +60,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 /generated/prisma
 
 *.db
+*.db-journal
+*.db-wal
+*.db-shm

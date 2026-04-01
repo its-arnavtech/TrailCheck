@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { NpsService } from 'src/nps/nps.service';
-import { WeatherService } from 'src/weather/weather.service';
+import { NpsService } from '../nps/nps.service';
+import { WeatherService } from '../weather/weather.service';
 
 @Injectable()
 export class TrailsService {
