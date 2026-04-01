@@ -1,3 +1,5 @@
+import { PARK_CATALOG } from './park-catalog';
+
 export type TrailSummary = {
   id: number;
   name: string;
@@ -9,6 +11,7 @@ export type TrailSummary = {
 
 export type ParkSummary = {
   name: string;
+  state: string;
   state: string;
   slug: string;
   trails: TrailSummary[];
@@ -135,9 +138,14 @@ async function parseError(response: Response, fallbackMessage: string) {
 }
 
 export async function getTrails(): Promise<TrailSummary[]> {
-  const res = await fetch(`${API_BASE_URL}/trails`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Failed to load trails');
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE_URL}/trails`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to load trails');
+    return res.json();
+  } catch (error) {
+    console.error('Unable to load trails from API.', error);
+    return [];
+  }
 }
 
 export async function getParks(): Promise<ParkSummary[]> {

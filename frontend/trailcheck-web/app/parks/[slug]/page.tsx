@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import ParkTrailsExplorer from '@/components/park-trails-explorer';
 import { getPark } from '@/lib/api';
 import { getParkVisual } from '@/lib/park-content';
 
@@ -12,7 +13,7 @@ export default async function ParkPage({ params }: ParkPageProps) {
   const park = await getPark(slug);
 
   if (!park) notFound();
-  const visual = getParkVisual(park.slug);
+  const visual = await getParkVisual(park.slug, park.name);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[min(100%,1440px)] flex-col gap-8 px-4 py-6 sm:px-6 sm:py-8 lg:px-8 xl:px-10">
@@ -60,6 +61,7 @@ export default async function ParkPage({ params }: ParkPageProps) {
           </h2>
         </div>
 
+<<<<<<< HEAD
         {park.trails.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
             {park.trails.map((trail) => (
@@ -88,6 +90,9 @@ export default async function ParkPage({ params }: ParkPageProps) {
             Trail coverage is coming soon for this park. For now, you can still browse the full national park directory from the homepage.
           </div>
         )}
+=======
+        <ParkTrailsExplorer trails={park.trails} />
+>>>>>>> 5bfcbcb64ad7b1b2ffb5fa3cb99a464eb1f62fe0
       </section>
     </main>
   );

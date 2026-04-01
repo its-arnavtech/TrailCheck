@@ -1,10 +1,20 @@
 import { PrismaClient } from '@prisma/client';
 import { parks } from './data/parks';
+import { parks } from './data/parks';
 import { parkTrails } from './data/park-trails';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  const parkRecords = await Promise.all(
+    parks.map((park) =>
+      prisma.park.upsert({
+        where: { slug: park.slug },
+        update: { name: park.name, state: park.state },
+        create: park,
+      }),
+    ),
+  );
   const parkRecords = await Promise.all(
     parks.map((park) =>
       prisma.park.upsert({
@@ -23,6 +33,7 @@ async function main() {
     entries.map((trail) => ({
       ...trail,
       parkId: parkIds[parkSlug],
+      parkId: parkIds[parkSlug],
     })),
   );
 
@@ -40,7 +51,22 @@ async function main() {
       }),
     ),
   );
+  await Promise.all(
+    trails.map((trail) =>
+      prisma.trail.upsert({
+        where: { slug: trail.slug },
+        update: {
+          parkId: trail.parkId,
+          name: trail.name,
+          difficulty: trail.difficulty,
+          lengthMiles: trail.lengthMiles,
+        },
+        create: trail,
+      }),
+    ),
+  );
 
+  console.log(`Seeded successfully with ${parkRecords.length} parks and ${trails.length} trails`);
   console.log(`Seeded successfully with ${parkRecords.length} parks and ${trails.length} trails`);
 }
 
