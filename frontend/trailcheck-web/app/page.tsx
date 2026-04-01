@@ -2,19 +2,21 @@ import Image from 'next/image';
 import AuthPanel from '@/components/auth-panel';
 import ParksExplorer from '@/components/parks-explorer';
 import { getParks } from '../lib/api';
-import { getParkVisual } from '../lib/park-content';
+import { getParkVisual, getParkVisualMap } from '../lib/park-content';
 import trailcheckLogo from './trailcheck_logo-removebg-preview.png';
 
 export default async function Home() {
   const parks = await getParks();
+  const heroVisual = await getParkVisual('yosemite', 'Yosemite');
+  const parkVisuals = await getParkVisualMap(parks);
   const trailCount = parks.reduce((count, park) => count + park.trails.length, 0);
 
   return (
     <main className="flex min-h-screen w-full flex-col gap-0 pb-6 sm:pb-8 lg:pb-10">
       <section className="relative min-h-[320px] overflow-hidden">
         <img
-          src={getParkVisual('yosemite').imageUrl}
-          alt={getParkVisual('yosemite').imageAlt}
+          src={heroVisual.imageUrl}
+          alt={heroVisual.imageAlt}
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(22,34,42,0.58)_0%,rgba(22,34,42,0.34)_48%,rgba(22,34,42,0.18)_100%)]" />
@@ -61,7 +63,7 @@ export default async function Home() {
           </p>
         </div>
 
-        <ParksExplorer parks={parks} />
+        <ParksExplorer parks={parks} visuals={parkVisuals} />
       </section>
     </main>
   );
