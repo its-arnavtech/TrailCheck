@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import AuthPanel from '@/components/auth-panel';
 import ParksExplorer from '@/components/parks-explorer';
-import ParksExplorer from '@/components/parks-explorer';
 import { getParks } from '../lib/api';
 import { getParkVisual, getParkVisualMap } from '../lib/park-content';
 import trailcheckLogo from './trailcheck_logo-removebg-preview.png';
@@ -50,7 +49,21 @@ export default async function Home() {
       </section>
 
       <section className="mx-auto w-full max-w-[min(100%,1440px)] space-y-4 px-4 pt-8 sm:px-6 sm:pt-10 lg:px-8 xl:px-10">
-        <ParksExplorer parks={parks} />
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-[var(--accent-strong)]/75">
+              Explore
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">
+              National parks
+            </h2>
+          </div>
+          <p className="text-sm text-[var(--foreground)]/60">
+            Choose a park to browse its trails.
+          </p>
+        </div>
+
+        <ParksExplorer parks={parks} visuals={parkVisuals} />
       </section>
     </main>
   );

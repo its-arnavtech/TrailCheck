@@ -12,7 +12,6 @@ export type TrailSummary = {
 export type ParkSummary = {
   name: string;
   state: string;
-  state: string;
   slug: string;
   trails: TrailSummary[];
 };
