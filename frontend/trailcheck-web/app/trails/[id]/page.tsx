@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import AuthPanel from '@/components/auth-panel';
 import ReportForm from '@/components/reportform';
@@ -44,6 +45,14 @@ export default async function TrailPage({ params }: TrailPageProps) {
             <p className="mb-3 text-sm font-medium uppercase tracking-[0.24em] text-[var(--accent-strong)]/70">
               Trail overview
             </p>
+            {trail.park?.slug && (
+              <Link
+                href={`/parks/${trail.park.slug}`}
+                className="mb-4 inline-flex rounded-full border border-white/65 bg-white/55 px-4 py-2 text-sm font-medium text-emerald-950 transition hover:bg-white/72"
+              >
+                Back to park
+              </Link>
+            )}
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-semibold tracking-tight text-emerald-950 sm:text-4xl">{trail.name}</h1>
               {trail.status && (

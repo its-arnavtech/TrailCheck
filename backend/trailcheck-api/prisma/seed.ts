@@ -15,7 +15,9 @@ async function main() {
     ),
   );
 
-  const parkIds = Object.fromEntries(parkRecords.map((park) => [park.slug, park.id])) as Record<string, number>;
+  const parkIds = Object.fromEntries(
+    parkRecords.map((park) => [park.slug, park.id]),
+  ) as Record<string, number>;
 
   const trails = Object.entries(parkTrails).flatMap(([parkSlug, entries]) =>
     entries.map((trail) => ({

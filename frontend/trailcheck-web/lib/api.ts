@@ -148,31 +148,9 @@ export async function getTrails(): Promise<TrailSummary[]> {
 }
 
 export async function getParks(): Promise<ParkSummary[]> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/parks`, { cache: 'no-store' });
-    if (!res.ok) throw new Error('Failed to load parks');
-    return res.json();
-  } catch (error) {
-    console.error('Unable to load parks from API.', error);
-
-    const trails = await getTrails();
-    const trailsByParkSlug = new Map<string, TrailSummary[]>();
-
-    for (const trail of trails) {
-      if (!trail.park?.slug) {
-        continue;
-      }
-
-      const existingTrails = trailsByParkSlug.get(trail.park.slug) ?? [];
-      existingTrails.push(trail);
-      trailsByParkSlug.set(trail.park.slug, existingTrails);
-    }
-
-    return PARK_CATALOG.map((park) => ({
-      ...park,
-      trails: trailsByParkSlug.get(park.slug) ?? [],
-    })).sort((a, b) => a.name.localeCompare(b.name));
-  }
+  const res = await fetch(`${API_BASE_URL}/parks`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Failed to load parks');
+  return res.json();
 }
 
 export async function getPark(slug: string): Promise<ParkSummary | null> {

@@ -47,7 +47,7 @@ export default function ParksExplorer({ parks, visuals }: ParksExplorerProps) {
 
             return (
               <Link key={park.slug} href={`/parks/${park.slug}`} className="group">
-                <article className="h-full overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-soft)] backdrop-blur transition duration-200 hover:-translate-y-1 hover:border-[var(--accent)]/35 hover:bg-[var(--surface-strong)]">
+                <article className="h-full overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-soft)] backdrop-blur transition duration-200 hover:border-[var(--accent)]/35 hover:bg-[var(--surface-strong)]">
                   <div className="relative h-52 overflow-hidden">
                     <img
                       src={visual.imageUrl}
