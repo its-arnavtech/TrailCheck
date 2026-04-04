@@ -197,7 +197,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
           onChange={(event) => setEmail(event.target.value)}
           className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
             compact
-              ? 'border-[var(--border)] bg-white/80 text-[var(--foreground)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
+              ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
               : 'border-white/35 bg-white/92 text-slate-900 focus:border-white focus:ring-4 focus:ring-white/30'
           }`}
           required
@@ -210,7 +210,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
           onChange={(event) => setPassword(event.target.value)}
           className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
             compact
-              ? 'border-[var(--border)] bg-white/80 text-[var(--foreground)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
+              ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
               : 'border-white/35 bg-white/92 text-slate-900 focus:border-white focus:ring-4 focus:ring-white/30'
           }`}
           minLength={8}

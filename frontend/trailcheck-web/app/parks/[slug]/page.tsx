@@ -69,11 +69,6 @@ export default async function ParkPage({ params }: ParkPageProps) {
                     Alerts, hazards, and park summary
                   </h2>
                 </div>
-                {digest ? (
-                  <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold text-[var(--accent-strong)]">
-                    {digest.generationSource === 'gemini' ? 'Gemini live' : 'Live fallback'}
-                  </span>
-                ) : null}
               </div>
             </div>
 
@@ -139,18 +134,13 @@ export default async function ParkPage({ params }: ParkPageProps) {
               </div>
 
               <div className="space-y-4">
-                <div className="rounded-[1.35rem] border border-[var(--accent)]/28 bg-[linear-gradient(150deg,color-mix(in_srgb,var(--accent-soft)_68%,white_32%)_0%,rgba(255,255,255,0.94)_100%)] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+                <div className="rounded-[1.35rem] border border-[var(--accent)]/28 bg-[linear-gradient(150deg,color-mix(in_srgb,var(--accent-soft)_68%,white_32%)_0%,rgba(255,255,255,0.94)_100%)] p-5 text-[var(--ink-on-light)] shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent-strong)]/82">
-                    Gemini Summary
+                    Summary
                   </p>
-                  <p className="mt-4 text-lg font-semibold leading-8 text-[var(--foreground)]">
+                  <p className="mt-4 text-lg font-semibold leading-8 text-[var(--ink-on-light)]">
                     {digest?.shortSummary ?? 'A park-wide summary will appear here when live condition data is available.'}
                   </p>
-                  {digest?.generationSource === 'fallback' ? (
-                    <p className="mt-4 text-xs leading-5 text-[var(--foreground)]/52">
-                      Summary is currently using the deterministic fallback while Gemini output stabilizes.
-                    </p>
-                  ) : null}
                 </div>
 
                 <div className="rounded-[1.35rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)]">

@@ -35,7 +35,7 @@ export default function ParkReportPanel({ trails }: ParkReportPanelProps) {
           id="park-report-trail"
           value={selectedTrailId ?? ''}
           onChange={(event) => setSelectedTrailId(Number(event.target.value))}
-          className="w-full rounded-2xl border border-[var(--border)] bg-white/80 px-4 py-3 text-sm text-[var(--foreground)] shadow-sm outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100"
+          className="w-full rounded-2xl border border-[var(--border)] bg-white/80 px-4 py-3 text-sm text-[var(--ink-on-light)] shadow-sm outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100"
         >
           {selectableTrails.map((trail) => (
             <option key={trail.id} value={trail.id}>
