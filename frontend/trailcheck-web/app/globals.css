@@ -3,6 +3,8 @@
 :root {
   --background: #dbe0e6;
   --foreground: #27323d;
+  --ink-on-light: #111827;
+  --ink-on-light-muted: rgba(17, 24, 39, 0.62);
   --surface: rgba(245, 247, 250, 0.82);
   --surface-strong: #ffffff;
   --surface-muted: #dbe2ea;
@@ -26,6 +28,8 @@
   :root {
     --background: #11161d;
     --foreground: #ecf2f8;
+    --ink-on-light: #111827;
+    --ink-on-light-muted: rgba(17, 24, 39, 0.62);
     --surface: rgba(20, 27, 36, 0.84);
     --surface-strong: #161d26;
     --surface-muted: #202a36;
@@ -79,6 +83,13 @@ body::before {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+input,
+textarea,
+select,
+option {
+  font: inherit;
 }
 
 ::selection {

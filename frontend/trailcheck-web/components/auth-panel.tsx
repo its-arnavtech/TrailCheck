@@ -15,10 +15,31 @@ type AuthPanelProps = {
   compact?: boolean;
 };
 
+const allowedEmailDomains = new Set([
+  'gmail.com',
+  'googlemail.com',
+  'yahoo.com',
+  'yahoo.co.uk',
+  'outlook.com',
+  'hotmail.com',
+  'live.com',
+  'icloud.com',
+  'me.com',
+  'mac.com',
+  'aol.com',
+  'proton.me',
+  'protonmail.com',
+]);
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function AuthPanel({ compact = false }: AuthPanelProps) {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [gender, setGender] = useState<'MALE' | 'FEMALE' | 'OTHER'>('OTHER');
+  const [age, setAge] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
@@ -64,27 +85,68 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
       window.removeEventListener(AUTH_STATE_CHANGED_EVENT, handleAuthChange);
   }, []);
 
+  function hasAllowedEmailDomain(value: string) {
+    const domain = value.trim().toLowerCase().split('@')[1] ?? '';
+    return allowedEmailDomains.has(domain);
+  }
+
+  function hasValidEmail(value: string) {
+    const normalized = value.trim().toLowerCase();
+    return emailPattern.test(normalized) && hasAllowedEmailDomain(normalized);
+  }
+
+  const emailIsInvalid = mode === 'signup' && email.length > 0 && !hasValidEmail(email);
+  const passwordTooShort = mode === 'signup' && password.length > 0 && password.length < 8;
+  const ageIsInvalid =
+    mode === 'signup' &&
+    age.length > 0 &&
+    (!/^\d+$/.test(age) || Number(age) < 1 || Number(age) > 120);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (mode === 'signup' && !hasValidEmail(email)) {
+      toast.error('Please use a supported email provider such as Gmail, Yahoo, Outlook, iCloud, AOL, or Proton.');
+      return;
+    }
+
+    if (mode === 'signup' && password !== confirmPassword) {
+      toast.error('Passwords do not match.');
+      return;
+    }
+
+    if (mode === 'signup' && ageIsInvalid) {
+      toast.error('Age must be a whole number between 1 and 120.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const response =
         mode === 'signup'
-          ? await signup({ email, password })
+          ? await signup({ email, password, gender, age: Number(age) })
           : await signin({ email, password });
 
       setStoredSession(response.access_token, response.user);
       setUser(response.user);
       setPassword('');
+      setConfirmPassword('');
+      setAge('');
+      setGender('OTHER');
       toast.success(
         mode === 'signup'
           ? 'Account created. You are now signed in.'
           : 'Signed in successfully.',
       );
     } catch (error) {
-      const message =
+      const rawMessage =
         error instanceof Error ? error.message : 'Authentication failed.';
+      const message =
+        mode === 'signup' &&
+        rawMessage.toLowerCase().includes('already exists')
+          ? 'This user already exists'
+          : rawMessage;
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -95,6 +157,9 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
     clearStoredSession();
     setUser(null);
     setPassword('');
+    setConfirmPassword('');
+    setAge('');
+    setGender('OTHER');
     toast.success('Signed out.');
   }
 
@@ -197,7 +262,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
           onChange={(event) => setEmail(event.target.value)}
           className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
             compact
-              ? 'border-[var(--border)] bg-white/80 text-[var(--foreground)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
+              ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
               : 'border-white/35 bg-white/92 text-slate-900 focus:border-white focus:ring-4 focus:ring-white/30'
           }`}
           required
@@ -210,15 +275,74 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
           onChange={(event) => setPassword(event.target.value)}
           className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
             compact
-              ? 'border-[var(--border)] bg-white/80 text-[var(--foreground)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
+              ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
               : 'border-white/35 bg-white/92 text-slate-900 focus:border-white focus:ring-4 focus:ring-white/30'
           }`}
           minLength={8}
           required
         />
+        {mode === 'signup' ? (
+          <input
+            type="password"
+            autoComplete="new-password"
+            placeholder="Re-enter password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
+              compact
+                ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
+                : 'border-white/35 bg-white/92 text-slate-900 focus:border-white focus:ring-4 focus:ring-white/30'
+            }`}
+            minLength={8}
+            required
+          />
+        ) : null}
+        {mode === 'signup' ? (
+          <select
+            value={gender}
+            onChange={(event) => setGender(event.target.value as 'MALE' | 'FEMALE' | 'OTHER')}
+            className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
+              compact
+                ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
+                : 'border-white/35 bg-white/92 text-slate-900 focus:border-white focus:ring-4 focus:ring-white/30'
+            }`}
+            required
+          >
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
+            <option value="OTHER">Other</option>
+          </select>
+        ) : null}
+        {mode === 'signup' ? (
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            placeholder="Age"
+            value={age}
+            onChange={(event) => {
+              const nextValue = event.target.value.replace(/\D/g, '');
+              setAge(nextValue);
+            }}
+            className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
+              compact
+                ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
+                : 'border-white/35 bg-white/92 text-slate-900 focus:border-white focus:ring-4 focus:ring-white/30'
+            }`}
+            required
+          />
+        ) : null}
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={
+            isSubmitting ||
+            (mode === 'signup' &&
+              ((confirmPassword.length > 0 && password !== confirmPassword) ||
+                emailIsInvalid ||
+                passwordTooShort ||
+                ageIsInvalid ||
+                age.length === 0))
+          }
           className={`w-full rounded-2xl px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
             compact
               ? 'bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] text-white hover:brightness-105'
@@ -233,6 +357,33 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
               ? 'Create account'
               : 'Sign in'}
         </button>
+        {mode === 'signup' ? (
+          <div
+            className={`rounded-2xl border px-4 py-3 text-sm ${
+              compact
+                ? 'border-[var(--border)] bg-white/72 text-[var(--ink-on-light)]'
+                : 'border-white/20 bg-white/12 text-white'
+            }`}
+          >
+            <ul className="list-disc space-y-1 pl-5">
+              <li>Email must be valid.</li>
+              <li>Password should be more than 8 characters.</li>
+            </ul>
+            {emailIsInvalid || passwordTooShort ? (
+              <div className="mt-3 space-y-1 font-medium text-rose-300">
+                {emailIsInvalid ? (
+                  <p>Email is not valid. Use a supported provider such as Gmail, Yahoo, Outlook, iCloud, AOL, or Proton.</p>
+                ) : null}
+                {passwordTooShort ? (
+                  <p>Password must be at least 8 characters long.</p>
+                ) : null}
+                {ageIsInvalid ? (
+                  <p>Age must be a whole number between 1 and 120.</p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </form>
     </div>
   );

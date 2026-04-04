@@ -99,9 +99,14 @@ export type CreateReportInput = {
   reporterName?: string;
 };
 
-export type AuthInput = {
+export type SigninInput = {
   email: string;
   password: string;
+};
+
+export type SignupInput = SigninInput & {
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  age: number;
 };
 
 export type AuthenticatedUser = {
@@ -200,7 +205,7 @@ export async function getTrail(id: string): Promise<TrailDetail | null> {
   return response.json();
 }
 
-export async function signup(input: AuthInput): Promise<AuthResponse> {
+export async function signup(input: SignupInput): Promise<AuthResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/signup`, {
     method: 'POST',
     headers: buildHeaders(undefined, { json: true }),
@@ -214,7 +219,7 @@ export async function signup(input: AuthInput): Promise<AuthResponse> {
   return response.json();
 }
 
-export async function signin(input: AuthInput): Promise<AuthResponse> {
+export async function signin(input: SigninInput): Promise<AuthResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/signin`, {
     method: 'POST',
     headers: buildHeaders(undefined, { json: true }),

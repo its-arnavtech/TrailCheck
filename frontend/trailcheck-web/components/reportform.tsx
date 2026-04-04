@@ -70,13 +70,13 @@ export default function ReportForm({ trailId }: { trailId: number }) {
         value={note}
         onChange={(e) => setNote(e.target.value)}
         rows={3}
-        className="w-full resize-none rounded-2xl border border-[var(--border)] bg-white/80 px-4 py-3 text-sm text-[var(--foreground)] shadow-sm outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100"
+        className="w-full resize-none rounded-2xl border border-[var(--border)] bg-white/80 px-4 py-3 text-sm text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] shadow-sm outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100"
       />
 
       <select
         value={surface}
         onChange={(e) => setSurface(e.target.value)}
-        className="w-full rounded-2xl border border-[var(--border)] bg-white/80 px-4 py-3 text-sm text-[var(--foreground)] shadow-sm outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100"
+        className="w-full rounded-2xl border border-[var(--border)] bg-white/80 px-4 py-3 text-sm text-[var(--ink-on-light)] shadow-sm outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100"
       >
         <option value="DRY">Dry</option>
         <option value="MUDDY">Muddy</option>

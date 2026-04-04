@@ -111,7 +111,12 @@ export class AiService {
 
     return {
       parkSlug,
-      shortSummary: this.truncateForPrompt(askResponse.answer, 220),
+      shortSummary: this.buildDigestSummary(
+        askResponse.notice,
+        askResponse.hazards,
+        askResponse.alerts,
+        askResponse.weather,
+      ),
       notification: this.truncateForPrompt(askResponse.notice, 160),
       generationSource: askResponse.generationSource,
       generationError: askResponse.generationError,
@@ -261,6 +266,43 @@ export class AiService {
     }
 
     return `I could not find enough live park condition data to confidently answer "${question}" right now.`;
+  }
+
+  private buildDigestSummary(
+    notice: string,
+    hazards: DerivedHazard[],
+    alerts: NpsAlert[],
+    weather: ParkWeather | null,
+  ): string {
+    const topHazard = hazards[0];
+    if (topHazard) {
+      return this.truncateForPrompt(
+        `${notice} ${topHazard.summary} Check the latest trail and access conditions before you head out.`,
+        220,
+      );
+    }
+
+    const topAlert = alerts[0];
+    if (topAlert) {
+      return this.truncateForPrompt(
+        `${notice} ${this.cleanSummaryText(topAlert.description)} Plan around this alert before starting your visit.`,
+        220,
+      );
+    }
+
+    const forecast = weather?.forecast[0];
+    if (forecast) {
+      return this.truncateForPrompt(
+        `${notice} Expect ${forecast.shortForecast.toLowerCase()} with winds ${forecast.windSpeed}.`,
+        220,
+      );
+    }
+
+    return this.truncateForPrompt(notice, 220);
+  }
+
+  private cleanSummaryText(value: string): string {
+    return value.replace(/\s+/g, ' ').trim();
   }
 
   private getClient(): GoogleGenAI {
