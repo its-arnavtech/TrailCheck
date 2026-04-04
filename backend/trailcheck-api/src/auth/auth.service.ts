@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto/auth.dto';
+import { SignupDto } from './dto/signup.dto';
 
 type AuthUser = {
   id: number;
@@ -19,7 +20,7 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async signup(dto: AuthDto) {
+  async signup(dto: SignupDto) {
     const hash = await argon2.hash(dto.password);
 
     try {
@@ -27,6 +28,8 @@ export class AuthService {
         data: {
           email: dto.email,
           password: hash,
+          gender: dto.gender,
+          age: dto.age,
         },
       });
 
