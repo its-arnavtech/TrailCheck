@@ -8,12 +8,13 @@ datasource db {
 }
 
 model Park {
-  id        Int      @id @default(autoincrement())
-  name      String
-  state     String
-  slug      String   @unique
-  createdAt DateTime @default(now())
-  trails    Trail[]
+  id          Int                  @id @default(autoincrement())
+  name        String
+  state       String
+  slug        String               @unique
+  createdAt   DateTime             @default(now())
+  trails      Trail[]
+  preferences UserParkPreference[]
 }
 
 model Trail {
@@ -56,12 +57,29 @@ model TrailReport {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  gender    Gender   @default(OTHER)
-  age       Int      @default(18)
-  createdAt DateTime @default(now())
+  id          Int                  @id @default(autoincrement())
+  email       String               @unique
+  password    String
+  gender      Gender               @default(OTHER)
+  age         Int                  @default(18)
+  createdAt   DateTime             @default(now())
+  preferences UserParkPreference[]
+}
+
+model UserParkPreference {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  parkId     Int
+  isFavorite Boolean  @default(false)
+  wantsToGo  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+  park       Park     @relation(fields: [parkId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, parkId])
+  @@index([userId])
+  @@index([parkId])
 }
 
 enum TrailStatus {

@@ -49,6 +49,7 @@ export const PARK_CATALOG: ParkCatalogEntry[] = [
   { name: 'Mesa Verde', state: 'Colorado', slug: 'mesa-verde' },
   { name: 'Mount Rainier', state: 'Washington', slug: 'mount-rainier' },
   { name: 'National Park of American Samoa', state: 'American Samoa', slug: 'american-samoa' },
+  { name: 'New River Gorge', state: 'West Virginia', slug: 'new-river-gorge' },
   { name: 'North Cascades', state: 'Washington', slug: 'north-cascades' },
   { name: 'Olympic', state: 'Washington', slug: 'olympic' },
   { name: 'Petrified Forest', state: 'Arizona', slug: 'petrified-forest' },
