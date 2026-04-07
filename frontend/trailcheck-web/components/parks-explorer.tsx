@@ -102,7 +102,7 @@ export default function ParksExplorer({ parks, visuals }: ParksExplorerProps) {
         </div>
       ) : (
         <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--foreground)]/65 shadow-[var(--shadow-soft)]">
-          No parks matched "{query}".
+          No parks matched &quot;{query}&quot;.
         </div>
       )}
     </div>

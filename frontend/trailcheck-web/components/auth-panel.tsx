@@ -191,7 +191,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
         <button
           type="button"
           onClick={handleSignOut}
-          className={`mt-4 inline-flex rounded-2xl px-4 py-2 text-sm font-semibold transition ${
+          className={`mt-4 flex w-full items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold transition ${
             compact
               ? 'bg-[var(--accent-strong)] text-white hover:brightness-110'
               : 'bg-white text-emerald-950 hover:bg-white/90'
