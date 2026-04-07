@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import HomeHeader from '@/components/home-header';
+import ParkMap from '@/components/park-map';
 import ParksExplorer from '@/components/parks-explorer';
 import { getParks } from '../lib/api';
 import { getParkVisual, getParkVisualMap } from '../lib/park-content';
@@ -26,23 +27,22 @@ export default async function Home() {
         <div className="absolute -left-10 bottom-6 h-32 w-32 rounded-full bg-white/18 blur-3xl sm:h-40 sm:w-40" />
         <div className="relative px-8 py-6 sm:px-10 sm:py-8 lg:px-12">
           <div className="flex min-h-[calc(100vh-8rem)] flex-col justify-center gap-10">
-            <div className="flex flex-col gap-8 text-white lg:flex-row lg:items-start lg:justify-between">
-              <div className="flex items-center lg:self-start">
+            <div className="flex flex-col gap-8 text-white lg:flex-row lg:items-center lg:justify-between xl:gap-10">
+              <div className="flex flex-col items-center gap-6 lg:max-w-[28rem] lg:items-start lg:gap-8">
                 <Image
                   src={trailcheckLogo}
                   alt="TrailCheck"
                   priority
                   className="h-auto w-[280px] max-w-full sm:w-[360px] lg:w-[420px]"
                 />
-              </div>
-              <div className="max-w-[22rem] lg:max-w-[28rem] lg:text-right">
                 <p className="text-xl leading-relaxed text-white/95 sm:text-2xl">
                   Report trail hazards and help keep our national parks safe for everyone.
                 </p>
-                <p className="mt-5 text-sm font-medium tracking-[0.01em] text-white/84 sm:text-base">
-                  Explore {trailCount} trail{trailCount === 1 ? '' : 's'} across {parks.length} park{parks.length === 1 ? '' : 's'} on the TrailCheck network.
+                <p className="text-sm font-medium tracking-[0.01em] text-white/84 sm:text-base">
+                  Explore Trails across all {parks.length} U.S. National Park{parks.length === 1 ? '' : 's'} on the TrailCheck network.
                 </p>
               </div>
+              <ParkMap />
             </div>
 
             <div className="flex justify-center">

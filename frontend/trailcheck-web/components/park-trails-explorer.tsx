@@ -71,7 +71,7 @@ export default function ParkTrailsExplorer({ trails }: ParkTrailsExplorerProps) 
         </div>
       ) : (
         <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--foreground)]/65 shadow-[var(--shadow-soft)]">
-          No trails matched "{query}".
+          No trails matched &quot;{query}&quot;.
         </div>
       )}
     </div>

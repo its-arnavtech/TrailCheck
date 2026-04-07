@@ -1,5 +1,3 @@
-import { PARK_CATALOG } from './park-catalog';
-
 export type TrailSummary = {
   id: number;
   name: string;
