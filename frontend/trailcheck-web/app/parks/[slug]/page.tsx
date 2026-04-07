@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import AuthPanel from '@/components/auth-panel';
+import ParkPreferenceActions from '@/components/park-preference-actions';
 import ParkReportPanel from '@/components/park-report-panel';
 import ParkTrailsExplorer from '@/components/park-trails-explorer';
 import { getPark, getParkDigest } from '@/lib/api';
@@ -52,6 +53,9 @@ export default async function ParkPage({ params }: ParkPageProps) {
             >
               Back to parks
             </Link>
+          </div>
+          <div className="mt-6">
+            <ParkPreferenceActions parkSlug={park.slug} parkName={park.name} />
           </div>
         </div>
       </section>

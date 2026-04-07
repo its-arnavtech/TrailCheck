@@ -10,6 +10,7 @@ import {
   getStoredAuthUser,
   setStoredSession,
 } from '@/lib/auth';
+import SavedParksPanel from '@/components/saved-parks-panel';
 
 type AuthPanelProps = {
   compact?: boolean;
@@ -185,7 +186,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
           {user.email}
         </h3>
         <p className="mt-2 text-sm opacity-80">
-          You can submit protected trail reports with this account.
+          You can submit protected trail reports and save parks to favorites or want-to-go lists with this account.
         </p>
         <button
           type="button"
@@ -198,6 +199,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
         >
           Sign out
         </button>
+        <SavedParksPanel />
       </div>
     );
   }

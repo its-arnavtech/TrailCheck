@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import AuthPanel from '@/components/auth-panel';
+import FavoritesPanel from '@/components/favorites-panel';
 import {
   AUTH_STATE_CHANGED_EVENT,
-  clearStoredSession,
   getStoredAuthToken,
   getStoredAuthUser,
 } from '@/lib/auth';
 
 export default function HomeHeader() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
@@ -26,12 +27,6 @@ export default function HomeHeader() {
   }, []);
 
   function handleAuthAction() {
-    if (isSignedIn) {
-      clearStoredSession();
-      setIsAuthOpen(false);
-      return;
-    }
-
     setIsAuthOpen(true);
   }
 
@@ -54,12 +49,21 @@ export default function HomeHeader() {
             >
               Visit NPS
             </a>
+            {isSignedIn ? (
+              <button
+                type="button"
+                onClick={() => setIsFavoritesOpen(true)}
+                className="text-sm font-medium text-white underline underline-offset-4 transition hover:text-white/80 sm:text-base"
+              >
+                Favorites
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={handleAuthAction}
               className="text-sm font-semibold text-white underline underline-offset-4 transition hover:text-white/80 sm:text-base"
             >
-              {isSignedIn ? 'Sign out' : 'Login / Sign up'}
+              {isSignedIn ? 'Account' : 'Login / Sign up'}
             </button>
           </nav>
         </div>
@@ -75,6 +79,20 @@ export default function HomeHeader() {
             onClick={(event) => event.stopPropagation()}
           >
             <AuthPanel />
+          </div>
+        </div>
+      ) : null}
+
+      {isFavoritesOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+          onClick={() => setIsFavoritesOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-lg"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <FavoritesPanel />
           </div>
         </div>
       ) : null}
