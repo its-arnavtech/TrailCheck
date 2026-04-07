@@ -119,6 +119,20 @@ export type AuthResponse = {
   user: AuthenticatedUser;
 };
 
+export type ParkPreference = {
+  parkId: number;
+  parkSlug: string;
+  parkName: string;
+  parkState: string;
+  isFavorite: boolean;
+  wantsToGo: boolean;
+};
+
+export type UpdateParkPreferenceInput = {
+  isFavorite: boolean;
+  wantsToGo: boolean;
+};
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001';
 
@@ -258,6 +272,49 @@ export async function createReport(input: CreateReportInput) {
 
   if (!response.ok) {
     throw new Error(await parseError(response, 'Failed to submit report.'));
+  }
+
+  return response.json();
+}
+
+export async function getMyParkPreferences(): Promise<ParkPreference[]> {
+  const response = await fetch(`${API_BASE_URL}/parks/preferences/me`, {
+    headers: buildHeaders(undefined, { auth: true }),
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, 'Failed to load saved parks.'));
+  }
+
+  return response.json();
+}
+
+export async function getParkPreference(slug: string): Promise<ParkPreference> {
+  const response = await fetch(`${API_BASE_URL}/parks/${slug}/preferences`, {
+    headers: buildHeaders(undefined, { auth: true }),
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, 'Failed to load park preference.'));
+  }
+
+  return response.json();
+}
+
+export async function updateParkPreference(
+  slug: string,
+  input: UpdateParkPreferenceInput,
+): Promise<ParkPreference> {
+  const response = await fetch(`${API_BASE_URL}/parks/${slug}/preferences`, {
+    method: 'PUT',
+    headers: buildHeaders(undefined, { json: true, auth: true }),
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, 'Failed to update park preference.'));
   }
 
   return response.json();

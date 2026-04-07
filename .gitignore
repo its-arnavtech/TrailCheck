@@ -3,6 +3,14 @@
 /node_modules
 /build
 /tmp
+/coverage
+/.next
+/out
+/.turbo
+/.cache
+/.vercel
+*.tsbuildinfo
+next-env.d.ts
 
 # Logs
 logs
@@ -18,7 +26,17 @@ lerna-debug.log*
 .env.development
 .env.test
 .env.production
+.env.local
+.env.*
+!.env.example
 
 # temp directory
 .temp
 .tmp
+
+# SQLite and local DB artifacts
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.db.*

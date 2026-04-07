@@ -3,6 +3,7 @@ import type { AuthenticatedUser } from './api';
 export const AUTH_TOKEN_KEY = 'trailcheck.auth.token';
 export const AUTH_USER_KEY = 'trailcheck.auth.user';
 export const AUTH_STATE_CHANGED_EVENT = 'trailcheck-auth-changed';
+export const PARK_PREFERENCES_CHANGED_EVENT = 'trailcheck-park-preferences-changed';
 
 function isBrowser() {
   return typeof window !== 'undefined';
@@ -52,4 +53,12 @@ export function clearStoredSession() {
   window.localStorage.removeItem(AUTH_TOKEN_KEY);
   window.localStorage.removeItem(AUTH_USER_KEY);
   window.dispatchEvent(new Event(AUTH_STATE_CHANGED_EVENT));
+}
+
+export function notifyParkPreferencesChanged() {
+  if (!isBrowser()) {
+    return;
+  }
+
+  window.dispatchEvent(new Event(PARK_PREFERENCES_CHANGED_EVENT));
 }

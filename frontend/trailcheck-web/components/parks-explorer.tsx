@@ -4,6 +4,7 @@ import { useDeferredValue, useState } from 'react';
 import Link from 'next/link';
 import type { ParkSummary } from '@/lib/api';
 import type { ParkVisual } from '@/lib/park-content';
+import ParkFavoriteButton from '@/components/park-favorite-button';
 
 type ParksExplorerProps = {
   parks: ParkSummary[];
@@ -46,8 +47,11 @@ export default function ParksExplorer({ parks, visuals }: ParksExplorerProps) {
             const visual = visuals[park.slug];
 
             return (
-              <Link key={park.slug} href={`/parks/${park.slug}`} className="group">
-                <article className="h-full overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-soft)] backdrop-blur transition duration-200 hover:border-[var(--accent)]/35 hover:bg-[var(--surface-strong)]">
+              <article
+                key={park.slug}
+                className="group h-full overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-soft)] backdrop-blur transition duration-200 hover:border-[var(--accent)]/35 hover:bg-[var(--surface-strong)]"
+              >
+                <Link href={`/parks/${park.slug}`} className="block h-full">
                   <div className="relative h-52 overflow-hidden">
                     <img
                       src={visual.imageUrl}
@@ -55,6 +59,15 @@ export default function ParksExplorer({ parks, visuals }: ParksExplorerProps) {
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/78 via-slate-900/18 to-transparent" />
+                    <div className="absolute right-4 top-4 z-10">
+                      <ParkFavoriteButton
+                        parkSlug={park.slug}
+                        parkName={park.name}
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-slate-950/42 text-white shadow-[0_16px_30px_rgba(15,23,42,0.28)] backdrop-blur-md transition hover:bg-slate-950/58 disabled:cursor-not-allowed disabled:opacity-70"
+                        activeClassName="border-rose-200 bg-rose-500 text-white"
+                        inactiveClassName="border-white/30 bg-slate-950/42 text-white hover:bg-slate-950/58"
+                      />
+                    </div>
                     <div className="absolute inset-x-0 bottom-0 p-5 text-white">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/78">
                         {visual.eyebrow}
@@ -82,8 +95,8 @@ export default function ParksExplorer({ parks, visuals }: ParksExplorerProps) {
                         : 'Trail coverage coming soon'}
                     </p>
                   </div>
-                </article>
-              </Link>
+                </Link>
+              </article>
             );
           })}
         </div>
