@@ -82,6 +82,18 @@ model UserParkPreference {
   @@index([parkId])
 }
 
+model ParkSnapshot {
+  id         Int      @id @default(autoincrement())
+  parkId      Int
+  createdAt   DateTime @default(now())
+
+  npsRaw      Json
+  nwsRaw      Json
+  geminiReply String?
+
+  park        Park     @relation(fields: [parkId], references: [id])
+}
+
 enum TrailStatus {
   OPEN
   CAUTION

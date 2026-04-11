@@ -40,3 +40,6 @@ lerna-debug.log*
 *.db-wal
 *.db-shm
 *.db.*
+
+# Local training data artifacts
+backend/trailcheck-api/data/

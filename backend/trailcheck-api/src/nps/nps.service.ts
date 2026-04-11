@@ -19,11 +19,20 @@ export class NpsService {
   constructor(private config: ConfigService) {}
 
   async getAlertsForPark(parkSlug: string): Promise<NpsAlert[]> {
+    const payload = await this.getAlertsPayloadForPark(parkSlug);
+    return payload.alerts;
+  }
+
+  async getAlertsPayloadForPark(parkSlug: string): Promise<{
+    parkCode: string | null;
+    raw: unknown;
+    alerts: NpsAlert[];
+  }> {
     const parkCode = this.parkCodeMap[parkSlug];
 
     if (!parkCode) {
       this.logger.warn(`No NPS park code found for slug: ${parkSlug}`);
-      return [];
+      return { parkCode: null, raw: null, alerts: [] };
     }
 
     const apiKey = this.config.get<string>('NPS_API_KEY');
@@ -34,14 +43,18 @@ export class NpsService {
 
       if (!response.ok) {
         this.logger.error(`NPS API error: ${response.status}`);
-        return [];
+        return { parkCode, raw: null, alerts: [] };
       }
 
       const data = await response.json();
-      return this.mapToNpsAlerts(data.data ?? []);
+      return {
+        parkCode,
+        raw: data,
+        alerts: this.mapToNpsAlerts(data.data ?? []),
+      };
     } catch (error) {
       this.logger.error('Failed to fetch NPS alerts', error);
-      return [];
+      return { parkCode, raw: null, alerts: [] };
     }
   }
 
