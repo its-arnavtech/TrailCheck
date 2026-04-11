@@ -1,10 +1,12 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI } from '@google/genai';
+import { Prisma } from '@prisma/client';
 import { AskDto } from './dto/ask.dto';
 import { HazardsService, type DerivedHazard } from '../hazards/hazards.service';
 import { NpsAlert, NpsService } from '../nps/nps.service';
 import { ParkWeather, WeatherService } from '../weather/weather.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface RagDocument {
   id: string;
@@ -49,6 +51,7 @@ export class AiService {
     private readonly npsService: NpsService,
     private readonly weatherService: WeatherService,
     private readonly hazardsService: HazardsService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async ask(dto: AskDto): Promise<AskResponse> {
@@ -137,11 +140,29 @@ export class AiService {
     hazards: DerivedHazard[];
     context: RagDocument[];
   }> {
-    const [alerts, weather] = await Promise.all([
-      this.npsService.getAlertsForPark(parkSlug),
-      this.weatherService.getWeatherForPark(parkSlug),
+    const [park, npsPayload, weatherPayload] = await Promise.all([
+      this.prisma.park.findUnique({
+        where: { slug: parkSlug },
+        select: { id: true },
+      }),
+      this.npsService.getAlertsPayloadForPark(parkSlug),
+      this.weatherService.getWeatherPayloadForPark(parkSlug),
     ]);
 
+    if (park) {
+      await this.prisma.parkSnapshot.create({
+        data: {
+          parkId: park.id,
+          npsRaw: npsPayload.raw ?? Prisma.JsonNull,
+          nwsRaw: weatherPayload.raw ?? Prisma.JsonNull,
+        },
+      });
+    } else {
+      this.logger.warn(`Skipping snapshot storage because park "${parkSlug}" was not found.`);
+    }
+
+    const alerts = npsPayload.alerts;
+    const weather = weatherPayload.weather;
     const hazards = this.hazardsService.deriveHazards(alerts, weather);
     const context = this.buildContext({ parkSlug, alerts, weather, hazards });
 
