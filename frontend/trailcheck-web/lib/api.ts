@@ -1,3 +1,5 @@
+import { clearStoredSession } from './auth';
+
 export type TrailSummary = {
   id: number;
   name: string;
@@ -163,6 +165,11 @@ function buildHeaders(
 }
 
 async function parseError(response: Response, fallbackMessage: string) {
+  if (response.status === 401) {
+    clearStoredSession();
+    return 'Your session has expired. Please sign in again.';
+  }
+
   try {
     const data = (await response.json()) as { message?: string | string[] };
     if (Array.isArray(data.message)) {
