@@ -3,7 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI } from '@google/genai';
 import { Prisma } from '@prisma/client';
 import { AskDto } from './dto/ask.dto';
-import { HazardsService, type DerivedHazard } from '../hazards/hazards.service';
+import { HazardsService } from '../hazards/hazards.service';
+import { type DerivedHazard, type SeasonalHazardAssessment } from '../hazards/hazard.types';
 import { NpsAlert, NpsService } from '../nps/nps.service';
 import { ParkWeather, WeatherService } from '../weather/weather.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -24,6 +25,7 @@ export interface AskResponse {
   generationSource: 'gemini' | 'fallback';
   generationError: string | null;
   hazards: DerivedHazard[];
+  hazardAssessment: SeasonalHazardAssessment;
   alerts: NpsAlert[];
   weather: ParkWeather | null;
   context: RagDocument[];
@@ -37,6 +39,7 @@ export interface ParkDigestResult {
   generationError: string | null;
   retrievedContext: RagDocument[];
   hazards: DerivedHazard[];
+  hazardAssessment: SeasonalHazardAssessment;
   alerts: NpsAlert[];
   weather: ParkWeather | null;
 }
@@ -55,8 +58,10 @@ export class AiService {
   ) {}
 
   async ask(dto: AskDto): Promise<AskResponse> {
-    const { alerts, weather, hazards, context } = await this.collectParkContext(dto.parkSlug);
-    const notice = this.hazardsService.buildNotice(hazards, weather);
+    const { alerts, weather, hazardAssessment, hazards, context } = await this.collectParkContext(
+      dto.parkSlug,
+    );
+    const notice = this.hazardsService.buildNotice(hazardAssessment, weather);
 
     if (!this.isGeminiConfigured()) {
       return {
@@ -67,6 +72,7 @@ export class AiService {
         generationSource: 'fallback',
         generationError: 'GEMINI_API_KEY is missing',
         hazards,
+        hazardAssessment,
         alerts,
         weather,
         context,
@@ -84,6 +90,7 @@ export class AiService {
         generationSource: 'gemini',
         generationError: null,
         hazards,
+        hazardAssessment,
         alerts,
         weather,
         context,
@@ -99,6 +106,7 @@ export class AiService {
         generationSource: 'fallback',
         generationError: error instanceof Error ? error.message : 'Unknown Gemini error',
         hazards,
+        hazardAssessment,
         alerts,
         weather,
         context,
@@ -125,6 +133,7 @@ export class AiService {
       generationError: askResponse.generationError,
       retrievedContext: askResponse.context,
       hazards: askResponse.hazards,
+      hazardAssessment: askResponse.hazardAssessment,
       alerts: askResponse.alerts,
       weather: askResponse.weather,
     };
@@ -137,6 +146,7 @@ export class AiService {
   private async collectParkContext(parkSlug: string): Promise<{
     alerts: NpsAlert[];
     weather: ParkWeather | null;
+    hazardAssessment: SeasonalHazardAssessment;
     hazards: DerivedHazard[];
     context: RagDocument[];
   }> {
@@ -163,10 +173,11 @@ export class AiService {
 
     const alerts = npsPayload.alerts;
     const weather = weatherPayload.weather;
-    const hazards = this.hazardsService.deriveHazards(alerts, weather);
-    const context = this.buildContext({ parkSlug, alerts, weather, hazards });
+    const hazardAssessment = this.hazardsService.assessParkHazards(parkSlug, alerts, weather);
+    const hazards = hazardAssessment.activeHazards;
+    const context = this.buildContext({ parkSlug, alerts, weather, hazardAssessment, hazards });
 
-    return { alerts, weather, hazards, context };
+    return { alerts, weather, hazardAssessment, hazards, context };
   }
 
   private async generateAskAnswer(dto: AskDto, context: RagDocument[], notice: string): Promise<string> {
@@ -197,15 +208,33 @@ export class AiService {
     parkSlug: string;
     alerts: NpsAlert[];
     weather: ParkWeather | null;
+    hazardAssessment: SeasonalHazardAssessment;
     hazards: DerivedHazard[];
   }): RagDocument[] {
+    const assessmentDoc: RagDocument = {
+      id: `seasonal-profile-${params.parkSlug}`,
+      source: 'hazard',
+      title: `${params.hazardAssessment.season} ${params.hazardAssessment.profile.replace(/_/g, ' ')} hazard profile`,
+      content: `Risk level ${params.hazardAssessment.riskLevel}. Active hazards: ${params.hazardAssessment.activeHazards.map((hazard) => hazard.type).join(', ') || 'none'}. Ignored hazards: ${params.hazardAssessment.ignoredHazards.join(', ') || 'none'}.`,
+      metadata: {
+        season: params.hazardAssessment.season,
+        profile: params.hazardAssessment.profile,
+        riskLevel: params.hazardAssessment.riskLevel,
+      },
+    };
+
     const hazardDocs = params.hazards.map((hazard) => ({
       id: hazard.id,
       source: 'hazard' as const,
       title: hazard.title,
       content: `${hazard.severity.toUpperCase()} hazard. ${hazard.summary}`,
       metadata: {
+        type: hazard.type,
+        profile: hazard.profile,
+        season: hazard.season,
         severity: hazard.severity,
+        priority: hazard.priority,
+        score: hazard.score,
         source: hazard.source,
         tags: hazard.tags.join(', '),
       },
@@ -239,7 +268,7 @@ export class AiService {
         },
       })) ?? [];
 
-    return [...hazardDocs, ...alertDocs, ...weatherDocs].slice(0, 10);
+    return [assessmentDoc, ...hazardDocs, ...alertDocs, ...weatherDocs].slice(0, 10);
   }
 
   private buildAskPrompt(dto: AskDto, context: RagDocument[], notice: string): string {

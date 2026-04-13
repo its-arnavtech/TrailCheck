@@ -1,18 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { getParkMetadata } from '../parks/park-registry';
 
 @Injectable()
 export class WeatherService {
   private readonly logger = new Logger(WeatherService.name);
-
-  // Maps park slugs to lat/lng for NWS API
-  private readonly parkCoordinates: Record<string, { lat: number; lng: number }> = {
-    yosemite: { lat: 37.8651, lng: -119.5383 },
-    zion: { lat: 37.2982, lng: -113.0263 },
-    yellowstone: { lat: 44.428, lng: -110.5885 },
-    'grand-canyon': { lat: 36.1069, lng: -112.1129 },
-    acadia: { lat: 44.3386, lng: -68.2733 },
-    'big-bend': { lat: 29.1275, lng: -103.2425 },
-  };
 
   async getWeatherForPark(parkSlug: string): Promise<ParkWeather | null> {
     const payload = await this.getWeatherPayloadForPark(parkSlug);
@@ -23,16 +14,16 @@ export class WeatherService {
     raw: unknown;
     weather: ParkWeather | null;
   }> {
-    const coords = this.parkCoordinates[parkSlug];
+    const park = getParkMetadata(parkSlug);
 
-    if (!coords) {
+    if (!park) {
       this.logger.warn(`No coordinates found for slug: ${parkSlug}`);
       return { raw: null, weather: null };
     }
 
     try {
-      const pointsRes = await fetch(`https://api.weather.gov/points/${coords.lat},${coords.lng}`, {
-        headers: { 'User-Agent': 'TrailPulse/1.0 (contact@trailpulse.dev)' },
+      const pointsRes = await fetch(`https://api.weather.gov/points/${park.lat},${park.lng}`, {
+        headers: { 'User-Agent': 'TrailCheck/1.0 (contact@trailcheck.dev)' },
       });
 
       if (!pointsRes.ok) {
@@ -51,7 +42,7 @@ export class WeatherService {
       }
 
       const forecastRes = await fetch(forecastUrl, {
-        headers: { 'User-Agent': 'TrailPulse/1.0 (contact@trailpulse.dev)' },
+        headers: { 'User-Agent': 'TrailCheck/1.0 (contact@trailcheck.dev)' },
       });
 
       if (!forecastRes.ok) {
@@ -72,7 +63,7 @@ export class WeatherService {
         },
         weather: {
           parkSlug,
-          forecast: periods.slice(0, 3).map((p: any) => ({
+          forecast: periods.slice(0, 6).map((p: any) => ({
             name: p.name,
             temperature: p.temperature,
             temperatureUnit: p.temperatureUnit,

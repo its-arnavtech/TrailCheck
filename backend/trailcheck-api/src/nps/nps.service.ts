@@ -1,20 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { getParkMetadata } from '../parks/park-registry';
 
 @Injectable()
 export class NpsService {
   private readonly logger = new Logger(NpsService.name);
   private readonly baseUrl = 'https://developer.nps.gov/api/v1';
-
-  // Maps your DB park slugs to NPS park codes
-  private readonly parkCodeMap: Record<string, string> = {
-    yosemite: 'yose',
-    zion: 'zion',
-    yellowstone: 'yell',
-    'grand-canyon': 'grca',
-    acadia: 'acad',
-    'big-bend': 'bibe',
-  };
 
   constructor(private config: ConfigService) {}
 
@@ -28,7 +19,7 @@ export class NpsService {
     raw: unknown;
     alerts: NpsAlert[];
   }> {
-    const parkCode = this.parkCodeMap[parkSlug];
+    const parkCode = getParkMetadata(parkSlug)?.parkCode ?? null;
 
     if (!parkCode) {
       this.logger.warn(`No NPS park code found for slug: ${parkSlug}`);
