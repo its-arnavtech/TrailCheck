@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
+import SlippyMapGlobe from 'three-slippy-map-globe';
 import type { Feature, MultiPolygon, Polygon } from 'geojson';
 import type { ParkMapRegion } from '@/lib/park-map-data';
 import { PARK_GLOBE_POINTS } from '@/lib/park-globe-data';
@@ -15,7 +16,12 @@ type HoverState = {
   y: number;
 } | null;
 
-const REGION_TO_SCENE_KEY: Record<ParkMapRegion, 'mainland' | 'alaska' | 'hawaii' | 'pacific' | 'caribbean'> = {
+const TILE_WARMUP_MS = 2500;
+
+const REGION_TO_SCENE_KEY: Record<
+  ParkMapRegion,
+  'mainland' | 'alaska' | 'hawaii' | 'pacific' | 'caribbean'
+> = {
   mainland: 'mainland',
   alaska: 'alaska',
   hawaii: 'hawaii',
@@ -25,133 +31,63 @@ const REGION_TO_SCENE_KEY: Record<ParkMapRegion, 'mainland' | 'alaska' | 'hawaii
 
 const REGION_CAMERA: Record<
   ParkMapRegion,
-  { lat: number; lng: number; distance: number; markerScale: number }
+  { lat: number; lng: number; distance: number; markerSize: number; hoverThreshold: number }
 > = {
-  mainland: { lat: 38, lng: -98, distance: 2.15, markerScale: 0.04 },
-  alaska: { lat: 63.5, lng: -151, distance: 1.95, markerScale: 0.052 },
-  hawaii: { lat: 20.6, lng: -156.2, distance: 1.68, markerScale: 0.062 },
-  pacific: { lat: -14.3, lng: -170.7, distance: 1.56, markerScale: 0.062 },
-  caribbean: { lat: 18.25, lng: -64.85, distance: 1.52, markerScale: 0.062 },
+  mainland: { lat: 38, lng: -98, distance: 2.18, markerSize: 18, hoverThreshold: 0.06 },
+  alaska: { lat: 63.5, lng: -151, distance: 1.96, markerSize: 20, hoverThreshold: 0.075 },
+  hawaii: { lat: 20.6, lng: -156.2, distance: 1.7, markerSize: 22, hoverThreshold: 0.085 },
+  pacific: { lat: -14.3, lng: -170.7, distance: 1.58, markerSize: 22, hoverThreshold: 0.085 },
+  caribbean: { lat: 18.25, lng: -64.85, distance: 1.54, markerSize: 22, hoverThreshold: 0.085 },
 };
 
 function latLngToVector(lat: number, lng: number, radius = 1) {
   const phi = (90 - lat) * (Math.PI / 180);
-  const theta = (lng + 180) * (Math.PI / 180);
+  const theta = (90 - lng) * (Math.PI / 180);
 
   return new THREE.Vector3(
-    -(radius * Math.sin(phi) * Math.cos(theta)),
+    radius * Math.sin(phi) * Math.cos(theta),
     radius * Math.cos(phi),
     radius * Math.sin(phi) * Math.sin(theta),
   );
 }
 
-function createGlobeTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 2048;
-  canvas.height = 1024;
-  const context = canvas.getContext('2d');
-
-  if (!context) {
-    return new THREE.CanvasTexture(canvas);
-  }
-
-  const ocean = context.createLinearGradient(0, 0, 0, canvas.height);
-  ocean.addColorStop(0, '#17324f');
-  ocean.addColorStop(0.5, '#0e2236');
-  ocean.addColorStop(1, '#081827');
-  context.fillStyle = ocean;
-  context.fillRect(0, 0, canvas.width, canvas.height);
-
-  context.fillStyle = 'rgba(255,255,255,0.06)';
-  for (let i = 0; i < 8; i += 1) {
-    context.beginPath();
-    context.ellipse(
-      canvas.width * (0.12 + i * 0.11),
-      canvas.height * (0.18 + (i % 3) * 0.19),
-      120 + i * 18,
-      34 + (i % 2) * 18,
-      i * 0.15,
-      0,
-      Math.PI * 2,
-    );
-    context.fill();
-  }
-
-  const landGradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
-  landGradient.addColorStop(0, '#7c6844');
-  landGradient.addColorStop(0.35, '#5d6e3d');
-  landGradient.addColorStop(0.7, '#405434');
-  landGradient.addColorStop(1, '#2f4132');
-
-  const drawLand = (x: number, y: number, rx: number, ry: number, rotation = 0) => {
-    context.save();
-    context.translate(x, y);
-    context.rotate(rotation);
-    context.beginPath();
-    context.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
-    context.fill();
-    context.restore();
-  };
-
-  context.fillStyle = landGradient;
-  drawLand(canvas.width * 0.19, canvas.height * 0.37, 245, 168, -0.16);
-  drawLand(canvas.width * 0.29, canvas.height * 0.63, 190, 224, 0.18);
-  drawLand(canvas.width * 0.48, canvas.height * 0.31, 140, 252, 0.03);
-  drawLand(canvas.width * 0.71, canvas.height * 0.32, 272, 165, -0.04);
-  drawLand(canvas.width * 0.77, canvas.height * 0.58, 186, 235, 0.12);
-
-  context.strokeStyle = 'rgba(255,255,255,0.08)';
-  context.lineWidth = 2;
-  for (let i = 0; i <= 12; i += 1) {
-    const y = (canvas.height / 12) * i;
-    context.beginPath();
-    context.moveTo(0, y);
-    context.lineTo(canvas.width, y);
-    context.stroke();
-  }
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
 function createMarkerTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 72;
-  canvas.height = 96;
+  canvas.width = 128;
+  canvas.height = 128;
   const context = canvas.getContext('2d');
 
   if (!context) {
     return new THREE.CanvasTexture(canvas);
   }
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+
+  const glow = context.createRadialGradient(64, 64, 6, 64, 64, 48);
+  glow.addColorStop(0, 'rgba(255,220,145,0.98)');
+  glow.addColorStop(0.36, 'rgba(248,149,56,0.94)');
+  glow.addColorStop(0.72, 'rgba(207,98,37,0.38)');
+  glow.addColorStop(1, 'rgba(207,98,37,0)');
+  context.fillStyle = glow;
+  context.beginPath();
+  context.arc(64, 64, 48, 0, Math.PI * 2);
+  context.fill();
 
   context.fillStyle = '#cf6225';
   context.beginPath();
-  context.moveTo(36, 90);
-  context.lineTo(23, 63);
-  context.arc(36, 40, 24, Math.PI * 0.86, Math.PI * 0.14, true);
-  context.closePath();
+  context.arc(64, 64, 18, 0, Math.PI * 2);
   context.fill();
 
-  const gradient = context.createRadialGradient(28, 28, 4, 34, 34, 28);
-  gradient.addColorStop(0, '#f9e39c');
-  gradient.addColorStop(0.68, '#dba43f');
-  gradient.addColorStop(1, '#b86424');
-  context.fillStyle = gradient;
+  context.lineWidth = 4;
+  context.strokeStyle = 'rgba(255,255,255,0.92)';
   context.beginPath();
-  context.arc(36, 34, 22, 0, Math.PI * 2);
-  context.fill();
-
-  context.fillStyle = 'rgba(255,255,255,0.95)';
-  context.beginPath();
-  context.arc(36, 34, 9, 0, Math.PI * 2);
-  context.fill();
-
-  context.strokeStyle = 'rgba(255,255,255,0.95)';
-  context.lineWidth = 3;
-  context.beginPath();
-  context.arc(36, 34, 22, 0, Math.PI * 2);
+  context.arc(64, 64, 18, 0, Math.PI * 2);
   context.stroke();
+
+  context.fillStyle = '#fff6dd';
+  context.beginPath();
+  context.arc(64, 64, 6.5, 0, Math.PI * 2);
+  context.fill();
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -181,13 +117,43 @@ function polygonToShape(
     const material = new THREE.LineBasicMaterial({
       color,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.72,
     });
     const line = new THREE.LineLoop(geometry, material);
     group.add(line);
   });
 
   return group;
+}
+
+function disposeMaterial(material: THREE.Material | THREE.Material[] | undefined) {
+  if (!material) {
+    return;
+  }
+
+  if (Array.isArray(material)) {
+    material.forEach((entry) => disposeMaterial(entry));
+    return;
+  }
+
+  const materialWithMaps = material as THREE.Material & {
+    map?: THREE.Texture | null;
+    alphaMap?: THREE.Texture | null;
+  };
+
+  materialWithMaps.map?.dispose();
+  materialWithMaps.alphaMap?.dispose();
+  material.dispose();
+}
+
+function disposeObject3D(root: THREE.Object3D) {
+  root.traverse((object) => {
+    const geometry = (object as THREE.Mesh).geometry as THREE.BufferGeometry | undefined;
+    const material = (object as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+
+    geometry?.dispose();
+    disposeMaterial(material);
+  });
 }
 
 export default function USGlobePanel({
@@ -220,6 +186,8 @@ export default function USGlobePanel({
     }
 
     const host = container;
+    const radius = 1;
+    const pointPositions = points.map((park) => latLngToVector(park.lat, park.lng, radius + 0.028));
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
@@ -239,32 +207,27 @@ export default function USGlobePanel({
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     host.appendChild(renderer.domElement);
 
-    const radius = 1;
     const globeGroup = new THREE.Group();
     scene.add(globeGroup);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.18);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.14);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0xd5e8ff, 1.1);
-    keyLight.position.set(-2.4, 1.8, 2.7);
+    const keyLight = new THREE.DirectionalLight(0xf0f7ff, 0.88);
+    keyLight.position.set(-2.5, 1.9, 2.8);
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0x6e9ed6, 0.48);
-    fillLight.position.set(2.8, -0.8, 1.5);
+    const fillLight = new THREE.DirectionalLight(0x9cbfe3, 0.36);
+    fillLight.position.set(2.8, -0.8, 1.45);
     scene.add(fillLight);
 
-    const texture = createGlobeTexture();
-    const globe = new THREE.Mesh(
-      new THREE.SphereGeometry(radius, 96, 96),
-      new THREE.MeshPhongMaterial({
-        map: texture,
-        shininess: 8,
-        emissive: new THREE.Color('#102137'),
-        emissiveIntensity: 0.16,
-      }),
-    );
-    globeGroup.add(globe);
+    const slippyGlobe = new SlippyMapGlobe(radius, {
+      tileUrl: (x, y, level) => `https://tile.openstreetmap.org/${level}/${x}/${y}.png`,
+      minLevel: 0,
+      maxLevel: region === 'mainland' ? 5 : 6,
+    });
+    slippyGlobe.tileMargin = 0;
+    globeGroup.add(slippyGlobe);
 
     const atmosphere = new THREE.Mesh(
       new THREE.SphereGeometry(radius * 1.035, 64, 64),
@@ -278,67 +241,110 @@ export default function USGlobePanel({
     globeGroup.add(atmosphere);
 
     overlays.polygons.forEach((polygon) => {
-      globeGroup.add(polygonToShape(polygon, radius, '#d7e7f7', 0.012));
+      globeGroup.add(polygonToShape(polygon, radius, '#f4f8ff', 0.011));
     });
 
     [...overlays.borderPaths, ...overlays.outlinePaths].forEach((path) => {
       const positions = path.coords.map((coord) =>
-        latLngToVector(coord.lat, coord.lng, radius + (path.kind === 'outline' ? 0.014 : 0.012)),
+        latLngToVector(coord.lat, coord.lng, radius + (path.kind === 'outline' ? 0.013 : 0.011)),
       );
       const geometry = new THREE.BufferGeometry().setFromPoints(positions);
       const material = new THREE.LineBasicMaterial({
-        color: path.kind === 'outline' ? '#f4f8ff' : '#d4e4f6',
+        color: path.kind === 'outline' ? '#f9fbff' : '#d6e4f3',
         transparent: true,
-        opacity: path.kind === 'outline' ? 0.96 : 0.62,
+        opacity: path.kind === 'outline' ? 0.92 : 0.6,
       });
       const line = new THREE.Line(geometry, material);
       globeGroup.add(line);
     });
 
-    const markerTexture = createMarkerTexture();
-    const markerScale = REGION_CAMERA[region].markerScale;
-    const markers = points.map((park) => {
-      const sprite = new THREE.Sprite(
-        new THREE.SpriteMaterial({
-          map: markerTexture,
-          transparent: true,
-          depthTest: false,
-        }),
-      );
-      const position = latLngToVector(park.lat, park.lng, radius + 0.05);
-      sprite.position.copy(position);
-      sprite.scale.set(markerScale, markerScale * 1.28, 1);
-      sprite.userData.park = park;
-      globeGroup.add(sprite);
-      return sprite;
+    const markerPositions = new Float32Array(pointPositions.length * 3);
+    pointPositions.forEach((position, index) => {
+      markerPositions[index * 3] = position.x;
+      markerPositions[index * 3 + 1] = position.y;
+      markerPositions[index * 3 + 2] = position.z;
     });
 
-    const focus = latLngToVector(REGION_CAMERA[region].lat, REGION_CAMERA[region].lng, 1);
+    const markerTexture = createMarkerTexture();
+    const markerGeometry = new THREE.BufferGeometry();
+    markerGeometry.setAttribute('position', new THREE.BufferAttribute(markerPositions, 3));
+    const markers = new THREE.Points(
+      markerGeometry,
+      new THREE.PointsMaterial({
+        map: markerTexture,
+        color: 0xffffff,
+        transparent: true,
+        alphaTest: 0.12,
+        depthWrite: false,
+        depthTest: false,
+        sizeAttenuation: false,
+        size: REGION_CAMERA[region].markerSize,
+      }),
+    );
+    markers.renderOrder = 20;
+    globeGroup.add(markers);
+
+    const focus = latLngToVector(REGION_CAMERA[region].lat, REGION_CAMERA[region].lng, radius);
     camera.position.copy(focus.clone().multiplyScalar(REGION_CAMERA[region].distance));
     camera.lookAt(0, 0, 0);
+    slippyGlobe.updatePov(camera);
 
     const raycaster = new THREE.Raycaster();
+    raycaster.params.Points.threshold = REGION_CAMERA[region].hoverThreshold;
     const pointer = new THREE.Vector2();
 
-    function render() {
-      renderer.render(scene, camera);
+    let activeHoverIndex: number | null = null;
+    let animationFrame = 0;
+    let renderUntil = 0;
+    let disposed = false;
+
+    function getProjectedPosition(index: number) {
+      const projected = pointPositions[index].clone().project(camera);
+
+      return {
+        x: ((projected.x + 1) / 2) * host.clientWidth,
+        y: ((-projected.y + 1) / 2) * host.clientHeight,
+      };
     }
 
-    function updateTooltip(sprite: THREE.Sprite | null) {
-      if (!sprite) {
+    function updateTooltip(index: number | null) {
+      activeHoverIndex = index;
+
+      if (index === null) {
         setHovered(null);
         host.style.cursor = 'default';
         return;
       }
 
-      const park = sprite.userData.park as ParkPoint;
-      const projected = sprite.position.clone().project(camera);
+      const projected = getProjectedPosition(index);
       setHovered({
-        park,
-        x: ((projected.x + 1) / 2) * host.clientWidth,
-        y: ((-projected.y + 1) / 2) * host.clientHeight,
+        park: points[index],
+        ...projected,
       });
       host.style.cursor = 'pointer';
+    }
+
+    function renderFrame(now: number) {
+      animationFrame = 0;
+
+      if (disposed) {
+        return;
+      }
+
+      slippyGlobe.updatePov(camera);
+      renderer.render(scene, camera);
+
+      if (now < renderUntil) {
+        animationFrame = window.requestAnimationFrame(renderFrame);
+      }
+    }
+
+    function scheduleRender(extraMs = 0) {
+      renderUntil = Math.max(renderUntil, performance.now() + extraMs);
+
+      if (!animationFrame) {
+        animationFrame = window.requestAnimationFrame(renderFrame);
+      }
     }
 
     function handlePointerMove(event: PointerEvent) {
@@ -346,8 +352,10 @@ export default function USGlobePanel({
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
-      const intersections = raycaster.intersectObjects(markers);
-      updateTooltip((intersections[0]?.object as THREE.Sprite | undefined) ?? null);
+      const intersections = raycaster.intersectObject(markers, false);
+      updateTooltip(
+        typeof intersections[0]?.index === 'number' ? intersections[0].index : null,
+      );
     }
 
     function handlePointerLeave() {
@@ -357,8 +365,15 @@ export default function USGlobePanel({
     function handleResize() {
       camera.aspect = host.clientWidth / host.clientHeight;
       camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(host.clientWidth, host.clientHeight);
-      render();
+      slippyGlobe.updatePov(camera);
+
+      if (activeHoverIndex !== null) {
+        updateTooltip(activeHoverIndex);
+      }
+
+      scheduleRender(800);
     }
 
     host.addEventListener('pointermove', handlePointerMove);
@@ -367,15 +382,21 @@ export default function USGlobePanel({
     const resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(host);
 
-    render();
+    scheduleRender(TILE_WARMUP_MS);
 
     return () => {
+      disposed = true;
       resizeObserver.disconnect();
       host.removeEventListener('pointermove', handlePointerMove);
       host.removeEventListener('pointerleave', handlePointerLeave);
       host.style.cursor = 'default';
-      texture.dispose();
-      markerTexture.dispose();
+
+      if (animationFrame) {
+        window.cancelAnimationFrame(animationFrame);
+      }
+
+      slippyGlobe.clearTiles();
+      disposeObject3D(globeGroup);
       renderer.dispose();
       host.replaceChildren();
     };
