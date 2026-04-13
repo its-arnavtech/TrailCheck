@@ -5,7 +5,11 @@ import { AuthDto } from './auth.dto';
 
 export class SignupDto extends AuthDto {
   @IsEnum(Gender)
-  @Transform(({ value }) => String(value ?? '').trim().toUpperCase())
+  @Transform(({ value }) =>
+    String(value ?? '')
+      .trim()
+      .toUpperCase(),
+  )
   gender: Gender;
 
   @Type(() => Number)

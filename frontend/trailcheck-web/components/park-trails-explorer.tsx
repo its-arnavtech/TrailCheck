@@ -51,20 +51,14 @@ export default function ParkTrailsExplorer({ trails }: ParkTrailsExplorerProps) 
           {filteredTrails.map((trail) => (
             <Link key={trail.id} href={`/trails/${trail.id}`} className="group">
               <article className="h-full rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur transition duration-200 hover:-translate-y-1 hover:border-[var(--accent)]/35 hover:bg-[var(--surface-strong)]">
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]">
-                    Trail
-                  </span>
-                  <span className="text-sm text-[var(--foreground)]/45 transition group-hover:text-[var(--accent-strong)]">
+                <div className="flex flex-col gap-3">
+                  <h3 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">
+                    {trail.name}
+                  </h3>
+                  <span className="text-sm font-medium text-[var(--foreground)]/52 transition group-hover:text-[var(--accent-strong)]">
                     View conditions
                   </span>
                 </div>
-                <h3 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">
-                  {trail.name}
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-[var(--foreground)]/68">
-                  Open the trail page for reports and current conditions.
-                </p>
               </article>
             </Link>
           ))}

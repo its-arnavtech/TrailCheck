@@ -37,8 +37,16 @@ export default function ParksExplorer({ parks, visuals }: ParksExplorerProps) {
       </div>
 
       <div className="flex flex-col gap-2 text-sm text-[var(--foreground)]/60 sm:flex-row sm:items-center sm:justify-between">
-        <p>Search for a park or scroll the full list.</p>
-        <p>Showing {filteredParks.length} of {parks.length} parks</p>
+        <p>
+          {parks.length > 0
+            ? 'Search for a park or scroll the full list.'
+            : 'The park list will appear here as soon as the API responds again.'}
+        </p>
+        <p>
+          {parks.length > 0
+            ? `Showing ${filteredParks.length} of ${parks.length} parks`
+            : 'Waiting for live park data'}
+        </p>
       </div>
 
       {filteredParks.length > 0 ? (
@@ -102,7 +110,9 @@ export default function ParksExplorer({ parks, visuals }: ParksExplorerProps) {
         </div>
       ) : (
         <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] p-6 text-sm text-[var(--foreground)]/65 shadow-[var(--shadow-soft)]">
-          No parks matched &quot;{query}&quot;.
+          {parks.length === 0
+            ? 'Park data is temporarily unavailable. Start the API or reconnect it to repopulate this list.'
+            : `No parks matched "${query}".`}
         </div>
       )}
     </div>

@@ -1,0 +1,13 @@
+# Install a CUDA-enabled PyTorch wheel separately for your local environment first.
+accelerate>=0.34,<1.0
+bitsandbytes>=0.43.3,<0.46
+datasets>=2.21,<4.0
+jsonschema>=4.23,<5.0
+orjson>=3.10,<4.0
+pandas>=2.2,<3.0
+peft>=0.12,<0.15
+pydantic>=2.8,<3.0
+PyYAML>=6.0,<7.0
+scikit-learn>=1.5,<2.0
+transformers>=4.45,<4.53
+trl>=0.11,<0.13

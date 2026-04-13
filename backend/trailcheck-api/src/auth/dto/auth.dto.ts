@@ -28,7 +28,11 @@ const allowedEmailDomains = [
 @ValidatorConstraint({ name: 'allowedEmailDomain', async: false })
 class AllowedEmailDomainConstraint implements ValidatorConstraintInterface {
   validate(email: string) {
-    const domain = String(email ?? '').trim().toLowerCase().split('@')[1] ?? '';
+    const domain =
+      String(email ?? '')
+        .trim()
+        .toLowerCase()
+        .split('@')[1] ?? '';
     return allowedEmailDomains.includes(domain);
   }
 

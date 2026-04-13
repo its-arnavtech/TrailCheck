@@ -69,12 +69,33 @@ export type ParkConditionHazard = {
   tags: string[];
 };
 
+export type LocalStructuredHazard = {
+  type: string;
+  severity: 'LOW' | 'MODERATE' | 'HIGH' | 'EXTREME';
+  reason: string;
+};
+
+export type LocalStructuredAlert = {
+  title: string;
+  category: string;
+  impact: string;
+};
+
+export type LocalStructuredOutput = {
+  riskLevel: 'LOW' | 'MODERATE' | 'HIGH' | 'EXTREME';
+  hazards: LocalStructuredHazard[];
+  alerts: LocalStructuredAlert[];
+  notification: string;
+  recommendedAction: string;
+};
+
 export type ParkDigest = {
   parkSlug: string;
   shortSummary: string;
   notification: string;
-  generationSource: 'gemini' | 'fallback';
+  generationSource: 'local' | 'gemini' | 'fallback';
   generationError: string | null;
+  structuredOutput?: LocalStructuredOutput | null;
   hazards: ParkConditionHazard[];
   alerts: NpsAlert[];
   weather: ParkWeather | null;
@@ -187,15 +208,20 @@ export async function getTrails(): Promise<TrailSummary[]> {
     if (!res.ok) throw new Error('Failed to load trails');
     return res.json();
   } catch (error) {
-    console.error('Unable to load trails from API.', error);
+    console.warn('Unable to load trails from API.', error);
     return [];
   }
 }
 
 export async function getParks(): Promise<ParkSummary[]> {
-  const res = await fetch(`${API_BASE_URL}/parks`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Failed to load parks');
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE_URL}/parks`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Failed to load parks');
+    return res.json();
+  } catch (error) {
+    console.warn('Unable to load parks from API.', error);
+    return [];
+  }
 }
 
 export async function getPark(slug: string): Promise<ParkSummary | null> {

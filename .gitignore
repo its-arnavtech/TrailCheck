@@ -43,3 +43,7 @@ lerna-debug.log*
 
 # Local training data artifacts
 backend/trailcheck-api/data/
+backend/trailcheck-api/ml/models/*
+!backend/trailcheck-api/ml/models/.gitkeep
+backend/trailcheck-api/ml/data/outputs/*
+!backend/trailcheck-api/ml/data/outputs/.gitkeep

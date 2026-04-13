@@ -5,7 +5,11 @@ import {
   type SeasonalHazardProfile,
 } from './hazard.types';
 
-function rule(priority: HazardPriority, weight?: number, note?: string): HazardRuleSetting {
+function rule(
+  priority: HazardPriority,
+  weight?: number,
+  note?: string,
+): HazardRuleSetting {
   const defaultWeight: Record<HazardPriority, number> = {
     ignore: 0,
     low: 0.7,
@@ -25,7 +29,8 @@ export const HAZARD_PROFILES: Record<HazardProfileId, SeasonalHazardProfile> = {
   desert: {
     id: 'desert',
     label: 'Desert',
-    description: 'Hot, dry parks where exposure, dehydration, wind, and fire matter most.',
+    description:
+      'Hot, dry parks where exposure, dehydration, wind, and fire matter most.',
     seasons: {
       winter: {
         COLD: rule('low'),
@@ -94,7 +99,8 @@ export const HAZARD_PROFILES: Record<HazardProfileId, SeasonalHazardProfile> = {
   alpine: {
     id: 'alpine',
     label: 'Alpine / Mountain',
-    description: 'High-elevation parks where snowpack, ice, wind, and shoulder-season access drive risk.',
+    description:
+      'High-elevation parks where snowpack, ice, wind, and shoulder-season access drive risk.',
     seasons: {
       winter: {
         SNOW_ICE: rule('critical'),
@@ -129,7 +135,8 @@ export const HAZARD_PROFILES: Record<HazardProfileId, SeasonalHazardProfile> = {
   temperate_forest: {
     id: 'temperate_forest',
     label: 'Temperate Forest',
-    description: 'Forested parks with rain, runoff, mud, leaf cover, and wind-driven tree hazards.',
+    description:
+      'Forested parks with rain, runoff, mud, leaf cover, and wind-driven tree hazards.',
     seasons: {
       winter: {
         SNOW_ICE: rule('medium'),
@@ -161,7 +168,8 @@ export const HAZARD_PROFILES: Record<HazardProfileId, SeasonalHazardProfile> = {
   coastal: {
     id: 'coastal',
     label: 'Coastal / Island',
-    description: 'Coastal and island parks where marine weather, surf, wind, and storm access matter.',
+    description:
+      'Coastal and island parks where marine weather, surf, wind, and storm access matter.',
     seasons: {
       winter: {
         COASTAL_HAZARD: rule('high'),
@@ -191,7 +199,8 @@ export const HAZARD_PROFILES: Record<HazardProfileId, SeasonalHazardProfile> = {
   subarctic: {
     id: 'subarctic',
     label: 'Subarctic',
-    description: 'Far-north parks where cold exposure, snow, wind, remote access, and shoulder thaw dominate.',
+    description:
+      'Far-north parks where cold exposure, snow, wind, remote access, and shoulder thaw dominate.',
     seasons: {
       winter: {
         SNOW_ICE: rule('critical'),
@@ -222,7 +231,8 @@ export const HAZARD_PROFILES: Record<HazardProfileId, SeasonalHazardProfile> = {
   swamp_wetland: {
     id: 'swamp_wetland',
     label: 'Swamp / Wetland',
-    description: 'Low-lying wet parks where flooding, storms, lightning, and standing water drive access risk.',
+    description:
+      'Low-lying wet parks where flooding, storms, lightning, and standing water drive access risk.',
     seasons: {
       winter: {
         FLOODING: rule('medium'),

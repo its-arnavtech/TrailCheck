@@ -15,11 +15,16 @@ import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({isGlobal: true}),
-    TrailsModule, 
-    ReportsModule, 
-    HazardsModule, 
-    ParksModule, NpsModule, WeatherModule, AuthModule, AiModule],
+    ConfigModule.forRoot({ isGlobal: true }),
+    TrailsModule,
+    ReportsModule,
+    HazardsModule,
+    ParksModule,
+    NpsModule,
+    WeatherModule,
+    AuthModule,
+    AiModule,
+  ],
   controllers: [AppController],
   providers: [AppService, NpsService, WeatherService],
 })

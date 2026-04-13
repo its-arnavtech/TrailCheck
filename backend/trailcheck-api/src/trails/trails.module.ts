@@ -8,6 +8,6 @@ import { WeatherModule } from '../weather/weather.module';
 @Module({
   imports: [PrismaModule, NpsModule, WeatherModule],
   controllers: [TrailsController],
-  providers: [TrailsService]
+  providers: [TrailsService],
 })
 export class TrailsModule {}

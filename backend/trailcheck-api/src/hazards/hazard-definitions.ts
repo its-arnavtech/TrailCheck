@@ -49,7 +49,10 @@ function signal(
   };
 }
 
-function hasProfile(park: ParkMetadata, profiles: ParkMetadata['hazardProfile'][]) {
+function hasProfile(
+  park: ParkMetadata,
+  profiles: ParkMetadata['hazardProfile'][],
+) {
   return profiles.includes(park.hazardProfile);
 }
 
@@ -92,7 +95,12 @@ export const HAZARD_DEFINITIONS: Record<HazardType, HazardDefinition> = {
     type: 'DEHYDRATION',
     title: 'Dehydration risk',
     tags: ['heat', 'water', 'exposure'],
-    alertKeywords: ['dehydration', 'water shortage', 'carry water', 'water access'],
+    alertKeywords: [
+      'dehydration',
+      'water shortage',
+      'carry water',
+      'water access',
+    ],
     activationThreshold: 50,
     ignoredOverrideThreshold: 80,
     evaluateWeather: ({ park, weatherFeatures }) => {
@@ -108,7 +116,9 @@ export const HAZARD_DEFINITIONS: Record<HazardType, HazardDefinition> = {
           'Hot temperatures plus dry or exposed terrain sharply increase water loss.',
           [
             `Max forecast temperature ${Math.round(temp)}F.`,
-            weatherFeatures.dryWindSignal ? 'Forecast includes hot and windy periods.' : 'Park profile favors exposed travel.',
+            weatherFeatures.dryWindSignal
+              ? 'Forecast includes hot and windy periods.'
+              : 'Park profile favors exposed travel.',
           ],
           ['heat', 'dehydration', 'exposure'],
         );
@@ -130,7 +140,14 @@ export const HAZARD_DEFINITIONS: Record<HazardType, HazardDefinition> = {
     type: 'WILDFIRE',
     title: 'Wildfire risk',
     tags: ['fire', 'dry', 'wind'],
-    alertKeywords: ['fire', 'wildfire', 'red flag', 'burning', 'evacuat', 'burn ban'],
+    alertKeywords: [
+      'fire',
+      'wildfire',
+      'red flag',
+      'burning',
+      'evacuat',
+      'burn ban',
+    ],
     activationThreshold: 55,
     ignoredOverrideThreshold: 75,
     evaluateWeather: ({ weatherFeatures }) => {
@@ -179,7 +196,15 @@ export const HAZARD_DEFINITIONS: Record<HazardType, HazardDefinition> = {
     type: 'SNOW_ICE',
     title: 'Snow and ice hazards',
     tags: ['snow', 'ice', 'winter'],
-    alertKeywords: ['snow', 'ice', 'icy', 'blizzard', 'winter storm', 'freezing rain', 'sleet'],
+    alertKeywords: [
+      'snow',
+      'ice',
+      'icy',
+      'blizzard',
+      'winter storm',
+      'freezing rain',
+      'sleet',
+    ],
     activationThreshold: 50,
     ignoredOverrideThreshold: 75,
     evaluateWeather: ({ weatherFeatures }) => {
@@ -202,7 +227,9 @@ export const HAZARD_DEFINITIONS: Record<HazardType, HazardDefinition> = {
           70,
           'Freezing temperatures with moisture support icy trail or road surfaces.',
           [
-            weatherFeatures.freezeThaw ? 'Forecast crosses freezing, supporting melt/refreeze cycles.' : 'Wet forecast with freezing temperatures.',
+            weatherFeatures.freezeThaw
+              ? 'Forecast crosses freezing, supporting melt/refreeze cycles.'
+              : 'Wet forecast with freezing temperatures.',
           ],
           ['ice', 'freeze', 'traction'],
         );
@@ -215,7 +242,13 @@ export const HAZARD_DEFINITIONS: Record<HazardType, HazardDefinition> = {
     type: 'FLOODING',
     title: 'Flooding or washout risk',
     tags: ['flood', 'washout', 'water'],
-    alertKeywords: ['flood', 'flash flood', 'high water', 'washout', 'washed out'],
+    alertKeywords: [
+      'flood',
+      'flash flood',
+      'high water',
+      'washout',
+      'washed out',
+    ],
     activationThreshold: 50,
     ignoredOverrideThreshold: 78,
     evaluateWeather: ({ park, season, weatherFeatures }) => {
@@ -230,7 +263,8 @@ export const HAZARD_DEFINITIONS: Record<HazardType, HazardDefinition> = {
 
       if (
         weatherFeatures.sustainedWetPattern &&
-        (season === 'spring' || hasProfile(park, ['swamp_wetland', 'canyon_exposure', 'coastal']))
+        (season === 'spring' ||
+          hasProfile(park, ['swamp_wetland', 'canyon_exposure', 'coastal']))
       ) {
         return signal(
           70,
@@ -253,7 +287,8 @@ export const HAZARD_DEFINITIONS: Record<HazardType, HazardDefinition> = {
     evaluateWeather: ({ park, season, weatherFeatures }) => {
       if (
         weatherFeatures.sustainedWetPattern &&
-        (season === 'spring' || hasProfile(park, ['temperate_forest', 'swamp_wetland', 'alpine']))
+        (season === 'spring' ||
+          hasProfile(park, ['temperate_forest', 'swamp_wetland', 'alpine']))
       ) {
         return signal(
           66,
@@ -285,7 +320,8 @@ export const HAZARD_DEFINITIONS: Record<HazardType, HazardDefinition> = {
 
       if (
         weatherFeatures.maxWindMph >= 28 ||
-        (weatherFeatures.maxWindMph >= 20 && hasProfile(park, ['desert', 'coastal', 'canyon_exposure']))
+        (weatherFeatures.maxWindMph >= 20 &&
+          hasProfile(park, ['desert', 'coastal', 'canyon_exposure']))
       ) {
         return signal(
           62,
@@ -391,7 +427,10 @@ export const HAZARD_DEFINITIONS: Record<HazardType, HazardDefinition> = {
         );
       }
 
-      if (minTemp <= 28 || (minTemp <= 34 && weatherFeatures.maxWindMph >= 25)) {
+      if (
+        minTemp <= 28 ||
+        (minTemp <= 34 && weatherFeatures.maxWindMph >= 25)
+      ) {
         return signal(
           68,
           'Cold temperatures combined with exposure can slow travel and reduce safety margins.',
@@ -438,7 +477,11 @@ export const HAZARD_DEFINITIONS: Record<HazardType, HazardDefinition> = {
         return null;
       }
 
-      if (weatherFeatures.freezeThaw || season === 'fall' || season === 'spring') {
+      if (
+        weatherFeatures.freezeThaw ||
+        season === 'fall' ||
+        season === 'spring'
+      ) {
         return signal(
           64,
           'Wet surfaces, leaves, or refreezing conditions can reduce traction on trails and steps.',
@@ -475,7 +518,11 @@ export const HAZARD_DEFINITIONS: Record<HazardType, HazardDefinition> = {
         return null;
       }
 
-      if (/(surf|marine|rip current|coastal flood|tropical|hurricane)/i.test(weatherFeatures.combinedText)) {
+      if (
+        /(surf|marine|rip current|coastal flood|tropical|hurricane)/i.test(
+          weatherFeatures.combinedText,
+        )
+      ) {
         return signal(
           86,
           'Marine or coastal wording in the forecast suggests access or surf-related safety impacts.',

@@ -15,7 +15,9 @@ export interface ParkMetadata {
   lng: number;
   hazardProfile: HazardProfileId;
   hemisphere: Hemisphere;
-  seasonalOverrides?: Partial<Record<Season, Partial<Record<HazardType, HazardRuleSetting>>>>;
+  seasonalOverrides?: Partial<
+    Record<Season, Partial<Record<HazardType, HazardRuleSetting>>>
+  >;
 }
 
 const PARK_CODES: Record<string, string> = {
@@ -228,12 +230,23 @@ const PROFILE_GROUPS: Record<HazardProfileId, string[]> = {
 const SOUTHERN_HEMISPHERE_PARKS = new Set(['american-samoa']);
 
 const PARK_SEASONAL_OVERRIDES: Partial<
-  Record<string, Partial<Record<Season, Partial<Record<HazardType, HazardRuleSetting>>>>>
+  Record<
+    string,
+    Partial<Record<Season, Partial<Record<HazardType, HazardRuleSetting>>>>
+  >
 > = {
   yosemite: {
     summer: {
-      WILDFIRE: createHazardRule('high', 1.35, 'Dry Sierra summers elevate fire sensitivity.'),
-      ROCKFALL: createHazardRule('high', 1.2, 'Granite exposure and thaw cycles raise rockfall relevance.'),
+      WILDFIRE: createHazardRule(
+        'high',
+        1.35,
+        'Dry Sierra summers elevate fire sensitivity.',
+      ),
+      ROCKFALL: createHazardRule(
+        'high',
+        1.2,
+        'Granite exposure and thaw cycles raise rockfall relevance.',
+      ),
     },
   },
   yellowstone: {
@@ -264,19 +277,22 @@ const PARK_SEASONAL_OVERRIDES: Partial<
 };
 
 function buildParkProfileMap() {
-  return Object.entries(PROFILE_GROUPS).reduce<Record<string, HazardProfileId>>((accumulator, [profile, slugs]) => {
-    slugs.forEach((slug) => {
-      accumulator[slug] = profile as HazardProfileId;
-    });
-    return accumulator;
-  }, {});
+  return Object.entries(PROFILE_GROUPS).reduce<Record<string, HazardProfileId>>(
+    (accumulator, [profile, slugs]) => {
+      slugs.forEach((slug) => {
+        accumulator[slug] = profile as HazardProfileId;
+      });
+      return accumulator;
+    },
+    {},
+  );
 }
 
 const PARK_PROFILE_MAP = buildParkProfileMap();
 
-export const PARK_METADATA_BY_SLUG: Record<string, ParkMetadata> = Object.keys(PARK_CODES).reduce<
-  Record<string, ParkMetadata>
->((accumulator, slug) => {
+export const PARK_METADATA_BY_SLUG: Record<string, ParkMetadata> = Object.keys(
+  PARK_CODES,
+).reduce<Record<string, ParkMetadata>>((accumulator, slug) => {
   const coordinates = PARK_COORDINATES[slug];
   const hazardProfile = PARK_PROFILE_MAP[slug];
 

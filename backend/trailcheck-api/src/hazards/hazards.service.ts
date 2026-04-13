@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { HAZARD_DEFINITIONS, type HazardDefinition } from './hazard-definitions';
+import {
+  HAZARD_DEFINITIONS,
+  type HazardDefinition,
+} from './hazard-definitions';
 import { HAZARD_PROFILES } from './hazard-profiles';
 import { resolveSeason } from './season.util';
 import { getParkMetadata, type ParkMetadata } from '../parks/park-registry';
@@ -36,7 +39,11 @@ export class HazardsService {
     const activeHazards = HAZARD_TYPES.flatMap((type) => {
       const definition = HAZARD_DEFINITIONS[type];
       const rule = seasonalRules[type];
-      const weatherSignal = definition.evaluateWeather({ park, season, weatherFeatures });
+      const weatherSignal = definition.evaluateWeather({
+        park,
+        season,
+        weatherFeatures,
+      });
       const alertSignal = this.evaluateAlertSignal(definition, alerts);
       const derived = this.buildDerivedHazard({
         parkSlug,
@@ -53,7 +60,8 @@ export class HazardsService {
 
     const activeTypes = new Set(activeHazards.map((hazard) => hazard.type));
     const ignoredHazards = HAZARD_TYPES.filter(
-      (type) => seasonalRules[type].priority === 'ignore' && !activeTypes.has(type),
+      (type) =>
+        seasonalRules[type].priority === 'ignore' && !activeTypes.has(type),
     );
 
     return {
@@ -74,10 +82,14 @@ export class HazardsService {
     weather: ParkWeather | null,
     asOf = new Date(),
   ): DerivedHazard[] {
-    return this.assessParkHazards(parkSlug, alerts, weather, asOf).activeHazards;
+    return this.assessParkHazards(parkSlug, alerts, weather, asOf)
+      .activeHazards;
   }
 
-  buildNotice(assessment: SeasonalHazardAssessment, weather: ParkWeather | null): string {
+  buildNotice(
+    assessment: SeasonalHazardAssessment,
+    weather: ParkWeather | null,
+  ): string {
     const topHazard = assessment.activeHazards[0];
 
     if (topHazard) {
@@ -105,53 +117,86 @@ export class HazardsService {
     );
   }
 
-  private buildSeasonRules(park: ParkMetadata, season: Season): Record<HazardType, HazardRuleSetting> {
-    const baseSeasonRules = HAZARD_PROFILES[park.hazardProfile]?.seasons[season] ?? {};
+  private buildSeasonRules(
+    park: ParkMetadata,
+    season: Season,
+  ): Record<HazardType, HazardRuleSetting> {
+    const baseSeasonRules =
+      HAZARD_PROFILES[park.hazardProfile]?.seasons[season] ?? {};
     const parkOverrides = park.seasonalOverrides?.[season] ?? {};
 
-    return HAZARD_TYPES.reduce<Record<HazardType, HazardRuleSetting>>((accumulator, type) => {
-      accumulator[type] = parkOverrides[type] ?? baseSeasonRules[type] ?? { priority: 'ignore', weight: 0 };
-      return accumulator;
-    }, {} as Record<HazardType, HazardRuleSetting>);
+    return HAZARD_TYPES.reduce<Record<HazardType, HazardRuleSetting>>(
+      (accumulator, type) => {
+        accumulator[type] = parkOverrides[type] ??
+          baseSeasonRules[type] ?? { priority: 'ignore', weight: 0 };
+        return accumulator;
+      },
+      {} as Record<HazardType, HazardRuleSetting>,
+    );
   }
 
-  private deriveWeatherFeatures(weather: ParkWeather | null): DerivedWeatherFeatures {
+  private deriveWeatherFeatures(
+    weather: ParkWeather | null,
+  ): DerivedWeatherFeatures {
     const periods = weather?.forecast ?? [];
     const temperatures = periods
-      .map((period) => this.normalizeTemperature(period.temperature, period.temperatureUnit))
+      .map((period) =>
+        this.normalizeTemperature(period.temperature, period.temperatureUnit),
+      )
       .filter((value): value is number => value !== null);
     const textByPeriod = periods.map((period) =>
       `${period.shortForecast} ${period.detailedForecast} ${period.windSpeed}`.toLowerCase(),
     );
     const combinedText = textByPeriod.join(' ');
     const maxWindMph = periods.reduce(
-      (highest, period) => Math.max(highest, this.parseWindSpeedMph(period.windSpeed)),
+      (highest, period) =>
+        Math.max(highest, this.parseWindSpeedMph(period.windSpeed)),
       0,
     );
 
-    const liquidWetPattern = /(rain|showers|drizzle|downpour|thunderstorm|thunderstorms)/i;
+    const liquidWetPattern =
+      /(rain|showers|drizzle|downpour|thunderstorm|thunderstorms)/i;
     const snowPattern = /(snow|flurries|wintry|sleet|blizzard|freezing rain)/i;
     const thunderPattern = /(thunderstorm|thunder|lightning)/i;
     const smokePattern = /(smoke|haze|air quality|air-quality)/i;
-    const heavyRainPattern = /(heavy rain|excessive rainfall|flash flood|downpour|torrential)/i;
+    const heavyRainPattern =
+      /(heavy rain|excessive rainfall|flash flood|downpour|torrential)/i;
     const hotPattern = /\bhot\b|heat/i;
 
-    const wetPeriods = textByPeriod.filter((value) => liquidWetPattern.test(value)).length;
-    const snowPeriods = textByPeriod.filter((value) => snowPattern.test(value)).length;
-    const thunderPeriods = textByPeriod.filter((value) => thunderPattern.test(value)).length;
-    const smokePeriods = textByPeriod.filter((value) => smokePattern.test(value)).length;
+    const wetPeriods = textByPeriod.filter((value) =>
+      liquidWetPattern.test(value),
+    ).length;
+    const snowPeriods = textByPeriod.filter((value) =>
+      snowPattern.test(value),
+    ).length;
+    const thunderPeriods = textByPeriod.filter((value) =>
+      thunderPattern.test(value),
+    ).length;
+    const smokePeriods = textByPeriod.filter((value) =>
+      smokePattern.test(value),
+    ).length;
     const hotPeriods = periods.filter(
       (period) =>
-        (this.normalizeTemperature(period.temperature, period.temperatureUnit) ?? Number.NEGATIVE_INFINITY) >= 90 ||
+        (this.normalizeTemperature(
+          period.temperature,
+          period.temperatureUnit,
+        ) ?? Number.NEGATIVE_INFINITY) >= 90 ||
         hotPattern.test(`${period.shortForecast} ${period.detailedForecast}`),
     ).length;
     const coldPeriods = periods.filter(
       (period) =>
-        (this.normalizeTemperature(period.temperature, period.temperatureUnit) ?? Number.POSITIVE_INFINITY) <= 32,
+        (this.normalizeTemperature(
+          period.temperature,
+          period.temperatureUnit,
+        ) ?? Number.POSITIVE_INFINITY) <= 32,
     ).length;
 
-    const maxTemperatureF = temperatures.length ? Math.max(...temperatures) : null;
-    const minTemperatureF = temperatures.length ? Math.min(...temperatures) : null;
+    const maxTemperatureF = temperatures.length
+      ? Math.max(...temperatures)
+      : null;
+    const minTemperatureF = temperatures.length
+      ? Math.min(...temperatures)
+      : null;
 
     return {
       periodCount: periods.length,
@@ -184,8 +229,11 @@ export class HazardsService {
     alerts: NpsAlert[],
   ): HazardSignal | null {
     const matchedAlerts = alerts.filter((alert) => {
-      const haystack = `${alert.title} ${alert.description} ${alert.category}`.toLowerCase();
-      return definition.alertKeywords.some((keyword) => haystack.includes(keyword));
+      const haystack =
+        `${alert.title} ${alert.description} ${alert.category}`.toLowerCase();
+      return definition.alertKeywords.some((keyword) =>
+        haystack.includes(keyword),
+      );
     });
 
     if (!matchedAlerts.length) {
@@ -193,7 +241,9 @@ export class HazardsService {
     }
 
     const combinedText = matchedAlerts
-      .map((alert) => `${alert.title} ${alert.description} ${alert.category}`.toLowerCase())
+      .map((alert) =>
+        `${alert.title} ${alert.description} ${alert.category}`.toLowerCase(),
+      )
       .join(' ');
 
     const severeAlert =
@@ -211,14 +261,16 @@ export class HazardsService {
       SNOW_ICE: 'NPS alerts mention snow, ice, or winter travel concerns.',
       FLOODING: 'NPS alerts mention flooding, washouts, or high water.',
       MUD: 'NPS alerts mention muddy or damaged trail surfaces.',
-      HIGH_WIND: 'NPS alerts mention windy conditions affecting safety or access.',
+      HIGH_WIND:
+        'NPS alerts mention windy conditions affecting safety or access.',
       LIGHTNING: 'NPS alerts mention storms or lightning impacts.',
       ROCKFALL: 'NPS alerts mention rockfall, debris, or unstable slopes.',
       TRAIL_CLOSURE: 'NPS alerts indicate closures or access restrictions.',
       COLD: 'NPS alerts mention cold exposure concerns.',
       FREEZE_THAW: 'NPS alerts mention freeze-refreeze hazards.',
       SLIPPERY_TRAILS: 'NPS alerts mention slick or slippery trail conditions.',
-      COASTAL_HAZARD: 'NPS alerts mention marine, surf, or tropical weather hazards.',
+      COASTAL_HAZARD:
+        'NPS alerts mention marine, surf, or tropical weather hazards.',
     };
 
     return {
@@ -227,7 +279,9 @@ export class HazardsService {
       reason: reasons[definition.type],
       evidence: matchedAlerts
         .slice(0, 2)
-        .map((alert) => `${alert.title}: ${this.truncate(alert.description, 180)}`),
+        .map(
+          (alert) => `${alert.title}: ${this.truncate(alert.description, 180)}`,
+        ),
       tags: [...definition.tags, 'nps-alert'],
     };
   }
@@ -241,7 +295,15 @@ export class HazardsService {
     weatherSignal: HazardSignal | null;
     alertSignal: HazardSignal | null;
   }): DerivedHazard | null {
-    const { parkSlug, season, profile, definition, rule, weatherSignal, alertSignal } = params;
+    const {
+      parkSlug,
+      season,
+      profile,
+      definition,
+      rule,
+      weatherSignal,
+      alertSignal,
+    } = params;
     const weightedWeatherScore = weatherSignal
       ? Math.round(weatherSignal.score * rule.weight)
       : 0;
@@ -285,7 +347,13 @@ export class HazardsService {
 
     const severity = this.scoreToSeverity(score);
     const reason = reasons[0] ?? 'Seasonal hazard conditions were detected.';
-    const summary = this.composeSummary(definition.type, season, profile, reason, source);
+    const summary = this.composeSummary(
+      definition.type,
+      season,
+      profile,
+      reason,
+      source,
+    );
 
     return {
       id: `hazard-${parkSlug}-${season}-${definition.type.toLowerCase()}`,
@@ -330,7 +398,9 @@ export class HazardsService {
       return 'high';
     }
 
-    const moderateOrAbove = hazards.filter((hazard) => hazard.severity !== 'low').length;
+    const moderateOrAbove = hazards.filter(
+      (hazard) => hazard.severity !== 'low',
+    ).length;
     if (moderateOrAbove >= 2) {
       return 'high';
     }
@@ -382,7 +452,9 @@ export class HazardsService {
   }
 
   private parseWindSpeedMph(value: string): number {
-    const matches = [...value.matchAll(/(\d+)(?:\s*(?:to|-)\s*(\d+))?\s*(mph|kt|km\/h)?/gi)];
+    const matches = [
+      ...value.matchAll(/(\d+)(?:\s*(?:to|-)\s*(\d+))?\s*(mph|kt|km\/h)?/gi),
+    ];
 
     if (!matches.length) {
       return 0;
