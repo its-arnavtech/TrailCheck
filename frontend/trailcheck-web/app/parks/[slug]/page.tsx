@@ -19,7 +19,6 @@ export default async function ParkPage({ params }: ParkPageProps) {
   if (!park) notFound();
   const visual = await getParkVisual(park.slug, park.name);
   const forecastPeriods = digest?.weather?.forecast ?? [];
-  const hasOddForecastCount = forecastPeriods.length % 2 === 1;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[min(100%,1440px)] flex-col gap-8 px-4 py-6 sm:px-6 sm:py-8 lg:px-8 xl:px-10">
@@ -137,7 +136,7 @@ export default async function ParkPage({ params }: ParkPageProps) {
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div>
                 <div className="rounded-[1.35rem] border border-[var(--accent)]/28 bg-[linear-gradient(150deg,color-mix(in_srgb,var(--accent-soft)_68%,white_32%)_0%,rgba(255,255,255,0.94)_100%)] p-5 text-[var(--ink-on-light)] shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent-strong)]/82">
                     Summary
@@ -146,67 +145,49 @@ export default async function ParkPage({ params }: ParkPageProps) {
                     {digest?.shortSummary ?? 'A park-wide summary will appear here when live condition data is available.'}
                   </p>
                 </div>
-
-                <div className="rounded-[1.35rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)]">
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <h3 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">
-                      Weather forecast
-                    </h3>
-                    <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
-                      NWS forecast
-                    </span>
-                  </div>
-                  {forecastPeriods.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {forecastPeriods.map((period: WeatherPeriod, index: number) => (
-                        <div
-                          key={period.name}
-                          className={`rounded-2xl border border-sky-200 bg-[linear-gradient(180deg,#eff8ff,#dff1ff)] p-4 text-center ${
-                            hasOddForecastCount && index === forecastPeriods.length - 1 ? 'sm:col-span-2' : ''
-                          }`}
-                        >
-                          <p className="font-semibold text-sky-950">{period.name}</p>
-                          <img
-                            src={period.icon}
-                            alt={period.shortForecast}
-                            className="mx-auto my-2 h-12 w-12"
-                          />
-                          <p className="text-2xl font-bold text-sky-800">
-                            {period.temperature}&deg;{period.temperatureUnit}
-                          </p>
-                          <p className="mt-1 text-sm text-sky-800/80">{period.shortForecast}</p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.14em] text-sky-700/80">
-                            {period.windSpeed}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm leading-6 text-[var(--foreground)]/62">
-                      Weather data is not available right now.
-                    </p>
-                  )}
-                </div>
               </div>
             </div>
-          </section>
 
-          <section className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">
-                Submit a report
-              </h2>
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                Protected route
-              </span>
+            <div className="border-t border-[var(--border)]/70 px-5 py-6 sm:px-6">
+              <div className="w-full rounded-[1.35rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)]">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h3 className="text-lg font-semibold tracking-tight text-[var(--foreground)]">
+                    Weather forecast
+                  </h3>
+                  <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
+                    NWS forecast
+                  </span>
+                </div>
+                {forecastPeriods.length > 0 ? (
+                  <div className="grid auto-rows-fr grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    {forecastPeriods.map((period: WeatherPeriod) => (
+                      <div
+                        key={period.name}
+                        className="flex h-full flex-col items-center rounded-2xl border border-sky-200 bg-[linear-gradient(180deg,#eff8ff,#dff1ff)] p-4 text-center"
+                      >
+                        <p className="font-semibold text-sky-950">{period.name}</p>
+                        <img
+                          src={period.icon}
+                          alt={period.shortForecast}
+                          className="mx-auto my-2 h-12 w-12"
+                        />
+                        <p className="text-2xl font-bold text-sky-800">
+                          {period.temperature}&deg;{period.temperatureUnit}
+                        </p>
+                        <p className="mt-1 text-sm text-sky-800/80">{period.shortForecast}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.14em] text-sky-700/80">
+                          {period.windSpeed}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm leading-6 text-[var(--foreground)]/62">
+                    Weather data is not available right now.
+                  </p>
+                )}
+              </div>
             </div>
-            <p className="mb-4 max-w-4xl text-sm leading-6 text-[var(--foreground)]/64">
-              Sign in, choose a trail in this park, and share a quick conditions update so the next visitor has fresher context.
-            </p>
-            <div className="mb-4">
-              <AuthPanel compact />
-            </div>
-            <ParkReportPanel trails={park.trails} />
           </section>
         </div>
 
@@ -227,6 +208,24 @@ export default async function ParkPage({ params }: ParkPageProps) {
           </section>
         </div>
       </div>
+
+      <section className="w-full rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">
+            Submit a report
+          </h2>
+          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+            Protected route
+          </span>
+        </div>
+        <p className="mb-4 max-w-4xl text-sm leading-6 text-[var(--foreground)]/64">
+          Sign in, choose a trail in this park, and share a quick conditions update so the next visitor has fresher context.
+        </p>
+        <div className="mb-4">
+          <AuthPanel compact />
+        </div>
+        <ParkReportPanel trails={park.trails} />
+      </section>
     </main>
   );
 }
