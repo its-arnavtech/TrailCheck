@@ -8,7 +8,7 @@ export class TrailsService {
   constructor(
     private prisma: PrismaService,
     private nps: NpsService,
-    private weather: WeatherService,  
+    private weather: WeatherService,
   ) {}
 
   async findAll() {
@@ -39,7 +39,7 @@ export class TrailsService {
     }
 
     //fetch live data. return null if sm fails.
-    const[NpsAlerts, weather] = await Promise.allSettled([
+    const [NpsAlerts, weather] = await Promise.allSettled([
       this.nps.getAlertsForPark(trail.park.slug),
       this.weather.getWeatherForPark(trail.park.slug),
     ]);

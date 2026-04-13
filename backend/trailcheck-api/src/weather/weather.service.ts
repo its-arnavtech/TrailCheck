@@ -22,9 +22,12 @@ export class WeatherService {
     }
 
     try {
-      const pointsRes = await fetch(`https://api.weather.gov/points/${park.lat},${park.lng}`, {
-        headers: { 'User-Agent': 'TrailCheck/1.0 (contact@trailcheck.dev)' },
-      });
+      const pointsRes = await fetch(
+        `https://api.weather.gov/points/${park.lat},${park.lng}`,
+        {
+          headers: { 'User-Agent': 'TrailCheck/1.0 (contact@trailcheck.dev)' },
+        },
+      );
 
       if (!pointsRes.ok) {
         this.logger.error(`NWS points API error: ${pointsRes.status}`);

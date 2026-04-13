@@ -3,14 +3,16 @@ import { HazardsService } from './hazards.service';
 import type { NpsAlert } from '../nps/nps.service';
 import type { ParkWeather } from '../weather/weather.service';
 
-function buildWeather(periods: Array<{
-  name: string;
-  temperature: number;
-  windSpeed: string;
-  shortForecast: string;
-  detailedForecast: string;
-  temperatureUnit?: string;
-}>): ParkWeather {
+function buildWeather(
+  periods: Array<{
+    name: string;
+    temperature: number;
+    windSpeed: string;
+    shortForecast: string;
+    detailedForecast: string;
+    temperatureUnit?: string;
+  }>,
+): ParkWeather {
   return {
     parkSlug: 'test-park',
     forecast: periods.map((period) => ({
@@ -106,14 +108,16 @@ describe('HazardsService', () => {
         temperature: 58,
         windSpeed: '10 mph',
         shortForecast: 'Rain showers',
-        detailedForecast: 'Periods of rain with saturated trails and creeks running high.',
+        detailedForecast:
+          'Periods of rain with saturated trails and creeks running high.',
       },
       {
         name: 'Tonight',
         temperature: 46,
         windSpeed: '8 mph',
         shortForecast: 'Showers likely',
-        detailedForecast: 'Additional rain overnight keeps trails wet and muddy.',
+        detailedForecast:
+          'Additional rain overnight keeps trails wet and muddy.',
       },
       {
         name: 'Tomorrow',
@@ -143,7 +147,8 @@ describe('HazardsService', () => {
       {
         id: 'closure-1',
         title: 'Angels Landing Trail Closed',
-        description: 'Trail closed due to rockfall cleanup until further notice.',
+        description:
+          'Trail closed due to rockfall cleanup until further notice.',
         category: 'Park Closure',
         parkCode: 'zion',
         url: 'https://example.test/closure',
@@ -167,8 +172,12 @@ describe('HazardsService', () => {
       new Date('2026-11-03T18:00:00Z'),
     );
 
-    const closureHazard = assessment.activeHazards.find((hazard) => hazard.type === 'TRAIL_CLOSURE');
-    const rockfallHazard = assessment.activeHazards.find((hazard) => hazard.type === 'ROCKFALL');
+    const closureHazard = assessment.activeHazards.find(
+      (hazard) => hazard.type === 'TRAIL_CLOSURE',
+    );
+    const rockfallHazard = assessment.activeHazards.find(
+      (hazard) => hazard.type === 'ROCKFALL',
+    );
 
     expect(closureHazard).toBeDefined();
     expect(closureHazard?.source).toBe('nps');

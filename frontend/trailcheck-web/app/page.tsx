@@ -6,10 +6,13 @@ import { getParks } from '../lib/api';
 import { getParkVisual, getParkVisualMap } from '../lib/park-content';
 import trailcheckLogo from './trailcheck_logo-removebg-preview.png';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   const parks = await getParks();
   const heroVisual = await getParkVisual('yosemite', 'Yosemite');
   const parkVisuals = await getParkVisualMap(parks);
+  const hasParks = parks.length > 0;
 
   return (
     <main className="relative flex min-h-screen w-full flex-col gap-0 overflow-hidden pb-6 sm:pb-8 lg:pb-10">
@@ -38,10 +41,14 @@ export default async function Home() {
                   href="#explore-parks"
                   className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/18 px-8 py-4 text-center text-lg font-semibold text-white shadow-[0_20px_40px_rgba(10,18,26,0.22)] backdrop-blur-md transition hover:bg-white/28"
                 >
-                  Explore the breathtaking trails our National Parks have to offer
+                  {hasParks
+                    ? 'Explore the breathtaking trails our National Parks have to offer'
+                    : 'Browse TrailCheck while live park data reconnects'}
                 </a>
                 <p className="text-sm font-medium tracking-[0.01em] text-white/84 sm:text-base">
-                  Explore Trails across all {parks.length} U.S. National Park{parks.length === 1 ? '' : 's'} on the TrailCheck network.
+                  {hasParks
+                    ? `Explore Trails across all ${parks.length} U.S. National Park${parks.length === 1 ? '' : 's'} on the TrailCheck network.`
+                    : 'Live park listings are temporarily unavailable, but you can still explore the TrailCheck experience.'}
                 </p>
               </div>
               <ParkMap />
@@ -64,7 +71,9 @@ export default async function Home() {
             </h2>
           </div>
           <p className="text-sm text-[var(--foreground)]/60">
-            Choose a park to browse its trails.
+            {hasParks
+              ? 'Choose a park to browse its trails.'
+              : 'Park data will appear here once the API is reachable again.'}
           </p>
         </div>
 

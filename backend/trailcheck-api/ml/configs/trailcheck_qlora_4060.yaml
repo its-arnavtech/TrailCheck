@@ -1,0 +1,68 @@
+project:
+  name: trailcheck-local-qlora
+
+data:
+  weather_file: data/processed/parks/park_weather_hazards_2024.csv
+  alerts_file: data/processed/parks/nps_alerts_normalized.csv
+  current_alerts_file: data/processed/parks/park_weather_alerts_current.csv
+  output_dir: ml/data/outputs
+  validation_ratio: 0.15
+  max_alerts_per_example: 4
+  use_current_alerts_fallback: true
+
+model:
+  base_model: Qwen/Qwen2.5-3B-Instruct
+  alternatives:
+    - microsoft/Phi-3.5-mini-instruct
+    - meta-llama/Llama-3.2-3B-Instruct
+  trust_remote_code: false
+
+quantization:
+  load_in_4bit: true
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_use_double_quant: true
+  bnb_4bit_compute_dtype: float16
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  bias: none
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+training:
+  output_dir: ml/models/trailcheck-qwen25-3b-json
+  max_seq_length: 1024
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 0.0002
+  num_train_epochs: 3
+  warmup_ratio: 0.05
+  weight_decay: 0.01
+  logging_steps: 10
+  save_steps: 100
+  eval_steps: 100
+  max_grad_norm: 0.3
+  lr_scheduler_type: cosine
+  fp16: true
+  bf16: false
+  gradient_checkpointing: true
+  seed: 42
+  optim: paged_adamw_8bit
+
+inference:
+  max_new_tokens: 384
+  temperature: 0.0
+  top_p: 1.0
+  repetition_penalty: 1.02
+  do_sample: false
+  repair_attempts: 1
+  validation_required: true

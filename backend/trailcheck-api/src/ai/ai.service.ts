@@ -1,13 +1,25 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI } from '@google/genai';
 import { Prisma } from '@prisma/client';
 import { AskDto } from './dto/ask.dto';
 import { HazardsService } from '../hazards/hazards.service';
-import { type DerivedHazard, type SeasonalHazardAssessment } from '../hazards/hazard.types';
+import {
+  type DerivedHazard,
+  type SeasonalHazardAssessment,
+} from '../hazards/hazard.types';
 import { NpsAlert, NpsService } from '../nps/nps.service';
 import { ParkWeather, WeatherService } from '../weather/weather.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { LocalModelService } from './local-model.service';
+import type {
+  LocalModelResult,
+  LocalStructuredOutput,
+} from './local-model.types';
 
 export interface RagDocument {
   id: string;
@@ -22,8 +34,9 @@ export interface AskResponse {
   question: string;
   answer: string;
   notice: string;
-  generationSource: 'gemini' | 'fallback';
+  generationSource: 'local' | 'gemini' | 'fallback';
   generationError: string | null;
+  structuredOutput: LocalStructuredOutput | null;
   hazards: DerivedHazard[];
   hazardAssessment: SeasonalHazardAssessment;
   alerts: NpsAlert[];
@@ -35,8 +48,9 @@ export interface ParkDigestResult {
   parkSlug: string;
   shortSummary: string;
   notification: string;
-  generationSource: 'gemini' | 'fallback';
+  generationSource: 'local' | 'gemini' | 'fallback';
   generationError: string | null;
+  structuredOutput: LocalStructuredOutput | null;
   retrievedContext: RagDocument[];
   hazards: DerivedHazard[];
   hazardAssessment: SeasonalHazardAssessment;
@@ -55,22 +69,64 @@ export class AiService {
     private readonly weatherService: WeatherService,
     private readonly hazardsService: HazardsService,
     private readonly prisma: PrismaService,
+    private readonly localModelService: LocalModelService,
   ) {}
 
   async ask(dto: AskDto): Promise<AskResponse> {
-    const { alerts, weather, hazardAssessment, hazards, context } = await this.collectParkContext(
-      dto.parkSlug,
+    const { parkName, alerts, weather, hazardAssessment, hazards, context } =
+      await this.collectParkContext(dto.parkSlug);
+    const fallbackNotice = this.hazardsService.buildNotice(
+      hazardAssessment,
+      weather,
     );
-    const notice = this.hazardsService.buildNotice(hazardAssessment, weather);
+    const localResult = await this.tryLocalStructuredOutput({
+      parkSlug: dto.parkSlug,
+      parkName,
+      alerts,
+      weather,
+      hazardAssessment,
+      hazards,
+    });
+
+    if (localResult?.ok && localResult.output) {
+      return {
+        parkSlug: dto.parkSlug,
+        question: dto.question,
+        answer: this.buildAnswerFromStructuredOutput(
+          dto.question,
+          localResult.output,
+        ),
+        notice: this.truncateForPrompt(localResult.output.notification, 160),
+        generationSource: 'local',
+        generationError: null,
+        structuredOutput: localResult.output,
+        hazards,
+        hazardAssessment,
+        alerts,
+        weather,
+        context,
+      };
+    }
+
+    const localFailureMessage = this.describeLocalFailure(localResult);
 
     if (!this.isGeminiConfigured()) {
       return {
         parkSlug: dto.parkSlug,
         question: dto.question,
-        answer: this.buildFallbackAnswer(dto.question, hazards, alerts, weather),
-        notice,
+        answer: this.buildFallbackAnswer(
+          dto.question,
+          hazards,
+          alerts,
+          weather,
+        ),
+        notice: fallbackNotice,
         generationSource: 'fallback',
-        generationError: 'GEMINI_API_KEY is missing',
+        generationError: this.combineGenerationErrors(
+          localFailureMessage,
+          'GEMINI_API_KEY is missing',
+        ),
+        structuredOutput: null,
         hazards,
         hazardAssessment,
         alerts,
@@ -80,15 +136,16 @@ export class AiService {
     }
 
     try {
-      const answer = await this.generateAskAnswer(dto, context, notice);
+      const answer = await this.generateAskAnswer(dto, context, fallbackNotice);
 
       return {
         parkSlug: dto.parkSlug,
         question: dto.question,
         answer,
-        notice,
+        notice: fallbackNotice,
         generationSource: 'gemini',
-        generationError: null,
+        generationError: localFailureMessage,
+        structuredOutput: null,
         hazards,
         hazardAssessment,
         alerts,
@@ -96,15 +153,27 @@ export class AiService {
         context,
       };
     } catch (error) {
-      this.logger.error('Gemini ask flow failed, returning fallback answer.', error);
+      this.logger.error(
+        'Gemini ask flow failed, returning fallback answer.',
+        error,
+      );
 
       return {
         parkSlug: dto.parkSlug,
         question: dto.question,
-        answer: this.buildFallbackAnswer(dto.question, hazards, alerts, weather),
-        notice,
+        answer: this.buildFallbackAnswer(
+          dto.question,
+          hazards,
+          alerts,
+          weather,
+        ),
+        notice: fallbackNotice,
         generationSource: 'fallback',
-        generationError: error instanceof Error ? error.message : 'Unknown Gemini error',
+        generationError: this.combineGenerationErrors(
+          localFailureMessage,
+          error instanceof Error ? error.message : 'Unknown Gemini error',
+        ),
+        structuredOutput: null,
         hazards,
         hazardAssessment,
         alerts,
@@ -117,20 +186,31 @@ export class AiService {
   async generateParkDigest(parkSlug: string): Promise<ParkDigestResult> {
     const askResponse = await this.ask({
       parkSlug,
-      question: 'What important conditions and hazards should visitors know right now?',
+      question:
+        'What important conditions and hazards should visitors know right now?',
     });
+
+    const shortSummary = askResponse.structuredOutput
+      ? this.buildDigestSummaryFromStructuredOutput(
+          askResponse.structuredOutput,
+        )
+      : this.buildDigestSummary(
+          askResponse.notice,
+          askResponse.hazards,
+          askResponse.alerts,
+          askResponse.weather,
+        );
+    const notification = askResponse.structuredOutput
+      ? this.truncateForPrompt(askResponse.structuredOutput.notification, 160)
+      : this.truncateForPrompt(askResponse.notice, 160);
 
     return {
       parkSlug,
-      shortSummary: this.buildDigestSummary(
-        askResponse.notice,
-        askResponse.hazards,
-        askResponse.alerts,
-        askResponse.weather,
-      ),
-      notification: this.truncateForPrompt(askResponse.notice, 160),
+      shortSummary,
+      notification,
       generationSource: askResponse.generationSource,
       generationError: askResponse.generationError,
+      structuredOutput: askResponse.structuredOutput,
       retrievedContext: askResponse.context,
       hazards: askResponse.hazards,
       hazardAssessment: askResponse.hazardAssessment,
@@ -144,6 +224,7 @@ export class AiService {
   }
 
   private async collectParkContext(parkSlug: string): Promise<{
+    parkName: string;
     alerts: NpsAlert[];
     weather: ParkWeather | null;
     hazardAssessment: SeasonalHazardAssessment;
@@ -153,34 +234,59 @@ export class AiService {
     const [park, npsPayload, weatherPayload] = await Promise.all([
       this.prisma.park.findUnique({
         where: { slug: parkSlug },
-        select: { id: true },
+        select: { id: true, name: true },
       }),
       this.npsService.getAlertsPayloadForPark(parkSlug),
       this.weatherService.getWeatherPayloadForPark(parkSlug),
     ]);
 
     if (park) {
-      await this.prisma.parkSnapshot.create({
-        data: {
-          parkId: park.id,
-          npsRaw: npsPayload.raw ?? Prisma.JsonNull,
-          nwsRaw: weatherPayload.raw ?? Prisma.JsonNull,
-        },
-      });
+      try {
+        await this.prisma.parkSnapshot.create({
+          data: {
+            parkId: park.id,
+            npsRaw: npsPayload.raw ?? Prisma.JsonNull,
+            nwsRaw: weatherPayload.raw ?? Prisma.JsonNull,
+          },
+        });
+      } catch (error) {
+        this.logger.warn(
+          `Skipping park snapshot persistence for "${parkSlug}": ${
+            error instanceof Error ? error.message : 'Unknown snapshot error'
+          }`,
+        );
+      }
     } else {
-      this.logger.warn(`Skipping snapshot storage because park "${parkSlug}" was not found.`);
+      this.logger.warn(
+        `Skipping snapshot storage because park "${parkSlug}" was not found.`,
+      );
     }
 
     const alerts = npsPayload.alerts;
     const weather = weatherPayload.weather;
-    const hazardAssessment = this.hazardsService.assessParkHazards(parkSlug, alerts, weather);
+    const hazardAssessment = this.hazardsService.assessParkHazards(
+      parkSlug,
+      alerts,
+      weather,
+    );
     const hazards = hazardAssessment.activeHazards;
-    const context = this.buildContext({ parkSlug, alerts, weather, hazardAssessment, hazards });
+    const context = this.buildContext({
+      parkSlug,
+      alerts,
+      weather,
+      hazardAssessment,
+      hazards,
+    });
+    const parkName = park?.name ?? this.humanizeParkSlug(parkSlug);
 
-    return { alerts, weather, hazardAssessment, hazards, context };
+    return { parkName, alerts, weather, hazardAssessment, hazards, context };
   }
 
-  private async generateAskAnswer(dto: AskDto, context: RagDocument[], notice: string): Promise<string> {
+  private async generateAskAnswer(
+    dto: AskDto,
+    context: RagDocument[],
+    notice: string,
+  ): Promise<string> {
     const result = await this.getClient().models.generateContent({
       model: this.getModelName(),
       contents: this.buildAskPrompt(dto, context, notice),
@@ -202,6 +308,113 @@ export class AiService {
     }
 
     return answer;
+  }
+
+  private async tryLocalStructuredOutput(params: {
+    parkSlug: string;
+    parkName: string;
+    alerts: NpsAlert[];
+    weather: ParkWeather | null;
+    hazardAssessment: SeasonalHazardAssessment;
+    hazards: DerivedHazard[];
+  }): Promise<LocalModelResult | null> {
+    if (!this.localModelService.isEnabled()) {
+      return null;
+    }
+
+    const localInput = this.buildLocalModelInput(params);
+    return this.localModelService.generate(localInput);
+  }
+
+  private buildLocalModelInput(params: {
+    parkSlug: string;
+    parkName: string;
+    alerts: NpsAlert[];
+    weather: ParkWeather | null;
+    hazardAssessment: SeasonalHazardAssessment;
+    hazards: DerivedHazard[];
+  }): Record<string, unknown> {
+    const forecast = params.weather?.forecast ?? [];
+    const normalizedTemperatures = forecast
+      .map((period) =>
+        this.normalizeForecastTemperature(
+          period.temperature,
+          period.temperatureUnit,
+        ),
+      )
+      .filter((value): value is number => value !== null);
+    const maxTempF = normalizedTemperatures.length
+      ? Math.max(...normalizedTemperatures)
+      : null;
+    const minTempF = normalizedTemperatures.length
+      ? Math.min(...normalizedTemperatures)
+      : null;
+    const weatherText = forecast
+      .map((period) => `${period.shortForecast} ${period.detailedForecast}`)
+      .join(' ')
+      .toLowerCase();
+    const wetSignal =
+      /(rain|showers|thunderstorm|storm|flood|downpour)/.test(weatherText) ||
+      params.hazards.some((hazard) =>
+        ['FLOODING', 'MUD', 'LIGHTNING'].includes(hazard.type),
+      );
+    const snowSignal =
+      /(snow|sleet|blizzard|flurries|freezing rain|icy|ice)/.test(
+        weatherText,
+      ) || params.hazards.some((hazard) => hazard.type === 'SNOW_ICE');
+
+    return {
+      parkName: params.parkName,
+      parkCode: params.hazardAssessment.parkCode ?? params.parkSlug,
+      parkSlug: params.parkSlug,
+      date: new Date().toISOString().slice(0, 10),
+      season: params.hazardAssessment.season.toUpperCase(),
+      hazardProfile: params.hazardAssessment.profile,
+      weather: {
+        maxTempC: this.toCelsius(maxTempF),
+        maxTempF,
+        minTempC: this.toCelsius(minTempF),
+        minTempF,
+        precipitationMm: null,
+        snowMm: null,
+        forecast: forecast.map((period) => ({
+          name: period.name,
+          temperature: period.temperature,
+          temperatureUnit: period.temperatureUnit,
+          windSpeed: period.windSpeed,
+          shortForecast: period.shortForecast,
+          detailedForecast: period.detailedForecast,
+        })),
+      },
+      derivedHazardSignals: {
+        existingRuleLabels: params.hazards.map((hazard) => hazard.type),
+        riskLevel: params.hazardAssessment.riskLevel.toUpperCase(),
+        ignoredHazards: params.hazardAssessment.ignoredHazards,
+        isHot: maxTempF !== null && maxTempF >= 90,
+        isFreezing: minTempF !== null && minTempF <= 32,
+        isVeryWet: wetSignal,
+        hasSnowSignal: snowSignal,
+      },
+      seasonalAssessment: {
+        riskLevel: params.hazardAssessment.riskLevel.toUpperCase(),
+        activeHazards: params.hazards.map((hazard) => ({
+          type: hazard.type,
+          severity: hazard.severity.toUpperCase(),
+          summary: hazard.summary,
+          reason: hazard.reason,
+          source: hazard.source,
+        })),
+      },
+      activeAlerts: params.alerts.map((alert) => ({
+        title: alert.title,
+        category: alert.category,
+        impact: this.truncateForPrompt(
+          this.cleanSummaryText(alert.description),
+          220,
+        ),
+      })),
+      alertContextMode: params.alerts.length ? 'live_nps' : 'none',
+    };
   }
 
   private buildContext(params: {
@@ -268,12 +481,22 @@ export class AiService {
         },
       })) ?? [];
 
-    return [assessmentDoc, ...hazardDocs, ...alertDocs, ...weatherDocs].slice(0, 10);
+    return [assessmentDoc, ...hazardDocs, ...alertDocs, ...weatherDocs].slice(
+      0,
+      10,
+    );
   }
 
-  private buildAskPrompt(dto: AskDto, context: RagDocument[], notice: string): string {
+  private buildAskPrompt(
+    dto: AskDto,
+    context: RagDocument[],
+    notice: string,
+  ): string {
     const serializedContext = context
-      .map((doc, index) => `${index + 1}. [${doc.source.toUpperCase()}] ${doc.title}\n${doc.content}`)
+      .map(
+        (doc, index) =>
+          `${index + 1}. [${doc.source.toUpperCase()}] ${doc.title}\n${doc.content}`,
+      )
       .join('\n\n');
 
     return [
@@ -318,6 +541,55 @@ export class AiService {
     return `I could not find enough live park condition data to confidently answer "${question}" right now.`;
   }
 
+  private buildAnswerFromStructuredOutput(
+    question: string,
+    structuredOutput: LocalStructuredOutput,
+  ): string {
+    const hazardSentence = structuredOutput.hazards.length
+      ? `Main hazards right now are ${this.joinList(
+          structuredOutput.hazards
+            .slice(0, 3)
+            .map((hazard) => this.humanizeLabel(hazard.type)),
+        )}.`
+      : 'No major hazards were identified from the available weather and alert inputs.';
+    const alertSentence = structuredOutput.alerts.length
+      ? `Active alerts include ${this.joinList(
+          structuredOutput.alerts
+            .slice(0, 2)
+            .map((alert) => `"${this.truncateForPrompt(alert.title, 80)}"`),
+        )}.`
+      : '';
+
+    return this.truncateForPrompt(
+      [
+        `For "${question}", ${structuredOutput.notification}`,
+        hazardSentence,
+        alertSentence,
+        structuredOutput.recommendedAction,
+      ]
+        .filter(Boolean)
+        .join(' '),
+      420,
+    );
+  }
+
+  private buildDigestSummaryFromStructuredOutput(
+    structuredOutput: LocalStructuredOutput,
+  ): string {
+    const hazardSentence = structuredOutput.hazards.length
+      ? `Key hazards: ${this.joinList(
+          structuredOutput.hazards
+            .slice(0, 3)
+            .map((hazard) => this.humanizeLabel(hazard.type)),
+        )}.`
+      : 'No major hazards were identified from the available inputs.';
+
+    return this.truncateForPrompt(
+      `${structuredOutput.notification} ${hazardSentence} ${structuredOutput.recommendedAction}`,
+      220,
+    );
+  }
+
   private buildDigestSummary(
     notice: string,
     hazards: DerivedHazard[],
@@ -355,6 +627,27 @@ export class AiService {
     return value.replace(/\s+/g, ' ').trim();
   }
 
+  private describeLocalFailure(result: LocalModelResult | null): string | null {
+    if (!result || result.ok) {
+      return null;
+    }
+
+    if (result.errors.length) {
+      return `Local model failed: ${result.errors.join('; ')}`;
+    }
+
+    return 'Local model failed validation.';
+  }
+
+  private combineGenerationErrors(
+    ...values: Array<string | null>
+  ): string | null {
+    const nonEmpty = values
+      .map((value) => value?.trim())
+      .filter((value): value is string => Boolean(value));
+    return nonEmpty.length ? nonEmpty.join(' | ') : null;
+  }
+
   private getClient(): GoogleGenAI {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
 
@@ -379,6 +672,64 @@ export class AiService {
     }
 
     return `${value.slice(0, maxLength - 3).trim()}...`;
+  }
+
+  private normalizeForecastTemperature(
+    temperature: number | null | undefined,
+    unit: string | null | undefined,
+  ): number | null {
+    if (typeof temperature !== 'number') {
+      return null;
+    }
+
+    if (unit?.toUpperCase() === 'C') {
+      return temperature * (9 / 5) + 32;
+    }
+
+    return temperature;
+  }
+
+  private toCelsius(temperatureF: number | null): number | null {
+    if (temperatureF === null) {
+      return null;
+    }
+
+    return Number((((temperatureF - 32) * 5) / 9).toFixed(1));
+  }
+
+  private humanizeParkSlug(parkSlug: string): string {
+    return parkSlug
+      .split('-')
+      .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+      .join(' ');
+  }
+
+  private humanizeLabel(value: string): string {
+    const labelMap: Record<string, string> = {
+      SNOW_ICE: 'snow and ice',
+      AIR_QUALITY: 'air quality',
+      HIGH_WIND: 'high wind',
+      TRAIL_CLOSURE: 'trail closures',
+      COASTAL_HAZARD: 'coastal hazards',
+    };
+
+    return labelMap[value] ?? value.replace(/_/g, ' ').toLowerCase();
+  }
+
+  private joinList(values: string[]): string {
+    if (!values.length) {
+      return '';
+    }
+
+    if (values.length === 1) {
+      return values[0];
+    }
+
+    if (values.length === 2) {
+      return `${values[0]} and ${values[1]}`;
+    }
+
+    return `${values.slice(0, -1).join(', ')}, and ${values.at(-1)}`;
   }
 
   private isUsableAnswer(answer: string): boolean {

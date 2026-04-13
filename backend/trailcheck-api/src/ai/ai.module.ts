@@ -5,11 +5,12 @@ import { WeatherModule } from '../weather/weather.module';
 import { AiController } from './ai.controller';
 import { HazardsModule } from '../hazards/hazards.module';
 import { PrismaModule } from '../prisma/primsa.module';
+import { LocalModelService } from './local-model.service';
 
 @Module({
   imports: [NpsModule, WeatherModule, HazardsModule, PrismaModule],
   controllers: [AiController],
-  providers: [AiService],
+  providers: [AiService, LocalModelService],
   exports: [AiService],
 })
 export class AiModule {}

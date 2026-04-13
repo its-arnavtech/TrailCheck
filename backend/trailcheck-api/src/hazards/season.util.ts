@@ -21,7 +21,10 @@ const SOUTHERN_SEASON_LOOKUP: Record<Season, Season> = {
   fall: 'spring',
 };
 
-export function resolveSeason(date = new Date(), hemisphere: Hemisphere = 'north'): Season {
+export function resolveSeason(
+  date = new Date(),
+  hemisphere: Hemisphere = 'north',
+): Season {
   const utcMonth = date.getUTCMonth() + 1;
   const utcDay = date.getUTCDate();
 
