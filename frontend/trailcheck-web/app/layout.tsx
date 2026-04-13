@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import AppToaster from '@/components/app-toaster';
 import "./globals.css";
+import 'maplibre-gl/dist/maplibre-gl.css';
 
 export const metadata: Metadata = {
   title: "TrailCheck",

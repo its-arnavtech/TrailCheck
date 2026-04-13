@@ -10,7 +10,6 @@ export default async function Home() {
   const parks = await getParks();
   const heroVisual = await getParkVisual('yosemite', 'Yosemite');
   const parkVisuals = await getParkVisualMap(parks);
-  const trailCount = parks.reduce((count, park) => count + park.trails.length, 0);
 
   return (
     <main className="relative flex min-h-screen w-full flex-col gap-0 overflow-hidden pb-6 sm:pb-8 lg:pb-10">
@@ -35,23 +34,17 @@ export default async function Home() {
                   priority
                   className="h-auto w-[280px] max-w-full sm:w-[360px] lg:w-[420px]"
                 />
-                <p className="text-xl leading-relaxed text-white/95 sm:text-2xl">
-                  Report trail hazards and help keep our national parks safe for everyone.
-                </p>
+                <a
+                  href="#explore-parks"
+                  className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/18 px-8 py-4 text-center text-lg font-semibold text-white shadow-[0_20px_40px_rgba(10,18,26,0.22)] backdrop-blur-md transition hover:bg-white/28"
+                >
+                  Explore the breathtaking trails our National Parks have to offer
+                </a>
                 <p className="text-sm font-medium tracking-[0.01em] text-white/84 sm:text-base">
                   Explore Trails across all {parks.length} U.S. National Park{parks.length === 1 ? '' : 's'} on the TrailCheck network.
                 </p>
               </div>
               <ParkMap />
-            </div>
-
-            <div className="flex justify-center">
-              <a
-                href="#explore-parks"
-                className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/18 px-8 py-4 text-center text-lg font-semibold text-white shadow-[0_20px_40px_rgba(10,18,26,0.22)] backdrop-blur-md transition hover:bg-white/28"
-              >
-                Explore the breathtaking trails our National Parks have to offer
-              </a>
             </div>
           </div>
         </div>

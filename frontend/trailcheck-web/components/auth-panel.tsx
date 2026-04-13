@@ -58,8 +58,6 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
 
       if (storedUser) {
         setUser(storedUser);
-        setIsLoadingUser(false);
-        return;
       }
 
       try {
