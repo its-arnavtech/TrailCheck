@@ -16,6 +16,12 @@ type HoverState = {
   y: number;
 } | null;
 
+type ProjectedMarker = {
+  x: number;
+  y: number;
+  visible: boolean;
+};
+
 const TILE_WARMUP_MS = 2500;
 
 const REGION_TO_SCENE_KEY: Record<
@@ -29,15 +35,12 @@ const REGION_TO_SCENE_KEY: Record<
   caribbean: 'caribbean',
 };
 
-const REGION_CAMERA: Record<
-  ParkMapRegion,
-  { lat: number; lng: number; distance: number; markerSize: number; hoverThreshold: number }
-> = {
-  mainland: { lat: 38, lng: -98, distance: 2.18, markerSize: 18, hoverThreshold: 0.06 },
-  alaska: { lat: 63.5, lng: -151, distance: 1.96, markerSize: 20, hoverThreshold: 0.075 },
-  hawaii: { lat: 20.6, lng: -156.2, distance: 1.7, markerSize: 22, hoverThreshold: 0.085 },
-  pacific: { lat: -14.3, lng: -170.7, distance: 1.58, markerSize: 22, hoverThreshold: 0.085 },
-  caribbean: { lat: 18.25, lng: -64.85, distance: 1.54, markerSize: 22, hoverThreshold: 0.085 },
+const REGION_CAMERA: Record<ParkMapRegion, { lat: number; lng: number; distance: number }> = {
+  mainland: { lat: 38, lng: -98, distance: 2.18 },
+  alaska: { lat: 63.5, lng: -151, distance: 1.96 },
+  hawaii: { lat: 20.6, lng: -156.2, distance: 1.7 },
+  pacific: { lat: -14.3, lng: -170.7, distance: 1.58 },
+  caribbean: { lat: 18.25, lng: -64.85, distance: 1.54 },
 };
 
 function latLngToVector(lat: number, lng: number, radius = 1) {
@@ -49,49 +52,6 @@ function latLngToVector(lat: number, lng: number, radius = 1) {
     radius * Math.cos(phi),
     radius * Math.sin(phi) * Math.sin(theta),
   );
-}
-
-function createMarkerTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 128;
-  canvas.height = 128;
-  const context = canvas.getContext('2d');
-
-  if (!context) {
-    return new THREE.CanvasTexture(canvas);
-  }
-
-  context.clearRect(0, 0, canvas.width, canvas.height);
-
-  const glow = context.createRadialGradient(64, 64, 6, 64, 64, 48);
-  glow.addColorStop(0, 'rgba(255,220,145,0.98)');
-  glow.addColorStop(0.36, 'rgba(248,149,56,0.94)');
-  glow.addColorStop(0.72, 'rgba(207,98,37,0.38)');
-  glow.addColorStop(1, 'rgba(207,98,37,0)');
-  context.fillStyle = glow;
-  context.beginPath();
-  context.arc(64, 64, 48, 0, Math.PI * 2);
-  context.fill();
-
-  context.fillStyle = '#cf6225';
-  context.beginPath();
-  context.arc(64, 64, 18, 0, Math.PI * 2);
-  context.fill();
-
-  context.lineWidth = 4;
-  context.strokeStyle = 'rgba(255,255,255,0.92)';
-  context.beginPath();
-  context.arc(64, 64, 18, 0, Math.PI * 2);
-  context.stroke();
-
-  context.fillStyle = '#fff6dd';
-  context.beginPath();
-  context.arc(64, 64, 6.5, 0, Math.PI * 2);
-  context.fill();
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
 }
 
 function polygonToShape(
@@ -166,7 +126,10 @@ export default function USGlobePanel({
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const activeHoverSlugRef = useRef<string | null>(null);
+  const projectedMarkersRef = useRef<Record<string, ProjectedMarker>>({});
   const [hovered, setHovered] = useState<HoverState>(null);
+  const [projectedMarkers, setProjectedMarkers] = useState<Record<string, ProjectedMarker>>({});
 
   const points = useMemo(
     () => PARK_GLOBE_POINTS.filter((park) => park.region === region),
@@ -177,6 +140,28 @@ export default function USGlobePanel({
     () => getUSGlobeOverlays(REGION_TO_SCENE_KEY[region]),
     [region],
   );
+
+  function updateHoveredMarker(park: ParkPoint | null) {
+    activeHoverSlugRef.current = park?.slug ?? null;
+
+    if (!park) {
+      setHovered(null);
+      return;
+    }
+
+    const marker = projectedMarkersRef.current[park.slug];
+
+    if (!marker?.visible) {
+      setHovered(null);
+      return;
+    }
+
+    setHovered({
+      park,
+      x: marker.x,
+      y: marker.y,
+    });
+  }
 
   useEffect(() => {
     const container = containerRef.current;
@@ -258,70 +243,51 @@ export default function USGlobePanel({
       globeGroup.add(line);
     });
 
-    const markerPositions = new Float32Array(pointPositions.length * 3);
-    pointPositions.forEach((position, index) => {
-      markerPositions[index * 3] = position.x;
-      markerPositions[index * 3 + 1] = position.y;
-      markerPositions[index * 3 + 2] = position.z;
-    });
-
-    const markerTexture = createMarkerTexture();
-    const markerGeometry = new THREE.BufferGeometry();
-    markerGeometry.setAttribute('position', new THREE.BufferAttribute(markerPositions, 3));
-    const markers = new THREE.Points(
-      markerGeometry,
-      new THREE.PointsMaterial({
-        map: markerTexture,
-        color: 0xffffff,
-        transparent: true,
-        alphaTest: 0.12,
-        depthWrite: false,
-        depthTest: false,
-        sizeAttenuation: false,
-        size: REGION_CAMERA[region].markerSize,
-      }),
-    );
-    markers.renderOrder = 20;
-    globeGroup.add(markers);
-
     const focus = latLngToVector(REGION_CAMERA[region].lat, REGION_CAMERA[region].lng, radius);
     camera.position.copy(focus.clone().multiplyScalar(REGION_CAMERA[region].distance));
     camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+    camera.updateMatrixWorld(true);
     slippyGlobe.updatePov(camera);
 
-    const raycaster = new THREE.Raycaster();
-    raycaster.params.Points.threshold = REGION_CAMERA[region].hoverThreshold;
-    const pointer = new THREE.Vector2();
-
-    let activeHoverIndex: number | null = null;
     let animationFrame = 0;
     let renderUntil = 0;
     let disposed = false;
 
-    function getProjectedPosition(index: number) {
-      const projected = pointPositions[index].clone().project(camera);
+    function projectMarkers() {
+      camera.updateMatrixWorld(true);
 
-      return {
-        x: ((projected.x + 1) / 2) * host.clientWidth,
-        y: ((-projected.y + 1) / 2) * host.clientHeight,
-      };
-    }
+      const nextMarkers = points.reduce<Record<string, ProjectedMarker>>((accumulator, park, index) => {
+        const position = pointPositions[index];
+        const projected = position.clone().project(camera);
+        const x = ((projected.x + 1) / 2) * host.clientWidth;
+        const y = ((-projected.y + 1) / 2) * host.clientHeight;
+        const normal = position.clone().normalize();
+        const toCamera = camera.position.clone().sub(position).normalize();
+        const visible =
+          normal.dot(toCamera) > 0.08 &&
+          projected.z > -1 &&
+          projected.z < 1 &&
+          x >= -24 &&
+          x <= host.clientWidth + 24 &&
+          y >= -24 &&
+          y <= host.clientHeight + 24;
 
-    function updateTooltip(index: number | null) {
-      activeHoverIndex = index;
+        accumulator[park.slug] = { x, y, visible };
+        return accumulator;
+      }, {});
 
-      if (index === null) {
-        setHovered(null);
-        host.style.cursor = 'default';
-        return;
+      projectedMarkersRef.current = nextMarkers;
+
+      if (!disposed) {
+        setProjectedMarkers(nextMarkers);
       }
 
-      const projected = getProjectedPosition(index);
-      setHovered({
-        park: points[index],
-        ...projected,
-      });
-      host.style.cursor = 'pointer';
+      if (activeHoverSlugRef.current) {
+        updateHoveredMarker(
+          points.find((park) => park.slug === activeHoverSlugRef.current) ?? null,
+        );
+      }
     }
 
     function renderFrame(now: number) {
@@ -347,49 +313,26 @@ export default function USGlobePanel({
       }
     }
 
-    function handlePointerMove(event: PointerEvent) {
-      const rect = host.getBoundingClientRect();
-      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(pointer, camera);
-      const intersections = raycaster.intersectObject(markers, false);
-      updateTooltip(
-        typeof intersections[0]?.index === 'number' ? intersections[0].index : null,
-      );
-    }
-
-    function handlePointerLeave() {
-      updateTooltip(null);
-    }
-
     function handleResize() {
       camera.aspect = host.clientWidth / host.clientHeight;
       camera.updateProjectionMatrix();
+      camera.updateMatrixWorld(true);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(host.clientWidth, host.clientHeight);
       slippyGlobe.updatePov(camera);
-
-      if (activeHoverIndex !== null) {
-        updateTooltip(activeHoverIndex);
-      }
-
+      projectMarkers();
       scheduleRender(800);
     }
-
-    host.addEventListener('pointermove', handlePointerMove);
-    host.addEventListener('pointerleave', handlePointerLeave);
 
     const resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(host);
 
+    projectMarkers();
     scheduleRender(TILE_WARMUP_MS);
 
     return () => {
       disposed = true;
       resizeObserver.disconnect();
-      host.removeEventListener('pointermove', handlePointerMove);
-      host.removeEventListener('pointerleave', handlePointerLeave);
-      host.style.cursor = 'default';
 
       if (animationFrame) {
         window.cancelAnimationFrame(animationFrame);
@@ -414,6 +357,39 @@ export default function USGlobePanel({
       </div>
 
       <div ref={containerRef} className="absolute inset-0" />
+
+      {points.map((park) => {
+        const marker = projectedMarkers[park.slug];
+        const isMainland = region === 'mainland';
+
+        if (!marker?.visible) {
+          return null;
+        }
+
+        return (
+          <button
+            key={park.slug}
+            type="button"
+            aria-label={`${park.name}, ${park.state}`}
+            title={`${park.name}, ${park.state}`}
+            className={`absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#ffd9a6]/95 bg-[#cf6225]/90 shadow-[0_0_0_3px_rgba(207,98,37,0.28),0_0_18px_rgba(248,149,56,0.48)] transition duration-150 hover:scale-110 hover:shadow-[0_0_0_4px_rgba(207,98,37,0.34),0_0_22px_rgba(248,149,56,0.56)] focus:scale-110 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#ffd9a6]/30 ${
+              isMainland ? 'h-4 w-4' : 'h-5 w-5'
+            }`}
+            style={{ left: marker.x, top: marker.y }}
+            onMouseEnter={() => updateHoveredMarker(park)}
+            onMouseLeave={() => updateHoveredMarker(null)}
+            onFocus={() => updateHoveredMarker(park)}
+            onBlur={() => updateHoveredMarker(null)}
+          >
+            <span
+              aria-hidden="true"
+              className={`absolute rounded-full bg-[#fff6dd] ${
+                isMainland ? 'inset-[3px]' : 'inset-[4px]'
+              }`}
+            />
+          </button>
+        );
+      })}
 
       {hovered ? (
         <div

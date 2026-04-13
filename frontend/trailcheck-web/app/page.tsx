@@ -10,7 +10,6 @@ export default async function Home() {
   const parks = await getParks();
   const heroVisual = await getParkVisual('yosemite', 'Yosemite');
   const parkVisuals = await getParkVisualMap(parks);
-  const trailCount = parks.reduce((count, park) => count + park.trails.length, 0);
 
   return (
     <main className="relative flex min-h-screen w-full flex-col gap-0 overflow-hidden pb-6 sm:pb-8 lg:pb-10">
