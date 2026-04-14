@@ -40,6 +40,23 @@ lerna-debug.log*
 *.db-wal
 *.db-shm
 *.db.*
+*.sqlite
+*.sqlite3
+
+# Secrets, credentials, and local key material
+.envrc
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.pkcs12
+secrets/
+credentials/
 
 # Local training data artifacts
 backend/trailcheck-api/data/
