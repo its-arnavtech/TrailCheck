@@ -245,8 +245,8 @@ export class AiService {
         await this.prisma.parkSnapshot.create({
           data: {
             parkId: park.id,
-            npsRaw: npsPayload.raw ?? Prisma.JsonNull,
-            nwsRaw: weatherPayload.raw ?? Prisma.JsonNull,
+            npsRaw: this.toSnapshotJsonValue(npsPayload.raw),
+            nwsRaw: this.toSnapshotJsonValue(weatherPayload.raw),
           },
         });
       } catch (error) {
@@ -485,6 +485,16 @@ export class AiService {
       0,
       10,
     );
+  }
+
+  private toSnapshotJsonValue(
+    value: unknown,
+  ): Prisma.InputJsonValue | Prisma.JsonNullValueInput {
+    if (value == null) {
+      return Prisma.JsonNull;
+    }
+
+    return value as Prisma.InputJsonValue;
   }
 
   private buildAskPrompt(

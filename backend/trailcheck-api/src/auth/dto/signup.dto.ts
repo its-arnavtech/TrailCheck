@@ -1,16 +1,23 @@
 import { Transform, Type } from 'class-transformer';
 import { IsEnum, IsInt, Max, Min } from 'class-validator';
-import { Gender } from '@prisma/client';
 import { AuthDto } from './auth.dto';
 
+export const SignupGender = {
+  MALE: 'MALE',
+  FEMALE: 'FEMALE',
+  OTHER: 'OTHER',
+} as const;
+
+export type SignupGender = (typeof SignupGender)[keyof typeof SignupGender];
+
 export class SignupDto extends AuthDto {
-  @IsEnum(Gender)
+  @IsEnum(SignupGender)
   @Transform(({ value }) =>
     String(value ?? '')
       .trim()
       .toUpperCase(),
   )
-  gender: Gender;
+  gender: SignupGender;
 
   @Type(() => Number)
   @IsInt()

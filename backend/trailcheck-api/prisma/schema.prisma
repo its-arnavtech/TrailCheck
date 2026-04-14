@@ -13,6 +13,7 @@ model Park {
   state       String
   slug        String               @unique
   createdAt   DateTime             @default(now())
+  snapshots   ParkSnapshot[]
   trails      Trail[]
   preferences UserParkPreference[]
 }

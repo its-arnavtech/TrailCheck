@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma } from '@prisma/client';
 import * as argon2 from 'argon2';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto/auth.dto';
 import { SignupDto } from './dto/signup.dto';
@@ -15,6 +15,18 @@ type AuthUser = {
   id: number;
   email: string;
 };
+
+function isPrismaKnownRequestError(
+  error: unknown,
+): error is Prisma.PrismaClientKnownRequestError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof (error as { code?: unknown }).code === 'string' &&
+    'clientVersion' in error
+  );
+}
 
 @Injectable()
 export class AuthService {
@@ -42,10 +54,7 @@ export class AuthService {
         email: user.email,
       });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
+      if (isPrismaKnownRequestError(error) && error.code === 'P2002') {
         throw new ConflictException(
           'An account with this email already exists.',
         );

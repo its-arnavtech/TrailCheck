@@ -1,6 +1,6 @@
 # TrailCheck
 
-TrailCheck is a full-stack web app for exploring U.S. national park trails, checking current conditions, and reporting on-the-ground hazards. It combines a Next.js frontend, a NestJS API, a Prisma-backed SQLite database, and live park context from the National Park Service, weather data, and Gemini-powered condition summaries.
+TrailCheck is a full-stack web app for exploring U.S. national park trails, checking current conditions, and reporting on-the-ground hazards. It combines a Next.js frontend, a NestJS API, a Prisma-backed database, and live park context from the National Park Service, weather data, and Gemini-powered condition summaries.
 
 ![TrailCheck system design](./sys_design_w_RAG.png)
 
@@ -15,7 +15,7 @@ TrailCheck is a full-stack web app for exploring U.S. national park trails, chec
 
 - Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS 4
 - Backend: NestJS 11, TypeScript
-- Database: Prisma ORM with SQLite
+- Database: Prisma ORM with a local SQLite dev setup and support for a managed production database
 - Auth: JWT + Passport
 - External data: National Park Service alerts, weather forecast data
 - AI: Google Gemini via `@google/genai`
@@ -60,19 +60,22 @@ npm install
 
 ### 2. Configure environment variables
 
-Create a `.env` file in `backend/trailcheck-api`:
+Create a `.env` file in `backend/trailcheck-api` from `.env.example`:
 
 ```env
+NODE_ENV="development"
 DATABASE_URL="file:./dev.db"
 JWT_SECRET="replace-with-a-secure-secret"
 FRONTEND_ORIGIN="http://localhost:3000"
 PORT=3001
+THROTTLE_TTL_SECONDS=60
+THROTTLE_LIMIT=120
 NPS_API_KEY="your-nps-api-key"
 GEMINI_API_KEY="your-gemini-api-key"
 GEMINI_MODEL="gemini-2.5-flash"
 ```
 
-Create a `.env.local` file in `frontend/trailcheck-web`:
+Create a `.env.local` file in `frontend/trailcheck-web` from `.env.example`:
 
 ```env
 NEXT_PUBLIC_API_BASE_URL="http://localhost:3001"
@@ -149,7 +152,23 @@ This supports seeded park and trail data, user-submitted reports, and derived or
 ## Current Notes
 
 - The repo contains starter/template READMEs inside the frontend and backend folders; the top-level `README.md` is the one GitHub displays on the repository main page.
-- The backend database file at `backend/trailcheck-api/prisma/dev.db` is currently tracked and locally modified.
+- The backend local SQLite file is suitable for development only; production startup now rejects local file-based databases.
+
+## Deployment Shape
+
+- Deploy `frontend/trailcheck-web` to Vercel.
+- Deploy `backend/trailcheck-api` as its own always-on service using the included `Dockerfile`.
+- If you use Render, import [`backend/trailcheck-api/render.yaml`](backend/trailcheck-api/render.yaml) for a managed web service config.
+- Set `NEXT_PUBLIC_API_BASE_URL=https://your-api-domain` in the frontend deployment.
+- Set `FRONTEND_ORIGIN=https://your-vercel-domain` in the backend deployment.
+- Set `DATABASE_URL` to a managed production database connection string.
+
+## Production Security Defaults
+
+- The backend validates required env vars on boot and refuses production startup with a weak JWT secret.
+- Production startup also refuses a local SQLite `DATABASE_URL`, which helps prevent an accidentally ephemeral database deployment.
+- CORS is restricted to the configured frontend allowlist, Helmet headers are enabled, and request throttling is turned on globally.
+- `GET /health` is available for platform health checks and uptime probes.
 
 ## Future Improvements
 

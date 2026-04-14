@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: trailcheck-api
+    runtime: docker
+    rootDir: backend/trailcheck-api
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: NPS_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: THROTTLE_TTL_SECONDS
+        value: 60
+      - key: THROTTLE_LIMIT
+        value: 120

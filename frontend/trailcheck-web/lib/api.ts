@@ -154,8 +154,26 @@ export type UpdateParkPreferenceInput = {
   wantsToGo: boolean;
 };
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001';
+function getApiBaseUrl() {
+  const configuredBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(
+    /\/$/,
+    '',
+  );
+
+  if (configuredBaseUrl) {
+    return configuredBaseUrl;
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    return 'http://localhost:3001';
+  }
+
+  throw new Error(
+    'NEXT_PUBLIC_API_BASE_URL is required in production so the frontend can reach the deployed API.',
+  );
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 function getStoredAuthToken() {
   if (typeof window === 'undefined') {
