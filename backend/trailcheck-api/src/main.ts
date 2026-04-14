@@ -8,6 +8,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const nodeEnv = process.env.NODE_ENV ?? 'development';
   const isProduction = nodeEnv === 'production';
+  const port = Number(process.env.PORT) || 3001;
   const frontendOrigins = getAllowedOrigins(
     process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000',
   );
@@ -31,7 +32,7 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(process.env.PORT ?? 3001, '0.0.0.0');
+  await app.listen(port, '0.0.0.0');
 }
 
 bootstrap();
