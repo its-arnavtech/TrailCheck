@@ -284,6 +284,25 @@ Generated files include:
 - `ml/data/outputs/manifest.json`
 - `ml/data/outputs/sample_input.json`
 
+### 7.1 Current local dataset metrics
+
+From the generated local artifacts currently present in `backend/trailcheck-api/ml/data/outputs/`:
+
+- total structured examples: `660`
+- training examples: `560`
+- validation examples: `100`
+- effective validation share: `15.15%`
+- skipped rows during dataset build: `0`
+- date coverage in the generated set: `2024-01-01` through `2024-12-31`
+- park coverage in the generated set: `2` parks
+- examples by park: `big-bend = 366`, `yosemite = 294`
+- risk-level distribution: `MODERATE = 349`, `HIGH = 7`, `EXTREME = 304`
+- average hazards per example: `1.38`
+- average alerts per example: `2.55`
+- alert-context mode distribution: `park_current_fallback = 660`
+
+These numbers come from the local generated dataset files and manifest, not from committed model checkpoints.
+
 ## 8. Exact training configuration
 
 The current YAML config specifies the following settings.
