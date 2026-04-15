@@ -73,7 +73,7 @@ export default async function Home() {
           <p className="text-sm text-[var(--foreground)]/60">
             {hasParks
               ? 'Choose a park to browse its trails.'
-              : 'Park data will appear here once the API is reachable again.'}
+              : 'Will be available soon'}
           </p>
         </div>
 
@@ -91,7 +91,7 @@ export default async function Home() {
             </p>
           </div>
           <p className="text-sm text-white/72">
-            We&apos;ll add full contact details here next.
+            its.arnavk.here@gmail.com
           </p>
         </div>
       </footer>

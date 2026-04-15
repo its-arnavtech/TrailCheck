@@ -37,6 +37,8 @@ export class AuthService {
   ) {}
 
   async signup(dto: SignupDto) {
+    this.prisma.requireConnection();
+
     const hash = await argon2.hash(dto.password);
 
     try {
@@ -65,6 +67,8 @@ export class AuthService {
   }
 
   async signin(dto: AuthDto) {
+    this.prisma.requireConnection();
+
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });

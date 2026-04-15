@@ -8,6 +8,8 @@ export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateReportDto, user: JwtUser) {
+    this.prisma.requireConnection();
+
     return this.prisma.trailReport.create({
       data: {
         ...dto,

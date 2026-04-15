@@ -15,6 +15,7 @@ import { WeatherModule } from './weather/weather.module';
 import { AuthModule } from './auth/auth.module';
 import { AiModule } from './ai/ai.module';
 import { validateEnvironment } from './config/environment';
+import { PrismaModule } from './prisma/primsa.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { validateEnvironment } from './config/environment';
     WeatherModule,
     AuthModule,
     AiModule,
+    PrismaModule,
   ],
   controllers: [AppController],
   providers: [

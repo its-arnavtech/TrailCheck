@@ -1,12 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateParkPreferenceDto } from './dto/update-park-preference.dto';
+import { getStaticParkBySlug, getStaticParks } from '../catalog/static-park-data';
 
 @Injectable()
 export class ParksService {
   constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
+    if (!this.prisma.isAvailable()) {
+      return getStaticParks();
+    }
+
     return this.prisma.park.findMany({
       orderBy: { name: 'asc' },
       include: {
@@ -21,6 +29,8 @@ export class ParksService {
   }
 
   async getUserPreferences(userId: number) {
+    this.prisma.requireConnection();
+
     const preferences = await this.prisma.userParkPreference.findMany({
       where: {
         userId,
@@ -47,11 +57,17 @@ export class ParksService {
   }
 
   async getUserPreferenceForPark(slug: string, userId: number) {
+    this.prisma.requireConnection();
+
     const park = await this.prisma.park.findUnique({
       where: { slug },
     });
 
     if (!park) {
+      const staticPark = getStaticParkBySlug(slug);
+      if (!staticPark) {
+        throw new NotFoundException(`Park "${slug}" not found`);
+      }
       throw new NotFoundException(`Park "${slug}" not found`);
     }
 
@@ -79,6 +95,8 @@ export class ParksService {
     userId: number,
     dto: UpdateParkPreferenceDto,
   ) {
+    this.prisma.requireConnection();
+
     const park = await this.prisma.park.findUnique({
       where: { slug },
     });

@@ -20,6 +20,7 @@ import type {
   LocalModelResult,
   LocalStructuredOutput,
 } from './local-model.types';
+import { getStaticParkBySlug } from '../catalog/static-park-data';
 
 export interface RagDocument {
   id: string;
@@ -231,20 +232,22 @@ export class AiService {
     hazards: DerivedHazard[];
     context: RagDocument[];
   }> {
-    const [park, npsPayload, weatherPayload] = await Promise.all([
-      this.prisma.park.findUnique({
-        where: { slug: parkSlug },
-        select: { id: true, name: true },
-      }),
+    const [parkRecord, npsPayload, weatherPayload] = await Promise.all([
+      this.prisma.isAvailable()
+        ? this.prisma.park.findUnique({
+            where: { slug: parkSlug },
+            select: { id: true, name: true },
+          })
+        : Promise.resolve(null),
       this.npsService.getAlertsPayloadForPark(parkSlug),
       this.weatherService.getWeatherPayloadForPark(parkSlug),
     ]);
 
-    if (park) {
+    if (parkRecord && this.prisma.isAvailable()) {
       try {
         await this.prisma.parkSnapshot.create({
           data: {
-            parkId: park.id,
+            parkId: parkRecord.id,
             npsRaw: this.toSnapshotJsonValue(npsPayload.raw),
             nwsRaw: this.toSnapshotJsonValue(weatherPayload.raw),
           },
@@ -277,7 +280,10 @@ export class AiService {
       hazardAssessment,
       hazards,
     });
-    const parkName = park?.name ?? this.humanizeParkSlug(parkSlug);
+    const parkName =
+      parkRecord?.name ??
+      getStaticParkBySlug(parkSlug)?.name ??
+      this.humanizeParkSlug(parkSlug);
 
     return { parkName, alerts, weather, hazardAssessment, hazards, context };
   }

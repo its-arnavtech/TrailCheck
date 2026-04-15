@@ -40,12 +40,12 @@ export default function ParksExplorer({ parks, visuals }: ParksExplorerProps) {
         <p>
           {parks.length > 0
             ? 'Search for a park or scroll the full list.'
-            : 'The park list will appear here as soon as the API responds again.'}
+            : 'Will be available soon'}
         </p>
         <p>
           {parks.length > 0
             ? `Showing ${filteredParks.length} of ${parks.length} parks`
-            : 'Waiting for live park data'}
+            : 'Will be available soon'}
         </p>
       </div>
 
