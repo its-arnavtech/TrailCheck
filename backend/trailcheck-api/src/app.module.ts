@@ -16,6 +16,7 @@ import { AuthModule } from './auth/auth.module';
 import { AiModule } from './ai/ai.module';
 import { validateEnvironment } from './config/environment';
 import { PrismaModule } from './prisma/primsa.module';
+import { CatalogSyncService } from './catalog/catalog-sync.service';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { PrismaModule } from './prisma/primsa.module';
   controllers: [AppController],
   providers: [
     AppService,
+    CatalogSyncService,
     NpsService,
     WeatherService,
     {
