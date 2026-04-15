@@ -15,7 +15,7 @@ TrailCheck is a full-stack web app for exploring U.S. national park trails, chec
 
 - Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS 4
 - Backend: NestJS 11, TypeScript
-- Database: Prisma ORM with a local SQLite dev setup and support for a managed production database
+- Database: Prisma ORM with PostgreSQL for local and production environments
 - Auth: JWT + Passport
 - External data: National Park Service alerts, weather forecast data
 - AI: Google Gemini via `@google/genai`
@@ -64,7 +64,7 @@ Create a `.env` file in `backend/trailcheck-api` from `.env.example`:
 
 ```env
 NODE_ENV="development"
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/trailcheck?schema=public"
 JWT_SECRET="replace-with-a-secure-secret"
 FRONTEND_ORIGIN="http://localhost:3000"
 PORT=3001
@@ -91,7 +91,7 @@ Notes:
 
 ```bash
 cd backend/trailcheck-api
-npx prisma migrate dev
+npx prisma migrate deploy
 npx prisma db seed
 ```
 
@@ -152,7 +152,7 @@ This supports seeded park and trail data, user-submitted reports, and derived or
 ## Current Notes
 
 - The repo contains starter/template READMEs inside the frontend and backend folders; the top-level `README.md` is the one GitHub displays on the repository main page.
-- The backend local SQLite file is suitable for development only; production startup now rejects local file-based databases.
+- The backend now targets PostgreSQL consistently, including local development and Render production deployments.
 
 ## Deployment Shape
 
@@ -166,7 +166,7 @@ This supports seeded park and trail data, user-submitted reports, and derived or
 ## Production Security Defaults
 
 - The backend validates required env vars on boot and refuses production startup with a weak JWT secret.
-- Production startup also refuses a local SQLite `DATABASE_URL`, which helps prevent an accidentally ephemeral database deployment.
+- Production startup refuses non-PostgreSQL `DATABASE_URL` values, which helps prevent mismatched or ephemeral database deployments.
 - CORS is restricted to the configured frontend allowlist, Helmet headers are enabled, and request throttling is turned on globally.
 - `GET /health` is available for platform health checks and uptime probes.
 

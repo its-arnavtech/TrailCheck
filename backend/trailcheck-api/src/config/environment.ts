@@ -1,4 +1,5 @@
 const DEFAULT_DEV_FRONTEND_ORIGIN = 'http://localhost:3000';
+const POSTGRES_PROTOCOLS = ['postgres://', 'postgresql://'];
 
 function parseAllowedOrigins(value?: string) {
   return (value ?? '')
@@ -51,6 +52,17 @@ export function validateEnvironment(config: Record<string, unknown>) {
   if (isProduction && String(config.DATABASE_URL).startsWith('file:')) {
     throw new Error(
       'Production deployments should use a managed database instead of a local SQLite file.',
+    );
+  }
+
+  if (
+    isProduction &&
+    !POSTGRES_PROTOCOLS.some((protocol) =>
+      String(config.DATABASE_URL).startsWith(protocol),
+    )
+  ) {
+    throw new Error(
+      'Production deployments must use a PostgreSQL DATABASE_URL.',
     );
   }
 
