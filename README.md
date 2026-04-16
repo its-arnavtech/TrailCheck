@@ -91,6 +91,33 @@ Notes:
 
 ```bash
 cd backend/trailcheck-api
+npm run db:start
+npx prisma migrate deploy
+npx prisma db seed
+```
+
+If Docker Desktop is not already running, start it first so the local PostgreSQL container can bind to `localhost:5432`.
+
+For the backend package scripts, the equivalent commands are:
+
+```bash
+cd backend/trailcheck-api
+npm run db:start
+npm run db:setup
+```
+
+You can inspect or stop the local database with:
+
+```bash
+cd backend/trailcheck-api
+npm run db:logs
+npm run db:stop
+```
+
+If you prefer the raw Prisma commands, they still work:
+
+```bash
+cd backend/trailcheck-api
 npx prisma migrate deploy
 npx prisma db seed
 ```

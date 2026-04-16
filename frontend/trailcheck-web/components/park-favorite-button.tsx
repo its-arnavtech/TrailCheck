@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { getParkPreference, updateParkPreference } from '@/lib/api';
+import { updateParkPreference } from '@/lib/api';
 import {
   AUTH_STATE_CHANGED_EVENT,
   PARK_PREFERENCES_CHANGED_EVENT,
   getStoredAuthToken,
   notifyParkPreferencesChanged,
 } from '@/lib/auth';
+import { getCachedParkPreferences } from '@/lib/park-preferences-store';
 
 type ParkFavoriteButtonProps = {
   parkSlug: string;
@@ -52,9 +53,12 @@ export default function ParkFavoriteButton({
       setIsLoading(true);
 
       try {
-        const preference = await getParkPreference(parkSlug);
-        setIsFavorite(preference.isFavorite);
-        setWantsToGo(preference.wantsToGo);
+        const preferences = await getCachedParkPreferences();
+        const preference = preferences.find(
+          (entry) => entry.parkSlug === parkSlug,
+        );
+        setIsFavorite(preference?.isFavorite ?? false);
+        setWantsToGo(preference?.wantsToGo ?? false);
       } catch {
         setIsFavorite(false);
         setWantsToGo(false);

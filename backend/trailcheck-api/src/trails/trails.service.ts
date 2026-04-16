@@ -21,7 +21,10 @@ export class TrailsService {
     }
 
     return this.prisma.trail.findMany({
-      include: {
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
         park: true,
       },
     });
@@ -31,14 +34,43 @@ export class TrailsService {
     const trail = this.prisma.isAvailable()
       ? await this.prisma.trail.findUnique({
           where: { id },
-          include: {
-            park: true,
-            hazards: true,
+          select: {
+            id: true,
+            name: true,
+            difficulty: true,
+            status: true,
+            lengthMiles: true,
+            description: true,
+            park: {
+              select: {
+                slug: true,
+                name: true,
+              },
+            },
+            hazards: {
+              select: {
+                id: true,
+                type: true,
+                severity: true,
+                title: true,
+                description: true,
+                isActive: true,
+                reportedAt: true,
+              },
+            },
             reports: {
               orderBy: {
                 createdAt: 'desc',
               },
               take: 5,
+              select: {
+                id: true,
+                note: true,
+                surfaceCondition: true,
+                conditionRating: true,
+                reporterName: true,
+                createdAt: true,
+              },
             },
           },
         })

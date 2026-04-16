@@ -1,13 +1,15 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
-import AuthPanel from '@/components/auth-panel';
-import FavoritesPanel from '@/components/favorites-panel';
 import {
   AUTH_STATE_CHANGED_EVENT,
   getStoredAuthToken,
   getStoredAuthUser,
 } from '@/lib/auth';
+
+const AuthPanel = dynamic(() => import('@/components/auth-panel'));
+const FavoritesPanel = dynamic(() => import('@/components/favorites-panel'));
 
 export default function HomeHeader() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);

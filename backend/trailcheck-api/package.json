@@ -7,6 +7,13 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "db:start": "docker compose -f ../../compose.yaml up -d postgres",
+    "db:stop": "docker compose -f ../../compose.yaml stop postgres",
+    "db:down": "docker compose -f ../../compose.yaml down",
+    "db:logs": "docker compose -f ../../compose.yaml logs -f postgres",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:setup": "npm run db:migrate && npm run db:seed",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",

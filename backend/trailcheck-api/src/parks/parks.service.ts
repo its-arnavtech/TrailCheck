@@ -17,11 +17,37 @@ export class ParksService {
 
     return this.prisma.park.findMany({
       orderBy: { name: 'asc' },
-      include: {
+      select: {
+        name: true,
+        state: true,
+        slug: true,
         trails: {
           orderBy: { name: 'asc' },
-          include: {
-            park: true,
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  async findBySlug(slug: string) {
+    if (!this.prisma.isAvailable()) {
+      return getStaticParkBySlug(slug) ?? null;
+    }
+
+    return this.prisma.park.findUnique({
+      where: { slug },
+      select: {
+        name: true,
+        state: true,
+        slug: true,
+        trails: {
+          orderBy: { name: 'asc' },
+          select: {
+            id: true,
+            name: true,
           },
         },
       },

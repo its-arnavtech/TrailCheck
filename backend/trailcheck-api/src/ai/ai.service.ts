@@ -62,7 +62,13 @@ export interface ParkDigestResult {
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
+  private readonly digestCacheTtlMs = 1000 * 60 * 5;
   private aiClient: GoogleGenAI | null = null;
+  private readonly digestCache = new Map<
+    string,
+    { expiresAt: number; value: ParkDigestResult }
+  >();
+  private readonly inFlightDigests = new Map<string, Promise<ParkDigestResult>>();
 
   constructor(
     private readonly configService: ConfigService,
@@ -185,39 +191,31 @@ export class AiService {
   }
 
   async generateParkDigest(parkSlug: string): Promise<ParkDigestResult> {
-    const askResponse = await this.ask({
-      parkSlug,
-      question:
-        'What important conditions and hazards should visitors know right now?',
-    });
+    const cached = this.digestCache.get(parkSlug);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.value;
+    }
 
-    const shortSummary = askResponse.structuredOutput
-      ? this.buildDigestSummaryFromStructuredOutput(
-          askResponse.structuredOutput,
-        )
-      : this.buildDigestSummary(
-          askResponse.notice,
-          askResponse.hazards,
-          askResponse.alerts,
-          askResponse.weather,
-        );
-    const notification = askResponse.structuredOutput
-      ? this.truncateForPrompt(askResponse.structuredOutput.notification, 160)
-      : this.truncateForPrompt(askResponse.notice, 160);
+    const existingRequest = this.inFlightDigests.get(parkSlug);
+    if (existingRequest) {
+      return existingRequest;
+    }
 
-    return {
-      parkSlug,
-      shortSummary,
-      notification,
-      generationSource: askResponse.generationSource,
-      generationError: askResponse.generationError,
-      structuredOutput: askResponse.structuredOutput,
-      retrievedContext: askResponse.context,
-      hazards: askResponse.hazards,
-      hazardAssessment: askResponse.hazardAssessment,
-      alerts: askResponse.alerts,
-      weather: askResponse.weather,
-    };
+    const request = this.buildParkDigest(parkSlug)
+      .then((value) => {
+        this.digestCache.set(parkSlug, {
+          value,
+          expiresAt: Date.now() + this.digestCacheTtlMs,
+        });
+        return value;
+      })
+      .finally(() => {
+        this.inFlightDigests.delete(parkSlug);
+      });
+
+    this.inFlightDigests.set(parkSlug, request);
+
+    return request;
   }
 
   isGeminiConfigured(): boolean {
@@ -244,21 +242,21 @@ export class AiService {
     ]);
 
     if (parkRecord && this.prisma.isAvailable()) {
-      try {
-        await this.prisma.parkSnapshot.create({
+      void this.prisma.parkSnapshot
+        .create({
           data: {
             parkId: parkRecord.id,
             npsRaw: this.toSnapshotJsonValue(npsPayload.raw),
             nwsRaw: this.toSnapshotJsonValue(weatherPayload.raw),
           },
+        })
+        .catch((error) => {
+          this.logger.warn(
+            `Skipping park snapshot persistence for "${parkSlug}": ${
+              error instanceof Error ? error.message : 'Unknown snapshot error'
+            }`,
+          );
         });
-      } catch (error) {
-        this.logger.warn(
-          `Skipping park snapshot persistence for "${parkSlug}": ${
-            error instanceof Error ? error.message : 'Unknown snapshot error'
-          }`,
-        );
-      }
     } else {
       this.logger.warn(
         `Skipping snapshot storage because park "${parkSlug}" was not found.`,
@@ -493,6 +491,122 @@ export class AiService {
     );
   }
 
+  private async buildParkDigest(parkSlug: string): Promise<ParkDigestResult> {
+    const { parkName, alerts, weather, hazardAssessment, hazards, context } =
+      await this.collectParkContext(parkSlug);
+    const fallbackNotice = this.hazardsService.buildNotice(
+      hazardAssessment,
+      weather,
+    );
+
+    const localResult = await this.withTimeout(
+      this.tryLocalStructuredOutput({
+        parkSlug,
+        parkName,
+        alerts,
+        weather,
+        hazardAssessment,
+        hazards,
+      }),
+      this.getDigestGenerationTimeoutMs(),
+    ).catch(() => null);
+
+    const structuredOutput =
+      localResult?.ok && localResult.output ? localResult.output : null;
+    const localFailureMessage = this.describeLocalFailure(localResult);
+
+    if (structuredOutput) {
+      return {
+        parkSlug,
+        shortSummary: this.buildDigestSummaryFromStructuredOutput(
+          structuredOutput,
+        ),
+        notification: this.truncateForPrompt(
+          structuredOutput.notification,
+          160,
+        ),
+        generationSource: 'local',
+        generationError: null,
+        structuredOutput,
+        retrievedContext: context,
+        hazards,
+        hazardAssessment,
+        alerts,
+        weather,
+      };
+    }
+
+    if (this.isGeminiConfigured()) {
+      try {
+        const answer = await this.withTimeout(
+          this.generateAskAnswer(
+            {
+              parkSlug,
+              question:
+                'What important conditions and hazards should visitors know right now?',
+            },
+            context,
+            fallbackNotice,
+          ),
+          this.getDigestGenerationTimeoutMs(),
+        );
+
+        return {
+          parkSlug,
+          shortSummary: this.buildDigestSummaryFromAnswer(answer),
+          notification: this.truncateForPrompt(fallbackNotice, 160),
+          generationSource: 'gemini',
+          generationError: localFailureMessage,
+          structuredOutput: null,
+          retrievedContext: context,
+          hazards,
+          hazardAssessment,
+          alerts,
+          weather,
+        };
+      } catch (error) {
+        return {
+          parkSlug,
+          shortSummary: this.buildDigestSummary(
+            fallbackNotice,
+            hazards,
+            alerts,
+            weather,
+          ),
+          notification: this.truncateForPrompt(fallbackNotice, 160),
+          generationSource: 'fallback',
+          generationError: this.combineGenerationErrors(
+            localFailureMessage,
+            error instanceof Error ? error.message : 'Unknown Gemini error',
+          ),
+          structuredOutput: null,
+          retrievedContext: context,
+          hazards,
+          hazardAssessment,
+          alerts,
+          weather,
+        };
+      }
+    }
+
+    return {
+      parkSlug,
+      shortSummary: this.buildDigestSummary(fallbackNotice, hazards, alerts, weather),
+      notification: this.truncateForPrompt(fallbackNotice, 160),
+      generationSource: 'fallback',
+      generationError: this.combineGenerationErrors(
+        localFailureMessage,
+        'GEMINI_API_KEY is missing',
+      ),
+      structuredOutput: null,
+      retrievedContext: context,
+      hazards,
+      hazardAssessment,
+      alerts,
+      weather,
+    };
+  }
+
   private toSnapshotJsonValue(
     value: unknown,
   ): Prisma.InputJsonValue | Prisma.JsonNullValueInput {
@@ -589,6 +703,10 @@ export class AiService {
     );
   }
 
+  private buildDigestSummaryFromAnswer(answer: string): string {
+    return this.truncateForPrompt(answer.replace(/\s+/g, ' ').trim(), 220);
+  }
+
   private buildDigestSummaryFromStructuredOutput(
     structuredOutput: LocalStructuredOutput,
   ): string {
@@ -680,6 +798,32 @@ export class AiService {
 
   private getModelName(): string {
     return this.configService.get<string>('GEMINI_MODEL') ?? 'gemini-2.5-flash';
+  }
+
+  private getDigestGenerationTimeoutMs(): number {
+    const configured = Number(
+      this.configService.get<string>('DIGEST_GENERATION_TIMEOUT_MS') ?? 2500,
+    );
+    return Number.isFinite(configured) && configured > 0 ? configured : 2500;
+  }
+
+  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error(`Timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+
+      promise.then(
+        (value) => {
+          clearTimeout(timeout);
+          resolve(value);
+        },
+        (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        },
+      );
+    });
   }
 
   private truncateForPrompt(value: string, maxLength: number): string {
