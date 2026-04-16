@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TrailsModule } from './trails/trails.module';
@@ -17,6 +17,7 @@ import { AiModule } from './ai/ai.module';
 import { validateEnvironment } from './config/environment';
 import { PrismaModule } from './prisma/primsa.module';
 import { CatalogSyncService } from './catalog/catalog-sync.service';
+import { RouteTimingInterceptor } from './common/interceptors/route-timing.interceptor';
 
 @Module({
   imports: [
@@ -51,6 +52,10 @@ import { CatalogSyncService } from './catalog/catalog-sync.service';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RouteTimingInterceptor,
     },
   ],
 })

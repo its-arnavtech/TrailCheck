@@ -1,5 +1,10 @@
 import { clearStoredSession } from './auth';
 
+const PARKS_REVALIDATE_SECONDS = 60 * 10;
+const PARK_DETAIL_REVALIDATE_SECONDS = 60 * 10;
+const TRAIL_DETAIL_REVALIDATE_SECONDS = 60 * 2;
+const PARK_DIGEST_REVALIDATE_SECONDS = 60 * 5;
+
 export type TrailSummary = {
   id: number;
   name: string;
@@ -222,7 +227,9 @@ async function parseError(response: Response, fallbackMessage: string) {
 
 export async function getTrails(): Promise<TrailSummary[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/trails`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE_URL}/trails`, {
+      next: { revalidate: PARKS_REVALIDATE_SECONDS },
+    });
     if (!res.ok) throw new Error('Failed to load trails');
     return res.json();
   } catch (error) {
@@ -233,7 +240,9 @@ export async function getTrails(): Promise<TrailSummary[]> {
 
 export async function getParks(): Promise<ParkSummary[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/parks`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE_URL}/parks`, {
+      next: { revalidate: PARKS_REVALIDATE_SECONDS },
+    });
     if (!res.ok) throw new Error('Failed to load parks');
     return res.json();
   } catch (error) {
@@ -243,13 +252,24 @@ export async function getParks(): Promise<ParkSummary[]> {
 }
 
 export async function getPark(slug: string): Promise<ParkSummary | null> {
-  const parks = await getParks();
-  return parks.find((park) => park.slug === slug) ?? null;
+  const response = await fetch(`${API_BASE_URL}/parks/${slug}`, {
+    next: { revalidate: PARK_DETAIL_REVALIDATE_SECONDS },
+  });
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Failed to load park ${slug}`);
+  }
+
+  return response.json();
 }
 
 export async function getParkDigest(slug: string): Promise<ParkDigest> {
   const response = await fetch(`${API_BASE_URL}/ai/parks/${slug}/digest`, {
-    cache: 'no-store',
+    next: { revalidate: PARK_DIGEST_REVALIDATE_SECONDS },
   });
 
   if (!response.ok) {
@@ -261,7 +281,7 @@ export async function getParkDigest(slug: string): Promise<ParkDigest> {
 
 export async function getTrail(id: string): Promise<TrailDetail | null> {
   const response = await fetch(`${API_BASE_URL}/trails/${id}`, {
-    cache: 'no-store',
+    next: { revalidate: TRAIL_DETAIL_REVALIDATE_SECONDS },
   });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Failed to load trail ${id}`);

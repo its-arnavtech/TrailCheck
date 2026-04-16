@@ -1,12 +1,4 @@
-import type { ParkMapRegion } from '@/lib/park-map-data';
 import USGlobePanel from './USGlobePanel';
-
-const INSET_SCENES: Array<{ key: ParkMapRegion; label: string }> = [
-  { key: 'alaska', label: 'Alaska' },
-  { key: 'hawaii', label: 'Hawaii' },
-  { key: 'pacific', label: 'American Samoa' },
-  { key: 'caribbean', label: 'Virgin Islands' },
-];
 
 export default function USMap3D() {
   return (
@@ -17,32 +9,19 @@ export default function USMap3D() {
             U.S. Globe Scene
           </p>
           <h2 className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">
-            Globe-rendered U.S. park view with all 63 locations
+            Explore the park map
           </h2>
         </div>
         <p className="max-w-xs text-right text-xs leading-5 text-white/58 sm:text-sm">
-          Hover a point to reveal its park name while the globe stays framed tightly around the U.S. and each outlying area.
+          Hover a marker to preview a park, then click it to open that park&apos;s page.
         </p>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,2.15fr)_minmax(16rem,0.95fr)]">
-        <USGlobePanel
-          label="Contiguous U.S."
-          region="mainland"
-          className="min-h-[22rem] sm:min-h-[28rem] lg:min-h-[34rem]"
-        />
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-          {INSET_SCENES.map((scene) => (
-            <USGlobePanel
-              key={scene.key}
-              label={scene.label}
-              region={scene.key}
-              className="min-h-[11rem] sm:min-h-[12rem] lg:min-h-[8rem]"
-            />
-          ))}
-        </div>
-      </div>
+      <USGlobePanel
+        label="Contiguous U.S."
+        region="mainland"
+        className="min-h-[22rem] sm:min-h-[28rem] lg:min-h-[34rem]"
+      />
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { parkTrails } from '../../prisma/data/park-trails';
 import { parks } from '../../prisma/data/parks';
@@ -17,7 +18,25 @@ export class CatalogSyncService implements OnApplicationBootstrap {
       return;
     }
 
-    await this.syncCatalog();
+    try {
+      await this.syncCatalog();
+    } catch (error) {
+      if (this.isMissingTableError(error)) {
+        this.logger.warn(
+          'Skipping park/trail catalog sync because the database schema has not been migrated yet. Run Prisma migrations and restart the API.',
+        );
+        return;
+      }
+
+      throw error;
+    }
+  }
+
+  private isMissingTableError(error: unknown) {
+    return (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2021'
+    );
   }
 
   private async syncCatalog() {

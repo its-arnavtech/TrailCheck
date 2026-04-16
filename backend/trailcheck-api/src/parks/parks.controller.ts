@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  NotFoundException,
   Param,
   Put,
   Req,
@@ -45,5 +46,16 @@ export class ParksController {
     @Req() req: Request & { user: JwtUser },
   ) {
     return this.parksService.updateUserPreference(slug, req.user.id, dto);
+  }
+
+  @Get(':slug')
+  async findBySlug(@Param('slug') slug: string) {
+    const park = await this.parksService.findBySlug(slug);
+
+    if (!park) {
+      throw new NotFoundException(`Park "${slug}" not found`);
+    }
+
+    return park;
   }
 }

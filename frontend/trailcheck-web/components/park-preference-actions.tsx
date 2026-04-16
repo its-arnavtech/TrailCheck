@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
-  getParkPreference,
   type ParkPreference,
   updateParkPreference,
 } from '@/lib/api';
@@ -14,6 +13,7 @@ import {
   notifyParkPreferencesChanged,
 } from '@/lib/auth';
 import ParkFavoriteButton from '@/components/park-favorite-button';
+import { getCachedParkPreferences } from '@/lib/park-preferences-store';
 
 type ParkPreferenceActionsProps = {
   parkSlug: string;
@@ -54,8 +54,15 @@ export default function ParkPreferenceActions({
       setIsLoading(true);
 
       try {
-        const nextPreference = await getParkPreference(parkSlug);
-        setPreference(nextPreference);
+        const preferences = await getCachedParkPreferences();
+        const nextPreference =
+          preferences.find((entry) => entry.parkSlug === parkSlug) ??
+          emptyPreference;
+        setPreference({
+          ...nextPreference,
+          parkSlug,
+          parkName: nextPreference.parkName || parkName,
+        });
       } catch {
         setPreference(emptyPreference);
       } finally {
@@ -71,7 +78,7 @@ export default function ParkPreferenceActions({
       window.removeEventListener(AUTH_STATE_CHANGED_EVENT, syncPreference);
       window.removeEventListener(PARK_PREFERENCES_CHANGED_EVENT, syncPreference);
     };
-  }, [parkSlug]);
+  }, [parkName, parkSlug]);
 
   async function savePreference(nextPreference: ParkPreference) {
     if (!isSignedIn) {

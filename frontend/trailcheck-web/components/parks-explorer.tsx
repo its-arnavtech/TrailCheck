@@ -64,6 +64,8 @@ export default function ParksExplorer({ parks, visuals }: ParksExplorerProps) {
                     <img
                       src={visual.imageUrl}
                       alt={visual.imageAlt}
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/78 via-slate-900/18 to-transparent" />

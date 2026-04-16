@@ -1,19 +1,56 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { getParkMetadata } from '../parks/park-registry';
 
+type WeatherPayload = {
+  raw: unknown;
+  weather: ParkWeather | null;
+};
+
 @Injectable()
 export class WeatherService {
   private readonly logger = new Logger(WeatherService.name);
+  private readonly cacheTtlMs = 1000 * 60 * 10;
+  private readonly requestTimeoutMs = 3500;
+  private readonly payloadCache = new Map<
+    string,
+    { expiresAt: number; value: WeatherPayload }
+  >();
+  private readonly inFlightPayloads = new Map<string, Promise<WeatherPayload>>();
 
   async getWeatherForPark(parkSlug: string): Promise<ParkWeather | null> {
     const payload = await this.getWeatherPayloadForPark(parkSlug);
     return payload.weather;
   }
 
-  async getWeatherPayloadForPark(parkSlug: string): Promise<{
-    raw: unknown;
-    weather: ParkWeather | null;
-  }> {
+  async getWeatherPayloadForPark(parkSlug: string): Promise<WeatherPayload> {
+    const cached = this.payloadCache.get(parkSlug);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.value;
+    }
+
+    const existingRequest = this.inFlightPayloads.get(parkSlug);
+    if (existingRequest) {
+      return existingRequest;
+    }
+
+    const request = this.fetchWeatherPayload(parkSlug)
+      .then((value) => {
+        this.payloadCache.set(parkSlug, {
+          value,
+          expiresAt: Date.now() + this.cacheTtlMs,
+        });
+        return value;
+      })
+      .finally(() => {
+        this.inFlightPayloads.delete(parkSlug);
+      });
+
+    this.inFlightPayloads.set(parkSlug, request);
+
+    return request;
+  }
+
+  private async fetchWeatherPayload(parkSlug: string): Promise<WeatherPayload> {
     const park = getParkMetadata(parkSlug);
 
     if (!park) {
@@ -26,6 +63,7 @@ export class WeatherService {
         `https://api.weather.gov/points/${park.lat},${park.lng}`,
         {
           headers: { 'User-Agent': 'TrailCheck/1.0 (contact@trailcheck.dev)' },
+          signal: AbortSignal.timeout(this.requestTimeoutMs),
         },
       );
 
@@ -46,6 +84,7 @@ export class WeatherService {
 
       const forecastRes = await fetch(forecastUrl, {
         headers: { 'User-Agent': 'TrailCheck/1.0 (contact@trailcheck.dev)' },
+        signal: AbortSignal.timeout(this.requestTimeoutMs),
       });
 
       if (!forecastRes.ok) {

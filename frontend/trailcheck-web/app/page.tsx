@@ -6,7 +6,7 @@ import { getParks } from '../lib/api';
 import { getParkVisual, getParkVisualMap } from '../lib/park-content';
 import trailcheckLogo from './trailcheck_logo-removebg-preview.png';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 600;
 
 export default async function Home() {
   const parks = await getParks();
@@ -19,6 +19,7 @@ export default async function Home() {
       <img
         src={heroVisual.imageUrl}
         alt={heroVisual.imageAlt}
+        fetchPriority="high"
         className="absolute inset-0 h-full w-full object-cover"
       />
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(18,26,34,0.52)_0%,rgba(18,26,34,0.44)_28%,rgba(18,26,34,0.34)_56%,rgba(219,224,230,0.78)_100%)]" />

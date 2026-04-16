@@ -1,13 +1,17 @@
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import AuthPanel from '@/components/auth-panel';
-import ReportForm from '@/components/reportform';
 import { getTrail } from '@/lib/api';
 import type { Hazard, NpsAlert, TrailReport, WeatherPeriod } from '@/lib/api';
+
+const AuthPanel = dynamic(() => import('@/components/auth-panel'));
+const ReportForm = dynamic(() => import('@/components/reportform'));
 
 type TrailPageProps = {
   params: Promise<{ id: string }>;
 };
+
+export const revalidate = 120;
 
 const severityColor: Record<string, string> = {
   LOW: 'bg-yellow-100 text-yellow-800',

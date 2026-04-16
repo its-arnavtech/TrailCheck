@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getMyParkPreferences, type ParkPreference } from '@/lib/api';
+import type { ParkPreference } from '@/lib/api';
 import {
   AUTH_STATE_CHANGED_EVENT,
   PARK_PREFERENCES_CHANGED_EVENT,
   getStoredAuthToken,
 } from '@/lib/auth';
+import { getCachedParkPreferences } from '@/lib/park-preferences-store';
 
 export default function FavoritesPanel() {
   const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +27,7 @@ export default function FavoritesPanel() {
       setIsLoading(true);
 
       try {
-        const preferences = await getMyParkPreferences();
+        const preferences = await getCachedParkPreferences();
         setFavorites(preferences.filter((preference) => preference.isFavorite));
         setErrorMessage(null);
       } catch (error) {

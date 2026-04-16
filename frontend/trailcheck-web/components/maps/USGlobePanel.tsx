@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import * as THREE from 'three';
 import SlippyMapGlobe from 'three-slippy-map-globe';
 import type { Feature, MultiPolygon, Polygon } from 'geojson';
@@ -125,6 +126,7 @@ export default function USGlobePanel({
   region: ParkMapRegion;
   className?: string;
 }) {
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const activeHoverSlugRef = useRef<string | null>(null);
   const projectedMarkersRef = useRef<Record<string, ProjectedMarker>>({});
@@ -380,6 +382,7 @@ export default function USGlobePanel({
             onMouseLeave={() => updateHoveredMarker(null)}
             onFocus={() => updateHoveredMarker(park)}
             onBlur={() => updateHoveredMarker(null)}
+            onClick={() => router.push(`/parks/${park.slug}`)}
           >
             <span
               aria-hidden="true"

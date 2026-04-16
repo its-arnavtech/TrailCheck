@@ -164,7 +164,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
 
   if (isLoadingUser) {
     return (
-      <div className="rounded-[1.75rem] border border-white/35 bg-white/20 p-5 text-sm text-white/88 backdrop-blur-xl">
+      <div className={`${compact ? 'py-1 text-[var(--foreground)]/72' : 'rounded-[1.75rem] border border-white/35 bg-white/20 p-5 text-sm text-white/88 backdrop-blur-xl'}`}>
         Checking sign-in status...
       </div>
     );
@@ -173,9 +173,11 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
   if (user) {
     return (
       <div
-        className={`rounded-[1.75rem] border ${
-          compact ? 'border-[var(--border)] bg-transparent text-[var(--foreground)]' : 'border-white/35 bg-transparent text-white'
-        } p-5 shadow-[var(--shadow-soft)] backdrop-blur-xl`}
+        className={`${
+          compact
+            ? 'text-[var(--foreground)]'
+            : 'rounded-[1.75rem] border border-white/35 bg-transparent p-5 text-white shadow-[var(--shadow-soft)] backdrop-blur-xl'
+        } ${compact ? 'py-1' : ''}`}
       >
         <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-70">
           Signed In
@@ -204,9 +206,11 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
 
   return (
     <div
-      className={`rounded-[1.75rem] border ${
-        compact ? 'border-[var(--border)] bg-transparent text-[var(--foreground)]' : 'border-white/35 bg-transparent text-white'
-      } p-5 shadow-[var(--shadow-soft)] backdrop-blur-xl`}
+      className={`${
+        compact
+          ? 'text-[var(--foreground)]'
+          : 'rounded-[1.75rem] border border-white/35 bg-transparent p-5 text-white shadow-[var(--shadow-soft)] backdrop-blur-xl'
+      } ${compact ? 'py-1' : ''}`}
     >
       <div className="flex items-center justify-between gap-3">
         <div>
