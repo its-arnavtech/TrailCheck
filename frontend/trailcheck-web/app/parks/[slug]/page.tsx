@@ -12,7 +12,6 @@ import ParkMapCard from '@/components/park-map-card';
 import PageNavbar from '@/components/page-navbar';
 import ParkPreferenceActions from '@/components/park-preference-actions';
 import ReportAuthCta from '@/components/report-auth-cta';
-import ParkTrailsExplorer from '@/components/park-trails-explorer';
 import { getPark } from '@/lib/api';
 import { getParkCoordinates } from '@/lib/park-globe-data';
 import { getParkVisual } from '@/lib/park-content';
@@ -102,39 +101,56 @@ export default async function ParkPage({ params }: ParkPageProps) {
             formattedLocation={park.state}
           />
 
-          <section className="px-1 py-1 sm:px-2">
-            <div>
-              <p className="text-sm font-medium uppercase tracking-[0.24em] text-[var(--accent-strong)]/75">
-                Trails
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)] sm:text-3xl">
-                Available routes
-              </h2>
-            </div>
-
-            <div className="mt-5">
-              <ParkTrailsExplorer trails={park.trails} />
+          <section className="rounded-[1.8rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]/72">
+              Trails
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
+              Browse trails on a dedicated page
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-[var(--foreground)]/68">
+              Trail highlights now live on their own page so the park overview stays easier to scan.
+            </p>
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-[1.4rem] border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-4">
+              <span className="text-sm font-medium text-[var(--foreground)]/72">
+                {park.trails.length} trail{park.trails.length === 1 ? '' : 's'} ready to explore
+              </span>
+              <Link
+                href={`/parks/${park.slug}/trails`}
+                className="rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                Open trails page
+              </Link>
             </div>
           </section>
         </div>
       </div>
 
-      <section className="w-full py-1">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">
-            Submit a report
-          </h2>
-          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-            Protected route
-          </span>
+      <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--surface)]/94 p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6 lg:p-8">
+        <div className="space-y-5">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3 xl:block">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]/72">
+                  Community reporting
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
+                  Submit a report
+                </h2>
+              </div>
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                Protected route
+              </span>
+            </div>
+            <p className="max-w-xl text-sm leading-7 text-[var(--foreground)]/68">
+              Sign in, choose a trail in this park, and share a quick conditions update so the next
+              visitor has fresher context.
+            </p>
+            <ReportAuthCta />
+          </div>
+
+          <ParkReportPanel trails={park.trails} flush />
         </div>
-        <p className="mb-4 max-w-4xl text-sm leading-6 text-[var(--foreground)]/64">
-          Sign in, choose a trail in this park, and share a quick conditions update so the next visitor has fresher context.
-        </p>
-        <div className="mb-4">
-          <ReportAuthCta />
-        </div>
-        <ParkReportPanel trails={park.trails} />
       </section>
     </main>
   );

@@ -28,8 +28,11 @@ export default function ReportAuthCta() {
 
   if (signedInEmail) {
     return (
-      <div className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800">
-        Signed in as {signedInEmail}
+      <div className="rounded-[1.35rem] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
+          Signed in
+        </p>
+        <p className="mt-2 font-medium">{signedInEmail}</p>
       </div>
     );
   }
@@ -39,9 +42,9 @@ export default function ReportAuthCta() {
       <button
         type="button"
         onClick={() => setIsAuthOpen(true)}
-        className="inline-flex rounded-full border border-[var(--border)] bg-white/78 px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-white"
+        className="inline-flex min-h-11 items-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
       >
-        Not Signed in? Click here
+        Login to report
       </button>
 
       {isAuthOpen ? (
