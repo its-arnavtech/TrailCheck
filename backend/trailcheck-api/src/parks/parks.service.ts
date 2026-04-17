@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateParkPreferenceDto } from './dto/update-park-preference.dto';
 import { getStaticParkBySlug, getStaticParks } from '../catalog/static-park-data';
@@ -10,26 +11,43 @@ import { getStaticParkBySlug, getStaticParks } from '../catalog/static-park-data
 export class ParksService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
+  private isRecoverableReadError(error: unknown) {
+    return (
+      error instanceof Prisma.PrismaClientKnownRequestError ||
+      error instanceof Prisma.PrismaClientInitializationError ||
+      error instanceof Prisma.PrismaClientRustPanicError ||
+      error instanceof Prisma.PrismaClientUnknownRequestError
+    );
+  }
+
+  async findAll() {
     if (!this.prisma.isAvailable()) {
       return getStaticParks();
     }
 
-    return this.prisma.park.findMany({
-      orderBy: { name: 'asc' },
-      select: {
-        name: true,
-        state: true,
-        slug: true,
-        trails: {
-          orderBy: { name: 'asc' },
-          select: {
-            id: true,
-            name: true,
+    try {
+      return await this.prisma.park.findMany({
+        orderBy: { name: 'asc' },
+        select: {
+          name: true,
+          state: true,
+          slug: true,
+          trails: {
+            orderBy: { name: 'asc' },
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      if (this.isRecoverableReadError(error)) {
+        return getStaticParks();
+      }
+
+      throw error;
+    }
   }
 
   async findBySlug(slug: string) {
@@ -37,21 +55,29 @@ export class ParksService {
       return getStaticParkBySlug(slug) ?? null;
     }
 
-    return this.prisma.park.findUnique({
-      where: { slug },
-      select: {
-        name: true,
-        state: true,
-        slug: true,
-        trails: {
-          orderBy: { name: 'asc' },
-          select: {
-            id: true,
-            name: true,
+    try {
+      return await this.prisma.park.findUnique({
+        where: { slug },
+        select: {
+          name: true,
+          state: true,
+          slug: true,
+          trails: {
+            orderBy: { name: 'asc' },
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      if (this.isRecoverableReadError(error)) {
+        return getStaticParkBySlug(slug) ?? null;
+      }
+
+      throw error;
+    }
   }
 
   async getUserPreferences(userId: number) {

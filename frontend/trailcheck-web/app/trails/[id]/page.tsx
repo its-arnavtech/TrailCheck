@@ -1,10 +1,11 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import PageNavbar from '@/components/page-navbar';
+import ReportAuthCta from '@/components/report-auth-cta';
 import { getTrail } from '@/lib/api';
 import type { Hazard, NpsAlert, TrailReport, WeatherPeriod } from '@/lib/api';
 
-const AuthPanel = dynamic(() => import('@/components/auth-panel'));
 const ReportForm = dynamic(() => import('@/components/reportform'));
 
 type TrailPageProps = {
@@ -43,6 +44,13 @@ export default async function TrailPage({ params }: TrailPageProps) {
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-5 py-8 sm:px-8 lg:px-10">
+      <PageNavbar
+        parkHref={trail.park?.slug ? `/parks/${trail.park.slug}` : undefined}
+        parkLabel={trail.park?.name}
+        trailHref={`/trails/${trail.id}`}
+        trailLabel={trail.name}
+      />
+
       <section className="overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[linear-gradient(145deg,var(--hero-start),color-mix(in_srgb,var(--hero-end)_72%,white_28%))] p-6 shadow-[var(--shadow-soft)] sm:p-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
@@ -240,7 +248,7 @@ export default async function TrailPage({ params }: TrailPageProps) {
           Sign in with a TrailCheck account, then share a quick surface update so the next visitor has fresher context.
         </p>
         <div className="mb-4">
-          <AuthPanel compact />
+          <ReportAuthCta />
         </div>
         <ReportForm trailId={trail.id} />
       </section>

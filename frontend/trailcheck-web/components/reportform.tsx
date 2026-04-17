@@ -62,9 +62,11 @@ export default function ReportForm({ trailId }: { trailId: number }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)]/80 px-4 py-3 text-sm text-[var(--foreground)]/70">
-        {signedInEmail ? `Signed in as ${signedInEmail}` : 'Sign in to unlock report submission.'}
-      </div>
+      {signedInEmail ? (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          Signed in as {signedInEmail}
+        </div>
+      ) : null}
       <textarea
         placeholder="Notes about the trail condition..."
         value={note}
