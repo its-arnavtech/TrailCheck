@@ -8,12 +8,15 @@ import {
   ParkNotificationCard,
   ParkNotificationCardFallback,
 } from '@/components/park-conditions-panel';
+import ParkMapCard from '@/components/park-map-card';
+import PageNavbar from '@/components/page-navbar';
 import ParkPreferenceActions from '@/components/park-preference-actions';
+import ReportAuthCta from '@/components/report-auth-cta';
 import ParkTrailsExplorer from '@/components/park-trails-explorer';
 import { getPark } from '@/lib/api';
+import { getParkCoordinates } from '@/lib/park-globe-data';
 import { getParkVisual } from '@/lib/park-content';
 
-const AuthPanel = dynamic(() => import('@/components/auth-panel'));
 const ParkReportPanel = dynamic(() => import('@/components/park-report-panel'));
 
 type ParkPageProps = {
@@ -28,9 +31,12 @@ export default async function ParkPage({ params }: ParkPageProps) {
 
   if (!park) notFound();
   const visual = await getParkVisual(park.slug, park.name);
+  const coordinates = getParkCoordinates(park.slug);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[min(100%,1440px)] flex-col gap-8 px-4 py-6 sm:px-6 sm:py-8 lg:px-8 xl:px-10">
+      <PageNavbar parkHref={`/parks/${park.slug}`} parkLabel={park.name} />
+
       <section className="relative overflow-hidden rounded-[2rem] border border-[var(--border)] shadow-[var(--shadow-soft)]">
         <img
           src={visual.imageUrl}
@@ -88,6 +94,14 @@ export default async function ParkPage({ params }: ParkPageProps) {
         </div>
 
         <div className="space-y-8">
+          <ParkMapCard
+            parkName={park.name}
+            state={park.state}
+            latitude={coordinates?.lat}
+            longitude={coordinates?.lng}
+            formattedLocation={park.state}
+          />
+
           <section className="px-1 py-1 sm:px-2">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.24em] text-[var(--accent-strong)]/75">
@@ -118,7 +132,7 @@ export default async function ParkPage({ params }: ParkPageProps) {
           Sign in, choose a trail in this park, and share a quick conditions update so the next visitor has fresher context.
         </p>
         <div className="mb-4">
-          <AuthPanel compact />
+          <ReportAuthCta />
         </div>
         <ParkReportPanel trails={park.trails} />
       </section>

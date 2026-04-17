@@ -2,7 +2,12 @@ import { PARK_MAP_PARKS } from '@/lib/park-map-data';
 
 // Coordinates are based on a published NPS-linked national parks dataset, with
 // a few newer parks filled in manually where that older dataset had gaps.
-const PARK_COORDINATES: Record<string, { lat: number; lng: number }> = {
+export type ParkCoordinates = {
+  lat: number;
+  lng: number;
+};
+
+const PARK_COORDINATES: Record<string, ParkCoordinates> = {
   acadia: { lat: 44.35, lng: -68.21 },
   arches: { lat: 38.68, lng: -109.57 },
   badlands: { lat: 43.75, lng: -102.5 },
@@ -85,3 +90,7 @@ export const PARK_GLOBE_POINTS: ParkGlobePoint[] = PARK_MAP_PARKS.map((park) => 
     ...coordinates,
   };
 });
+
+export function getParkCoordinates(slug: string): ParkCoordinates | null {
+  return PARK_COORDINATES[slug] ?? null;
+}
