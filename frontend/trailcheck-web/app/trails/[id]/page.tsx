@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import PageNavbar from '@/components/page-navbar';
 import ReportAuthCta from '@/components/report-auth-cta';
 import { getTrail } from '@/lib/api';
+import { getParkVisual } from '@/lib/park-content';
 import type { Hazard, NpsAlert, TrailReport, WeatherPeriod } from '@/lib/api';
 
 const ReportForm = dynamic(() => import('@/components/reportform'));
@@ -39,6 +40,10 @@ export default async function TrailPage({ params }: TrailPageProps) {
 
   if (!trail) notFound();
 
+  const trailVisual =
+    trail.park?.slug && trail.park?.name
+      ? await getParkVisual(trail.park.slug, trail.park.name)
+      : null;
   const forecastPeriods = trail.weather?.forecast ?? [];
   const hasOddForecastCount = forecastPeriods.length % 2 === 1;
 
@@ -51,8 +56,16 @@ export default async function TrailPage({ params }: TrailPageProps) {
         trailLabel={trail.name}
       />
 
-      <section className="overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[linear-gradient(145deg,var(--hero-start),color-mix(in_srgb,var(--hero-end)_72%,white_28%))] p-6 shadow-[var(--shadow-soft)] sm:p-8">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <section className="relative overflow-hidden rounded-[2rem] border border-[var(--border)] shadow-[var(--shadow-soft)]">
+        {trailVisual ? (
+          <img
+            src={trailVisual.imageUrl}
+            alt={trailVisual.imageAlt}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(245,248,252,0.9),rgba(232,238,245,0.86),rgba(255,255,255,0.58))]" />
+        <div className="relative flex flex-col gap-5 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <p className="mb-3 text-sm font-medium uppercase tracking-[0.24em] text-[var(--accent-strong)]/70">
               Trail overview
@@ -60,41 +73,53 @@ export default async function TrailPage({ params }: TrailPageProps) {
             {trail.park?.slug && (
               <Link
                 href={`/parks/${trail.park.slug}`}
-                className="mb-4 inline-flex rounded-full border border-white/65 bg-white/55 px-4 py-2 text-sm font-medium text-emerald-950 transition hover:bg-white/72"
+                className="mb-4 inline-flex items-center text-sm font-semibold text-slate-700 transition hover:text-slate-950"
               >
-                Back to park
+                Back to {trail.park?.name}
               </Link>
             )}
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-semibold tracking-tight text-emerald-950 sm:text-4xl">{trail.name}</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                {trail.name}
+              </h1>
               {trail.status && (
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusColor[trail.status] ?? 'bg-gray-100 text-gray-700'}`}>
                   {trail.status}
                 </span>
               )}
             </div>
-            <p className="mt-2 text-sm text-emerald-950/70">{trail.park?.name ?? 'Unknown park'}</p>
-            <div className="mt-4 flex flex-wrap gap-3 text-sm text-emerald-950/78">
-              {trail.lengthMiles && <span className="rounded-full border border-white/65 bg-white/55 px-4 py-2">{trail.lengthMiles} miles</span>}
-              {trail.difficulty && <span className="rounded-full border border-white/65 bg-white/55 px-4 py-2">{trail.difficulty}</span>}
+            <p className="mt-2 text-sm text-slate-700">{trail.park?.name ?? 'Unknown park'}</p>
+            <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-800">
+              {trail.lengthMiles && (
+                <span className="rounded-full border border-slate-900/8 bg-white/72 px-4 py-2">
+                  {trail.lengthMiles} miles
+                </span>
+              )}
+              {trail.difficulty && (
+                <span className="rounded-full border border-slate-900/8 bg-white/72 px-4 py-2">
+                  {trail.difficulty}
+                </span>
+              )}
             </div>
             {trail.description && (
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-emerald-950/78 sm:text-base">{trail.description}</p>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-800 sm:text-base">
+                {trail.description}
+              </p>
             )}
           </div>
 
           <div className="grid min-w-[220px] gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <div className="rounded-2xl border border-white/60 bg-white/55 px-4 py-3">
+            <div className="rounded-2xl border border-slate-900/8 bg-white/76 px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]/75">Reports</p>
-              <p className="mt-1 text-2xl font-semibold text-emerald-950">{trail.reports?.length ?? 0}</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-950">{trail.reports?.length ?? 0}</p>
             </div>
-            <div className="rounded-2xl border border-white/60 bg-white/55 px-4 py-3">
+            <div className="rounded-2xl border border-slate-900/8 bg-white/76 px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]/75">Hazards</p>
-              <p className="mt-1 text-2xl font-semibold text-emerald-950">{trail.hazards?.length ?? 0}</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-950">{trail.hazards?.length ?? 0}</p>
             </div>
-            <div className="rounded-2xl border border-white/60 bg-white/55 px-4 py-3">
+            <div className="rounded-2xl border border-slate-900/8 bg-white/76 px-4 py-3">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]/75">Alerts</p>
-              <p className="mt-1 text-2xl font-semibold text-emerald-950">{trail.npsAlerts?.length ?? 0}</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-950">{trail.npsAlerts?.length ?? 0}</p>
             </div>
           </div>
         </div>
@@ -237,20 +262,35 @@ export default async function TrailPage({ params }: TrailPageProps) {
         </div>
       </div>
 
-      <section className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">Submit a report</h2>
-          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-            Protected route
-          </span>
+      <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6 lg:p-8">
+        <div className="grid gap-6 xl:grid-cols-[0.78fr_1.22fr] xl:items-start">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3 xl:block">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]/72">
+                  Community reporting
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
+                  Submit a report
+                </h2>
+              </div>
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                Protected route
+              </span>
+            </div>
+            <p className="max-w-xl text-sm leading-7 text-[var(--foreground)]/68">
+              Sign in with a TrailCheck account, then share a quick surface update so the next
+              visitor has fresher context.
+            </p>
+            <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-4 shadow-sm">
+              <ReportAuthCta />
+            </div>
+          </div>
+
+          <div className="rounded-[1.65rem] border border-[var(--border)] bg-[var(--surface-strong)] p-4 shadow-sm sm:p-5">
+            <ReportForm trailId={trail.id} />
+          </div>
         </div>
-        <p className="mb-4 max-w-4xl text-sm leading-6 text-[var(--foreground)]/64">
-          Sign in with a TrailCheck account, then share a quick surface update so the next visitor has fresher context.
-        </p>
-        <div className="mb-4">
-          <ReportAuthCta />
-        </div>
-        <ReportForm trailId={trail.id} />
       </section>
     </main>
   );
