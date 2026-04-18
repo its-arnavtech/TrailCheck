@@ -2,6 +2,7 @@ import { Transform } from 'class-transformer';
 import {
   IsEmail,
   IsString,
+  MaxLength,
   MinLength,
   ValidationArguments,
   ValidatorConstraint,
@@ -9,7 +10,7 @@ import {
   Validate,
 } from 'class-validator';
 
-const allowedEmailDomains = [
+export const allowedEmailDomains = [
   'gmail.com',
   'googlemail.com',
   'yahoo.com',
@@ -26,7 +27,9 @@ const allowedEmailDomains = [
 ];
 
 @ValidatorConstraint({ name: 'allowedEmailDomain', async: false })
-class AllowedEmailDomainConstraint implements ValidatorConstraintInterface {
+export class AllowedEmailDomainConstraint
+  implements ValidatorConstraintInterface
+{
   validate(email: string) {
     const domain =
       String(email ?? '')
@@ -45,9 +48,11 @@ export class AuthDto {
   @IsEmail()
   @Validate(AllowedEmailDomainConstraint)
   @Transform(({ value }) => value.trim().toLowerCase())
+  @MaxLength(320)
   email: string;
 
   @IsString()
   @MinLength(8)
+  @MaxLength(128)
   password: string;
 }

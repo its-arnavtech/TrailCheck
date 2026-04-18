@@ -81,7 +81,7 @@ export class ParksService {
   }
 
   async getUserPreferences(userId: number) {
-    this.prisma.requireConnection();
+    await this.prisma.requireConnection();
 
     const preferences = await this.prisma.userParkPreference.findMany({
       where: {
@@ -109,7 +109,7 @@ export class ParksService {
   }
 
   async getUserPreferenceForPark(slug: string, userId: number) {
-    this.prisma.requireConnection();
+    await this.prisma.requireConnection();
 
     const park = await this.prisma.park.findUnique({
       where: { slug },
@@ -147,7 +147,7 @@ export class ParksService {
     userId: number,
     dto: UpdateParkPreferenceDto,
   ) {
-    this.prisma.requireConnection();
+    await this.prisma.requireConnection();
 
     const park = await this.prisma.park.findUnique({
       where: { slug },
