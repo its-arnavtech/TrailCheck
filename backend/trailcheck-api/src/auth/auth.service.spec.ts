@@ -19,6 +19,11 @@ describe('AuthService', () => {
   let passwordResetEmailService: {
     sendPasswordResetEmail: jest.Mock;
   };
+  let logger: {
+    log: jest.Mock;
+    warn: jest.Mock;
+    error: jest.Mock;
+  };
 
   beforeEach(() => {
     prisma = {
@@ -50,7 +55,11 @@ describe('AuthService', () => {
       }),
     };
     passwordResetEmailService = {
-      sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
+      sendPasswordResetEmail: jest.fn().mockResolvedValue({
+        status: 'sent',
+        provider: 'resend',
+        messageId: 'email_123',
+      }),
     };
 
     service = new AuthService(
@@ -59,6 +68,13 @@ describe('AuthService', () => {
       configService as never,
       passwordResetEmailService as PasswordResetEmailService,
     );
+
+    logger = {
+      log: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+    (service as never).logger = logger;
   });
 
   it('returns auth data for valid sign in credentials', async () => {
@@ -136,12 +152,15 @@ describe('AuthService', () => {
     const updatePayload = prisma.user.update.mock.calls[0][0];
     const resetUrl = passwordResetEmailService.sendPasswordResetEmail.mock.calls[0][0]
       .resetUrl as string;
+    const emailPayload = passwordResetEmailService.sendPasswordResetEmail.mock.calls[0][0];
     const token = new URL(resetUrl).searchParams.get('token');
 
     expect(token).toMatch(/^[a-f0-9]{64}$/i);
     expect(updatePayload.data.resetPasswordTokenHash).toMatch(/^[a-f0-9]{64}$/i);
     expect(updatePayload.data.resetPasswordTokenHash).not.toBe(token);
     expect(updatePayload.data.resetPasswordExpiresAt).toBeInstanceOf(Date);
+    expect(emailPayload.userId).toBe(7);
+    expect(emailPayload.emailFingerprint).toMatch(/^[a-f0-9]{12}$/i);
     expect(
       prisma.user.update.mock.invocationCallOrder[0],
     ).toBeLessThan(
@@ -162,6 +181,22 @@ describe('AuthService', () => {
     });
     expect(prisma.user.update).not.toHaveBeenCalled();
     expect(passwordResetEmailService.sendPasswordResetEmail).not.toHaveBeenCalled();
+  });
+
+  it('builds the reset link from FRONTEND_BASE_URL', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 7,
+      email: 'existing@gmail.com',
+    });
+    prisma.user.update.mockResolvedValue(undefined);
+
+    await service.forgotPassword({
+      email: 'existing@gmail.com',
+    });
+
+    const resetUrl = passwordResetEmailService.sendPasswordResetEmail.mock.calls[0][0]
+      .resetUrl as string;
+    expect(resetUrl.startsWith('https://trailcheck.app/auth/reset-password?token=')).toBe(true);
   });
 
   it('resets the password, clears the token, and invalidates old sessions', async () => {
@@ -249,5 +284,57 @@ describe('AuthService', () => {
       message:
         "If an account with that email exists, we've sent a password reset link.",
     });
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('Password reset email delivery failed for user 7'),
+    );
+  });
+
+  it('returns the generic forgot-password response when the email provider is misconfigured', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 7,
+      email: 'existing@gmail.com',
+    });
+    prisma.user.update.mockResolvedValue(undefined);
+    passwordResetEmailService.sendPasswordResetEmail.mockResolvedValue({
+      status: 'skipped',
+      provider: 'disabled',
+      reason: 'provider-disabled',
+    });
+
+    const response = await service.forgotPassword({
+      email: 'existing@gmail.com',
+    });
+
+    expect(response).toEqual({
+      message:
+        "If an account with that email exists, we've sent a password reset link.",
+    });
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Password reset email send skipped for user 7'),
+    );
+  });
+
+  it('does not leak the raw reset token into logs', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 7,
+      email: 'existing@gmail.com',
+    });
+    prisma.user.update.mockResolvedValue(undefined);
+
+    await service.forgotPassword({
+      email: 'existing@gmail.com',
+    });
+
+    const resetUrl = passwordResetEmailService.sendPasswordResetEmail.mock.calls[0][0]
+      .resetUrl as string;
+    const token = new URL(resetUrl).searchParams.get('token');
+    const allLogs = [
+      ...logger.log.mock.calls.flat(),
+      ...logger.warn.mock.calls.flat(),
+      ...logger.error.mock.calls.flat(),
+    ].join('\n');
+
+    expect(token).toBeTruthy();
+    expect(allLogs).not.toContain(token as string);
   });
 });
