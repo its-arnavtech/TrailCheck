@@ -5,7 +5,21 @@ type PasswordResetEmailInput = {
   to: string;
   resetUrl: string;
   expiresAt: Date;
+  userId: number;
+  emailFingerprint: string;
 };
+
+export type PasswordResetEmailResult =
+  | {
+      status: 'sent';
+      provider: 'resend';
+      messageId: string | null;
+    }
+  | {
+      status: 'skipped';
+      provider: string;
+      reason: 'provider-disabled' | 'missing-config';
+    };
 
 @Injectable()
 export class PasswordResetEmailService {
@@ -17,22 +31,44 @@ export class PasswordResetEmailService {
     to,
     resetUrl,
     expiresAt,
+    userId,
+    emailFingerprint,
   }: PasswordResetEmailInput) {
-    const provider = this.configService.get<string>(
-      'PASSWORD_RESET_EMAIL_PROVIDER',
-    );
+    const provider =
+      this.configService.get<string>('PASSWORD_RESET_EMAIL_PROVIDER') ??
+      'disabled';
 
     if (provider !== 'resend') {
       this.logger.warn(
-        'Password reset email delivery is disabled. Configure PASSWORD_RESET_EMAIL_PROVIDER=resend to enable emails.',
+        `Password reset email send skipped for user ${userId} (fingerprint ${emailFingerprint}): provider "${provider}" is not enabled.`,
       );
-      return;
+      return {
+        status: 'skipped',
+        provider,
+        reason: 'provider-disabled',
+      } satisfies PasswordResetEmailResult;
     }
 
-    const apiKey = this.configService.getOrThrow<string>('RESEND_API_KEY');
-    const from = this.configService.getOrThrow<string>('MAIL_FROM_ADDRESS');
+    const apiKey = this.configService.get<string>('RESEND_API_KEY')?.trim() ?? '';
+    const from =
+      this.configService.get<string>('MAIL_FROM_ADDRESS')?.trim() ?? '';
     const expiresInMinutes = this.configService.getOrThrow<number>(
       'PASSWORD_RESET_TOKEN_TTL_MINUTES',
+    );
+
+    if (!apiKey || !from) {
+      this.logger.error(
+        `Password reset email send skipped for user ${userId} (fingerprint ${emailFingerprint}): Resend configuration is incomplete.`,
+      );
+      return {
+        status: 'skipped',
+        provider,
+        reason: 'missing-config',
+      } satisfies PasswordResetEmailResult;
+    }
+
+    this.logger.log(
+      `Attempting Resend password reset delivery for user ${userId} (fingerprint ${emailFingerprint}).`,
     );
 
     const response = await fetch('https://api.resend.com/emails', {
@@ -67,5 +103,23 @@ export class PasswordResetEmailService {
         `Resend email delivery failed with status ${response.status}: ${message}`,
       );
     }
+
+    let messageId: string | null = null;
+    try {
+      const body = (await response.json()) as { id?: string };
+      messageId = typeof body.id === 'string' ? body.id : null;
+    } catch {
+      messageId = null;
+    }
+
+    this.logger.log(
+      `Resend password reset delivery succeeded for user ${userId} (fingerprint ${emailFingerprint})${messageId ? ` with message id ${messageId}` : ''}.`,
+    );
+
+    return {
+      status: 'sent',
+      provider: 'resend',
+      messageId,
+    } satisfies PasswordResetEmailResult;
   }
 }

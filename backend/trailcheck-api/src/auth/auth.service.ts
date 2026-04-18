@@ -134,9 +134,19 @@ export class AuthService {
     await this.prisma.requireConnection();
 
     const startedAt = Date.now();
+    const emailFingerprint = this.emailFingerprint(dto.email);
+
+    this.logger.log(
+      `Forgot-password request received for account fingerprint ${emailFingerprint}.`,
+    );
+
     const rawToken = this.generateResetToken();
     const tokenHash = this.hashResetToken(rawToken);
     const expiresAt = this.buildResetExpiry();
+
+    this.logger.log(
+      `Reset token generated for account fingerprint ${emailFingerprint}.`,
+    );
 
     try {
       const user = await this.prisma.user.findUnique({
@@ -147,7 +157,15 @@ export class AuthService {
         },
       });
 
+      this.logger.log(
+        `Forgot-password user lookup completed for account fingerprint ${emailFingerprint}.`,
+      );
+
       if (user) {
+        this.logger.log(
+          `Matching account found for forgot-password request: user ${user.id} (fingerprint ${emailFingerprint}).`,
+        );
+
         await this.prisma.user.update({
           where: { id: user.id },
           data: {
@@ -156,25 +174,55 @@ export class AuthService {
           },
         });
 
-        const resetUrl = this.buildResetUrl(rawToken);
+        this.logger.log(
+          `Password reset token persisted for user ${user.id} (fingerprint ${emailFingerprint}) with expiry ${expiresAt.toISOString()}.`,
+        );
+
+        let resetUrl: string;
+        try {
+          resetUrl = this.buildResetUrl(rawToken);
+        } catch (error) {
+          this.logger.error(
+            `Password reset link construction failed for user ${user.id} (fingerprint ${emailFingerprint}): ${
+              error instanceof Error ? error.message : 'Unknown URL error'
+            }`,
+          );
+          return FORGOT_PASSWORD_RESPONSE;
+        }
+
+        this.logger.log(
+          `Password reset email send will be attempted for user ${user.id} (fingerprint ${emailFingerprint}).`,
+        );
 
         try {
-          await this.passwordResetEmailService.sendPasswordResetEmail({
+          const deliveryResult =
+            await this.passwordResetEmailService.sendPasswordResetEmail({
             to: user.email,
             resetUrl,
             expiresAt,
+            userId: user.id,
+            emailFingerprint,
           });
-          this.logger.log(`Password reset requested for user ${user.id}.`);
+
+          if (deliveryResult.status === 'sent') {
+            this.logger.log(
+              `Password reset email send succeeded for user ${user.id} (fingerprint ${emailFingerprint}) via ${deliveryResult.provider}.`,
+            );
+          } else {
+            this.logger.warn(
+              `Password reset email send skipped for user ${user.id} (fingerprint ${emailFingerprint}) via provider "${deliveryResult.provider}" because ${deliveryResult.reason}.`,
+            );
+          }
         } catch (error) {
           this.logger.error(
-            `Password reset email delivery failed for user ${user.id}: ${
+            `Password reset email delivery failed for user ${user.id} (fingerprint ${emailFingerprint}): ${
               error instanceof Error ? error.message : 'Unknown email error'
             }`,
           );
         }
       } else {
         this.logger.warn(
-          `Password reset requested for unknown account fingerprint ${this.emailFingerprint(dto.email)}.`,
+          `Forgot-password request did not match an account for fingerprint ${emailFingerprint}.`,
         );
       }
     } finally {
