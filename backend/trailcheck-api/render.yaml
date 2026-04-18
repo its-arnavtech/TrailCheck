@@ -22,6 +22,12 @@ services:
         sync: false
       - key: GEMINI_MODEL
         value: gemini-2.5-flash
+      - key: PASSWORD_RESET_EMAIL_PROVIDER
+        value: disabled
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
       - key: THROTTLE_TTL_SECONDS
         value: 60
       - key: THROTTLE_LIMIT
