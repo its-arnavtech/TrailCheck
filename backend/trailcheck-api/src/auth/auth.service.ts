@@ -92,7 +92,15 @@ export class AuthService {
   async signin(dto: AuthDto) {
     await this.prisma.requireConnection();
 
-    const user = await this.prisma.findAuthUserByEmail(dto.email);
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        passwordVersion: true,
+      },
+    });
 
     if (!user) {
       throw new ForbiddenException('Invalid email or password.');
@@ -131,13 +139,6 @@ export class AuthService {
     const expiresAt = this.buildResetExpiry();
 
     try {
-      if (!(await this.prisma.supportsPasswordResetColumns())) {
-        this.logger.warn(
-          'Password reset requested, but reset token columns are unavailable in the current database schema.',
-        );
-        return FORGOT_PASSWORD_RESPONSE;
-      }
-
       const user = await this.prisma.user.findUnique({
         where: { email: dto.email },
         select: {
@@ -185,13 +186,6 @@ export class AuthService {
 
   async resetPassword(dto: ResetPasswordDto) {
     await this.prisma.requireConnection();
-
-    if (!(await this.prisma.supportsPasswordResetColumns())) {
-      this.logger.warn(
-        'Password reset attempted, but reset token columns are unavailable in the current database schema.',
-      );
-      throw new BadRequestException(INVALID_RESET_TOKEN_MESSAGE);
-    }
 
     const tokenHash = this.hashResetToken(dto.token);
 

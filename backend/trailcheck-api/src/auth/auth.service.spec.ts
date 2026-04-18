@@ -7,8 +7,6 @@ describe('AuthService', () => {
   let service: AuthService;
   let prisma: {
     requireConnection: jest.Mock;
-    findAuthUserByEmail: jest.Mock;
-    supportsPasswordResetColumns: jest.Mock;
     user: {
       create: jest.Mock;
       findUnique: jest.Mock;
@@ -25,8 +23,6 @@ describe('AuthService', () => {
   beforeEach(() => {
     prisma = {
       requireConnection: jest.fn(),
-      findAuthUserByEmail: jest.fn(),
-      supportsPasswordResetColumns: jest.fn().mockResolvedValue(true),
       user: {
         create: jest.fn(),
         findUnique: jest.fn(),
@@ -67,7 +63,7 @@ describe('AuthService', () => {
 
   it('returns auth data for valid sign in credentials', async () => {
     const passwordHash = await argon2.hash('Password123!');
-    prisma.findAuthUserByEmail.mockResolvedValue({
+    prisma.user.findUnique.mockResolvedValue({
       id: 42,
       email: 'hiker@gmail.com',
       password: passwordHash,
@@ -94,7 +90,7 @@ describe('AuthService', () => {
   });
 
   it('rejects invalid sign in credentials', async () => {
-    prisma.findAuthUserByEmail.mockResolvedValue(null);
+    prisma.user.findUnique.mockResolvedValue(null);
 
     await expect(
       service.signin({
@@ -105,7 +101,7 @@ describe('AuthService', () => {
   });
 
   it('returns a forbidden error when password verification hits a malformed hash', async () => {
-    prisma.findAuthUserByEmail.mockResolvedValue({
+    prisma.user.findUnique.mockResolvedValue({
       id: 42,
       email: 'hiker@gmail.com',
       password: 'not-a-valid-argon2-hash',
@@ -145,6 +141,12 @@ describe('AuthService', () => {
     expect(token).toMatch(/^[a-f0-9]{64}$/i);
     expect(updatePayload.data.resetPasswordTokenHash).toMatch(/^[a-f0-9]{64}$/i);
     expect(updatePayload.data.resetPasswordTokenHash).not.toBe(token);
+    expect(updatePayload.data.resetPasswordExpiresAt).toBeInstanceOf(Date);
+    expect(
+      prisma.user.update.mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      passwordResetEmailService.sendPasswordResetEmail.mock.invocationCallOrder[0],
+    );
   });
 
   it('returns the same forgot-password response for a non-existing account', async () => {
@@ -229,8 +231,15 @@ describe('AuthService', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
-  it('returns the same forgot-password response when reset columns are unavailable', async () => {
-    prisma.supportsPasswordResetColumns.mockResolvedValue(false);
+  it('returns the generic forgot-password response when email delivery fails', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 7,
+      email: 'existing@gmail.com',
+    });
+    prisma.user.update.mockResolvedValue(undefined);
+    passwordResetEmailService.sendPasswordResetEmail.mockRejectedValue(
+      new Error('Resend email delivery failed with status 403: forbidden'),
+    );
 
     const response = await service.forgotPassword({
       email: 'existing@gmail.com',
@@ -240,7 +249,5 @@ describe('AuthService', () => {
       message:
         "If an account with that email exists, we've sent a password reset link.",
     });
-    expect(prisma.user.findUnique).not.toHaveBeenCalled();
-    expect(passwordResetEmailService.sendPasswordResetEmail).not.toHaveBeenCalled();
   });
 });
