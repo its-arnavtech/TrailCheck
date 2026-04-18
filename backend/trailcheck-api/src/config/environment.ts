@@ -101,7 +101,7 @@ export function validateEnvironment(config: Record<string, unknown>) {
   );
 
   const passwordResetEmailProvider = String(
-    config.PASSWORD_RESET_EMAIL_PROVIDER ?? (isProduction ? 'resend' : 'disabled'),
+    config.PASSWORD_RESET_EMAIL_PROVIDER ?? 'disabled',
   ).toLowerCase();
 
   if (
@@ -111,12 +111,6 @@ export function validateEnvironment(config: Record<string, unknown>) {
   ) {
     throw new Error(
       'PASSWORD_RESET_EMAIL_PROVIDER must be one of: disabled, resend.',
-    );
-  }
-
-  if (isProduction && passwordResetEmailProvider !== 'resend') {
-    throw new Error(
-      'PASSWORD_RESET_EMAIL_PROVIDER must be set to "resend" in production.',
     );
   }
 
