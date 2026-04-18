@@ -257,7 +257,7 @@ export class AiService {
             }`,
           );
         });
-    } else {
+    } else if (this.prisma.isAvailable()) {
       this.logger.warn(
         `Skipping snapshot storage because park "${parkSlug}" was not found.`,
       );

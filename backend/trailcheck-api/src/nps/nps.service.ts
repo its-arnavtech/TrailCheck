@@ -14,6 +14,7 @@ export class NpsService {
   private readonly baseUrl = 'https://developer.nps.gov/api/v1';
   private readonly cacheTtlMs = 1000 * 60 * 10;
   private readonly requestTimeoutMs = 3500;
+  private hasWarnedAboutApiKey = false;
   private readonly payloadCache = new Map<
     string,
     { expiresAt: number; value: AlertsPayload }
@@ -63,7 +64,19 @@ export class NpsService {
       return { parkCode: null, raw: null, alerts: [] };
     }
 
-    const apiKey = this.config.get<string>('NPS_API_KEY');
+    const apiKey = this.getConfiguredApiKey();
+
+    if (!apiKey) {
+      if (!this.hasWarnedAboutApiKey) {
+        this.hasWarnedAboutApiKey = true;
+        this.logger.warn(
+          'NPS alerts are disabled because NPS_API_KEY is missing or still set to a placeholder value.',
+        );
+      }
+
+      return { parkCode, raw: null, alerts: [] };
+    }
+
     const url = `${this.baseUrl}/alerts?parkCode=${parkCode}&api_key=${apiKey}`;
 
     try {
@@ -72,7 +85,8 @@ export class NpsService {
       });
 
       if (!response.ok) {
-        this.logger.error(`NPS API error: ${response.status}`);
+        const level = response.status >= 500 ? 'error' : 'warn';
+        this.logger[level](`NPS API returned status ${response.status}.`);
         return { parkCode, raw: null, alerts: [] };
       }
 
@@ -86,6 +100,25 @@ export class NpsService {
       this.logger.error('Failed to fetch NPS alerts', error);
       return { parkCode, raw: null, alerts: [] };
     }
+  }
+
+  private getConfiguredApiKey() {
+    const apiKey = this.config.get<string>('NPS_API_KEY')?.trim();
+
+    if (!apiKey) {
+      return null;
+    }
+
+    const normalized = apiKey.toLowerCase();
+    if (
+      normalized === 'your-nps-api-key' ||
+      normalized === 'changeme' ||
+      normalized === 'placeholder'
+    ) {
+      return null;
+    }
+
+    return apiKey;
   }
 
   private mapToNpsAlerts(raw: any[]): NpsAlert[] {

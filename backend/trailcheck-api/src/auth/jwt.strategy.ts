@@ -1,11 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { PrismaService } from '../prisma/prisma.service';
 
 type JwtPayload = {
   sub: number;
   email: string;
+  passwordVersion: number;
 };
 
 export type JwtUser = {
@@ -15,17 +17,39 @@ export type JwtUser = {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(configService: ConfigService) {
+  constructor(
+    configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
     });
   }
 
-  validate(payload: JwtPayload): JwtUser {
+  async validate(payload: JwtPayload): Promise<JwtUser> {
+    await this.prisma.requireConnection();
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: {
+        id: true,
+        email: true,
+        passwordVersion: true,
+      },
+    });
+
+    if (
+      !user ||
+      user.email !== payload.email ||
+      user.passwordVersion !== payload.passwordVersion
+    ) {
+      throw new UnauthorizedException('Invalid or expired token.');
+    }
+
     return {
-      id: payload.sub,
-      email: payload.email,
+      id: user.id,
+      email: user.email,
     };
   }
 }
