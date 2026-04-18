@@ -306,7 +306,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
                   : 'text-white/88 hover:text-white'
               }`}
             >
-              Forgot password?
+              Forgot password? Contact support
             </Link>
           </div>
         ) : null}
