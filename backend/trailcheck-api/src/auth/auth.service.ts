@@ -106,7 +106,18 @@ export class AuthService {
       throw new ForbiddenException('Invalid email or password.');
     }
 
-    const passwordMatches = await argon2.verify(user.password, dto.password);
+    let passwordMatches = false;
+
+    try {
+      passwordMatches = await argon2.verify(user.password, dto.password);
+    } catch (error) {
+      this.logger.warn(
+        `Password verification failed for user ${user.id}: ${
+          error instanceof Error ? error.message : 'Unknown password hash error'
+        }`,
+      );
+      throw new ForbiddenException('Invalid email or password.');
+    }
 
     if (!passwordMatches) {
       throw new ForbiddenException('Invalid email or password.');

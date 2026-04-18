@@ -100,6 +100,22 @@ describe('AuthService', () => {
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
+  it('returns a forbidden error when password verification hits a malformed hash', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 42,
+      email: 'hiker@gmail.com',
+      password: 'not-a-valid-argon2-hash',
+      passwordVersion: 0,
+    });
+
+    await expect(
+      service.signin({
+        email: 'hiker@gmail.com',
+        password: 'Password123!',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
   it('returns the same forgot-password response for an existing account and stores only a token hash', async () => {
     prisma.user.findUnique.mockResolvedValue({
       id: 7,
