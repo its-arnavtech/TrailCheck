@@ -15,7 +15,7 @@ export default function HazardTag({ label, severity }: HazardTagProps) {
   const tone = severityStyles[(severity ?? '').toUpperCase()] ?? 'border-white/12 bg-white/6 text-white/76';
 
   return (
-    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${tone}`}>
+    <span className={`inline-flex rounded-full border px-4 py-2 text-sm font-semibold shadow-[0_10px_24px_rgba(0,0,0,0.14)] ${tone}`}>
       {label}
     </span>
   );

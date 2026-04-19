@@ -2,7 +2,7 @@ export default function Footer() {
   return (
     <footer className="section-shell mt-14 pb-8 sm:pb-10">
       <div className="glass-panel topo-ring rounded-[2rem] px-6 py-8 sm:px-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--accent-strong)]/62">
               TrailCheck
@@ -15,7 +15,7 @@ export default function Footer() {
             </p>
           </div>
 
-          <div className="space-y-2 text-sm text-white/66">
+          <div className="max-w-xl space-y-3 pt-1 text-base leading-8 text-white/74 sm:text-lg">
             <p>National park conditions, distilled into a calmer field dashboard.</p>
             <p>Contact: its.arnavk.here@gmail.com</p>
           </div>
