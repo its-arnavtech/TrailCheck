@@ -1,11 +1,17 @@
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import Footer from '@/components/footer';
+import HazardTag from '@/components/hazard-tag';
 import PageNavbar from '@/components/page-navbar';
 import ReportAuthCta from '@/components/report-auth-cta';
+import ReportCard from '@/components/report-card';
+import RiskBadge from '@/components/risk-badge';
+import WeatherCard from '@/components/weather-card';
 import { getTrail } from '@/lib/api';
 import { getParkVisual } from '@/lib/park-content';
-import type { Hazard, NpsAlert, TrailReport, WeatherPeriod } from '@/lib/api';
+import type { Hazard, NpsAlert } from '@/lib/api';
 
 const ReportForm = dynamic(() => import('@/components/reportform'));
 
@@ -15,24 +21,11 @@ type TrailPageProps = {
 
 export const revalidate = 120;
 
-const severityColor: Record<string, string> = {
-  LOW: 'bg-yellow-100 text-yellow-800',
-  MEDIUM: 'bg-orange-100 text-orange-800',
-  HIGH: 'bg-red-100 text-red-800',
+const statusCopy: Record<string, string> = {
+  OPEN: 'Route currently open',
+  CAUTION: 'Proceed with elevated caution',
+  CLOSED: 'Route currently closed',
 };
-
-const statusColor: Record<string, string> = {
-  OPEN: 'bg-emerald-100 text-emerald-800',
-  CAUTION: 'bg-amber-100 text-amber-800',
-  CLOSED: 'bg-rose-100 text-rose-800',
-};
-
-function formatSurfaceCondition(surfaceCondition: string) {
-  return surfaceCondition
-    .toLowerCase()
-    .replace(/_/g, ' ')
-    .replace(/^\w/, (char) => char.toUpperCase());
-}
 
 export default async function TrailPage({ params }: TrailPageProps) {
   const { id } = await params;
@@ -46,252 +39,276 @@ export default async function TrailPage({ params }: TrailPageProps) {
       : null;
   const forecastPeriods = trail.weather?.forecast ?? [];
   const hasOddForecastCount = forecastPeriods.length % 2 === 1;
+  const derivedRisk =
+    trail.hazards?.some((hazard) => hazard.severity === 'HIGH')
+      ? 'HIGH'
+      : trail.hazards?.some((hazard) => hazard.severity === 'MEDIUM')
+        ? 'MODERATE'
+        : 'LOW';
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-5 py-8 sm:px-8 lg:px-10">
-      <PageNavbar
-        parkHref={trail.park?.slug ? `/parks/${trail.park.slug}` : undefined}
-        parkLabel={trail.park?.name}
-        trailHref={`/trails/${trail.id}`}
-        trailLabel={trail.name}
-      />
+    <main className="min-h-screen pb-10">
+      <div className="section-shell flex flex-col gap-8 pt-6 sm:pt-8">
+        <PageNavbar
+          parkHref={trail.park?.slug ? `/parks/${trail.park.slug}` : undefined}
+          parkLabel={trail.park?.name}
+          trailHref={`/trails/${trail.id}`}
+          trailLabel={trail.name}
+        />
 
-      <section className="relative overflow-hidden rounded-[2rem] border border-[var(--border)] shadow-[var(--shadow-soft)]">
-        {trailVisual ? (
-          <img
-            src={trailVisual.imageUrl}
-            alt={trailVisual.imageAlt}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        ) : null}
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(245,248,252,0.9),rgba(232,238,245,0.86),rgba(255,255,255,0.58))]" />
-        <div className="relative flex flex-col gap-5 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <p className="mb-3 text-sm font-medium uppercase tracking-[0.24em] text-[var(--accent-strong)]/70">
-              Trail overview
-            </p>
-            {trail.park?.slug && (
-              <Link
-                href={`/parks/${trail.park.slug}`}
-                className="mb-4 inline-flex items-center text-sm font-semibold text-slate-700 transition hover:text-slate-950"
-              >
-                Back to {trail.park?.name}
-              </Link>
-            )}
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                {trail.name}
-              </h1>
-              {trail.status && (
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusColor[trail.status] ?? 'bg-gray-100 text-gray-700'}`}>
-                  {trail.status}
-                </span>
-              )}
-            </div>
-            <p className="mt-2 text-sm text-slate-700">{trail.park?.name ?? 'Unknown park'}</p>
-            <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-800">
-              {trail.lengthMiles && (
-                <span className="rounded-full border border-slate-900/8 bg-white/72 px-4 py-2">
-                  {trail.lengthMiles} miles
-                </span>
-              )}
-              {trail.difficulty && (
-                <span className="rounded-full border border-slate-900/8 bg-white/72 px-4 py-2">
-                  {trail.difficulty}
-                </span>
-              )}
-            </div>
-            {trail.description && (
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-800 sm:text-base">
-                {trail.description}
+        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 shadow-[var(--shadow-card)]">
+          {trailVisual ? (
+            <Image
+              src={trailVisual.imageUrl}
+              alt={trailVisual.imageAlt}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+          ) : null}
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(4,10,14,0.88),rgba(5,15,20,0.54),rgba(4,10,14,0.92))]" />
+          <div className="relative flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="mb-3 text-sm font-medium uppercase tracking-[0.24em] text-[var(--accent-strong)]/70">
+                Trail overview
               </p>
-            )}
-          </div>
+              {trail.park?.slug ? (
+                <Link
+                  href={`/parks/${trail.park.slug}`}
+                  className="mb-4 inline-flex items-center text-sm font-semibold text-white/72 transition hover:text-white"
+                >
+                  Back to {trail.park?.name}
+                </Link>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-5xl text-white sm:text-6xl" data-display="true">
+                  {trail.name}
+                </h1>
+                {trail.status ? (
+                  <span className="rounded-full border border-white/12 bg-white/6 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/72">
+                    {trail.status}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-3 text-base text-white/72">{trail.park?.name ?? 'Unknown park'}</p>
+              <div className="mt-5 flex flex-wrap gap-3 text-sm text-white">
+                {trail.lengthMiles ? (
+                  <span className="rounded-full border border-white/12 bg-white/6 px-4 py-2">
+                    {trail.lengthMiles} miles
+                  </span>
+                ) : null}
+                {trail.difficulty ? (
+                  <span className="rounded-full border border-white/12 bg-white/6 px-4 py-2">
+                    {trail.difficulty}
+                  </span>
+                ) : null}
+                {trail.status ? (
+                  <span className="rounded-full border border-white/12 bg-white/6 px-4 py-2">
+                    {statusCopy[trail.status] ?? trail.status}
+                  </span>
+                ) : null}
+              </div>
+              {trail.description ? (
+                <p className="mt-5 max-w-2xl text-sm leading-7 text-white/74 sm:text-base">
+                  {trail.description}
+                </p>
+              ) : null}
+            </div>
 
-          <div className="grid min-w-[220px] gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <div className="rounded-2xl border border-slate-900/8 bg-white/76 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]/75">Reports</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-950">{trail.reports?.length ?? 0}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-900/8 bg-white/76 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]/75">Hazards</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-950">{trail.hazards?.length ?? 0}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-900/8 bg-white/76 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]/75">Alerts</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-950">{trail.npsAlerts?.length ?? 0}</p>
+            <div className="grid min-w-[220px] gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <div className="glass-panel-light rounded-[1.2rem] px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/54">Reports</p>
+                <p className="mt-2 text-3xl font-semibold text-white">{trail.reports?.length ?? 0}</p>
+              </div>
+              <div className="glass-panel-light rounded-[1.2rem] px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/54">Hazards</p>
+                <p className="mt-2 text-3xl font-semibold text-white">{trail.hazards?.length ?? 0}</p>
+              </div>
+              <div className="glass-panel-light rounded-[1.2rem] px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/54">Alerts</p>
+                <p className="mt-2 text-3xl font-semibold text-white">{trail.npsAlerts?.length ?? 0}</p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <div className="grid gap-8 xl:grid-cols-[1.35fr_0.95fr]">
-        <div className="space-y-8">
-          <section className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6">
+        <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
+          <section className="glass-panel topo-ring rounded-[1.75rem] p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">Park alerts</h2>
-              <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]/72">
+                  Conditions
+                </p>
+                <h2 className="mt-3 text-3xl text-white" data-display="true">
+                  Route condition snapshot
+                </h2>
+              </div>
+              <RiskBadge level={derivedRisk} />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-[1.3rem] border border-white/10 bg-white/6 p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-white/44">Status</p>
+                <p className="mt-3 text-xl font-semibold text-white">
+                  {trail.status ?? 'Unknown'}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-white/66">
+                  {trail.status ? statusCopy[trail.status] ?? trail.status : 'Current route status is unavailable.'}
+                </p>
+              </div>
+              <div className="rounded-[1.3rem] border border-white/10 bg-white/6 p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-white/44">Route traits</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {trail.difficulty ? <HazardTag label={trail.difficulty} /> : null}
+                  {trail.lengthMiles ? <HazardTag label={`${trail.lengthMiles} miles`} /> : null}
+                  <HazardTag label={`${trail.reports?.length ?? 0} reports`} />
+                </div>
+                <p className="mt-3 text-sm leading-6 text-white/66">
+                  This card keeps the essential trail-read variables visible before you scroll into details.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="glass-panel topo-ring rounded-[1.75rem] p-5 sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-3xl text-white" data-display="true">
+                Weather cards
+              </h2>
+              <span className="rounded-full border border-sky-200/18 bg-sky-400/10 px-3 py-1 text-xs font-semibold text-sky-100">
+                Short range
+              </span>
+            </div>
+            {forecastPeriods.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {forecastPeriods.map((period, index) => (
+                  <div
+                    key={period.name}
+                    className={hasOddForecastCount && index === forecastPeriods.length - 1 ? 'sm:col-span-2' : ''}
+                  >
+                    <WeatherCard period={period} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-white/60">Weather data is not available right now.</p>
+            )}
+          </section>
+        </div>
+
+        <div className="grid gap-8 xl:grid-cols-[1fr_1fr]">
+          <section className="glass-panel topo-ring rounded-[1.75rem] p-5 sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-3xl text-white" data-display="true">
+                Hazards
+              </h2>
+              <span className="rounded-full border border-rose-300/16 bg-rose-400/10 px-3 py-1 text-xs font-semibold text-rose-100">
+                Live + community
+              </span>
+            </div>
+            {trail.hazards && trail.hazards.length > 0 ? (
+              <div className="space-y-3">
+                {trail.hazards.map((hazard: Hazard) => (
+                  <article key={hazard.id} className="rounded-[1.25rem] border border-white/10 bg-white/6 p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <RiskBadge level={hazard.severity} label={hazard.type} subtle />
+                    </div>
+                    <h3 className="mt-3 text-lg font-semibold text-white">{hazard.title}</h3>
+                    {hazard.description ? (
+                      <p className="mt-2 text-sm leading-6 text-white/70">{hazard.description}</p>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-white/60">No active hazards reported.</p>
+            )}
+          </section>
+
+          <section className="glass-panel topo-ring rounded-[1.75rem] p-5 sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-3xl text-white" data-display="true">
+                Park alerts
+              </h2>
+              <span className="rounded-full border border-orange-300/16 bg-orange-400/10 px-3 py-1 text-xs font-semibold text-orange-100">
                 NPS feed
               </span>
             </div>
             {trail.npsAlerts && trail.npsAlerts.length > 0 ? (
               <div className="space-y-3">
                 {trail.npsAlerts.map((alert: NpsAlert) => (
-                  <div key={alert.id} className="rounded-2xl border border-orange-200 bg-[linear-gradient(180deg,#fff7ed,#fff1dd)] p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="font-semibold text-orange-950">{alert.title}</p>
-                      <span className="shrink-0 rounded-full bg-orange-200 px-2 py-0.5 text-xs text-orange-800">
-                        {alert.category}
-                      </span>
+                  <article key={alert.id} className="rounded-[1.25rem] border border-white/10 bg-white/6 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-semibold text-white">{alert.title}</p>
+                      <HazardTag label={alert.category} />
                     </div>
-                    <p className="mt-1 text-sm leading-6 text-orange-900/78 line-clamp-3">{alert.description}</p>
-                    {alert.url && (
+                    <p className="mt-2 line-clamp-4 text-sm leading-6 text-white/68">
+                      {alert.description}
+                    </p>
+                    {alert.url ? (
                       <a
                         href={alert.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-3 inline-block text-xs font-medium text-orange-700 underline underline-offset-4"
+                        className="mt-3 inline-block text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent-strong)]"
                       >
                         More info
                       </a>
-                    )}
-                  </div>
+                    ) : null}
+                  </article>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-[var(--foreground)]/60">No current park alerts.</p>
+              <p className="text-sm text-white/60">No current park alerts.</p>
             )}
           </section>
+        </div>
 
-          <section className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6">
+        <div className="grid gap-8 xl:grid-cols-[1fr_1fr]">
+          <section className="glass-panel topo-ring rounded-[1.75rem] p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">Reported hazards</h2>
-              <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">
-                Community
+              <h2 className="text-3xl text-white" data-display="true">
+                Report system
+              </h2>
+              <span className="rounded-full border border-emerald-300/16 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-100">
+                Protected route
               </span>
             </div>
-            {trail.hazards && trail.hazards.length > 0 ? (
-              <div className="space-y-3">
-                {trail.hazards.map((hazard: Hazard) => (
-                  <div key={hazard.id} className="flex items-start gap-3 rounded-2xl border border-[var(--border)] bg-white/75 p-4">
-                    <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${severityColor[hazard.severity] ?? 'bg-gray-100 text-gray-700'}`}>
-                      {hazard.severity}
-                    </span>
-                    <div>
-                      <p className="font-medium text-[var(--foreground)]">{hazard.title}</p>
-                      {hazard.description && (
-                        <p className="mt-1 text-sm text-[var(--foreground)]/66">{hazard.description}</p>
-                      )}
-                      <p className="mt-2 text-xs uppercase tracking-[0.14em] text-[var(--foreground)]/40">{hazard.type}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-[var(--foreground)]/60">No active hazards reported.</p>
-            )}
+            <p className="max-w-xl text-sm leading-7 text-white/68">
+              Sign in with a TrailCheck account, then share a quick surface update so the next
+              visitor has fresher context before they head out.
+            </p>
+            <div className="mt-4 rounded-[1.35rem] border border-white/10 bg-white/6 p-4">
+              <ReportAuthCta />
+            </div>
+
+            <div className="mt-4 rounded-[1.4rem] border border-white/10 bg-black/12 p-4 sm:p-5">
+              <ReportForm trailId={trail.id} />
+            </div>
           </section>
 
-          <section className="rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6">
+          <section className="glass-panel topo-ring rounded-[1.75rem] p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">Recent reports</h2>
-              <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold text-[var(--accent-strong)]">
+              <h2 className="text-3xl text-white" data-display="true">
+                Recent reports
+              </h2>
+              <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-xs font-semibold text-white/70">
                 Latest trail check-ins
               </span>
             </div>
             <div className="space-y-3">
               {trail.reports?.length ? (
-                trail.reports.map((report: TrailReport) => (
-                  <div key={report.id} className="rounded-2xl border border-[var(--border)] bg-white/80 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium text-[var(--foreground)]">
-                        {report.reporterName ?? 'Anonymous'}
-                      </span>
-                      <span className="text-sm text-amber-500">
-                        {'\u2605'.repeat(report.conditionRating)}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-[var(--foreground)]/76">{report.note || 'No notes provided.'}</p>
-                    <p className="mt-2 text-xs uppercase tracking-[0.14em] text-[var(--foreground)]/42">
-                      {formatSurfaceCondition(report.surfaceCondition)}
-                    </p>
-                  </div>
-                ))
+                trail.reports.map((report) => <ReportCard key={report.id} report={report} />)
               ) : (
-                <p className="text-sm text-[var(--foreground)]/60">No reports yet.</p>
+                <p className="text-sm text-white/60">No reports yet.</p>
               )}
             </div>
           </section>
         </div>
-
-        <div className="space-y-8">
-          <section className="self-start rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-xl font-semibold tracking-tight text-[var(--foreground)]">Weather forecast</h2>
-              <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
-                Short range
-              </span>
-            </div>
-            {forecastPeriods.length > 0 ? (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {forecastPeriods.map((period: WeatherPeriod, index: number) => (
-                  <div
-                    key={period.name}
-                    className={`rounded-2xl border border-sky-200 bg-[linear-gradient(180deg,#eff8ff,#dff1ff)] p-4 text-center ${
-                      hasOddForecastCount && index === forecastPeriods.length - 1 ? 'sm:col-span-2' : ''
-                    }`}
-                  >
-                    <p className="font-semibold text-sky-950">{period.name}</p>
-                    <img
-                      src={period.icon}
-                      alt={period.shortForecast}
-                      className="mx-auto my-2 h-12 w-12"
-                    />
-                    <p className="text-2xl font-bold text-sky-800">
-                      {period.temperature}&deg;{period.temperatureUnit}
-                    </p>
-                    <p className="mt-1 text-sm text-sky-800/80">{period.shortForecast}</p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.14em] text-sky-700/80">{period.windSpeed}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-[var(--foreground)]/60">Weather data is not available right now.</p>
-            )}
-          </section>
-        </div>
       </div>
 
-      <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)] backdrop-blur sm:p-6 lg:p-8">
-        <div className="grid gap-6 xl:grid-cols-[0.78fr_1.22fr] xl:items-start">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3 xl:block">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]/72">
-                  Community reporting
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground)]">
-                  Submit a report
-                </h2>
-              </div>
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                Protected route
-              </span>
-            </div>
-            <p className="max-w-xl text-sm leading-7 text-[var(--foreground)]/68">
-              Sign in with a TrailCheck account, then share a quick surface update so the next
-              visitor has fresher context.
-            </p>
-            <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-4 shadow-sm">
-              <ReportAuthCta />
-            </div>
-          </div>
-
-          <div className="rounded-[1.65rem] border border-[var(--border)] bg-[var(--surface-strong)] p-4 shadow-sm sm:p-5">
-            <ReportForm trailId={trail.id} />
-          </div>
-        </div>
-      </section>
+      <Footer />
     </main>
   );
 }

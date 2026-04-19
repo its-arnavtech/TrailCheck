@@ -63,13 +63,13 @@ export default function ReportForm({ trailId, flush = false }: { trailId: number
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {signedInEmail ? (
-        <div className="rounded-[1.35rem] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
+        <div className="rounded-[1.35rem] border border-emerald-300/16 bg-emerald-400/10 px-4 py-4 text-sm text-emerald-50">
           Signed in as {signedInEmail}
         </div>
       ) : null}
       <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className={flush ? '' : 'rounded-[1.45rem] border border-[var(--border)] bg-[var(--surface)] px-4 py-4'}>
-          <label className="mb-2 block text-sm font-semibold text-[var(--foreground)]/72">
+        <div className={flush ? '' : 'rounded-[1.45rem] border border-white/10 bg-white/6 px-4 py-4'}>
+          <label className="mb-2 block text-sm font-semibold text-white/72">
             Trail notes
           </label>
           <textarea
@@ -77,19 +77,19 @@ export default function ReportForm({ trailId, flush = false }: { trailId: number
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={6}
-            className="w-full resize-none rounded-[1.1rem] border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] shadow-sm outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/10"
+            className="w-full resize-none rounded-[1.1rem] border border-white/10 bg-[rgba(6,12,16,0.42)] px-4 py-3 text-sm text-white placeholder:text-white/34 shadow-sm outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/10"
           />
         </div>
 
         <div className="space-y-5">
-          <div className={flush ? '' : 'rounded-[1.45rem] border border-[var(--border)] bg-[var(--surface)] px-4 py-4'}>
-            <label className="mb-2 block text-sm font-semibold text-[var(--foreground)]/72">
+          <div className={flush ? '' : 'rounded-[1.45rem] border border-white/10 bg-white/6 px-4 py-4'}>
+            <label className="mb-2 block text-sm font-semibold text-white/72">
               Surface condition
             </label>
             <select
               value={surface}
               onChange={(e) => setSurface(e.target.value)}
-              className="w-full rounded-[1.1rem] border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--ink-on-light)] shadow-sm outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/10"
+              className="w-full rounded-[1.1rem] border border-white/10 bg-[rgba(6,12,16,0.42)] px-4 py-3 text-sm text-white shadow-sm outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/10"
             >
               <option value="DRY">Dry</option>
               <option value="MUDDY">Muddy</option>
@@ -98,10 +98,10 @@ export default function ReportForm({ trailId, flush = false }: { trailId: number
             </select>
           </div>
 
-          <div className={flush ? '' : 'rounded-[1.45rem] border border-[var(--border)] bg-[var(--surface)] px-4 py-4'}>
+          <div className={flush ? '' : 'rounded-[1.45rem] border border-white/10 bg-white/6 px-4 py-4'}>
             <div className="flex items-center justify-between gap-3">
-              <label className="text-sm font-semibold text-[var(--foreground)]/72">Condition rating</label>
-              <span className="text-sm font-medium text-[var(--foreground)]/62">{rating}/5</span>
+              <label className="text-sm font-semibold text-white/72">Condition rating</label>
+              <span className="text-sm font-medium text-white/62">{rating}/5</span>
             </div>
             <div className="mt-3 flex gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
@@ -111,8 +111,8 @@ export default function ReportForm({ trailId, flush = false }: { trailId: number
                   onClick={() => setRating(star)}
                   className={`flex h-11 w-11 items-center justify-center rounded-full border text-xl transition-transform hover:scale-105 ${
                     star <= rating
-                      ? 'border-amber-200 bg-amber-50 text-amber-500'
-                      : 'border-[var(--border)] bg-white text-slate-300'
+                      ? 'border-amber-300/20 bg-amber-400/10 text-amber-200'
+                      : 'border-white/10 bg-[rgba(6,12,16,0.42)] text-slate-500'
                   }`}
                 >
                   {'\u2605'}
@@ -127,7 +127,7 @@ export default function ReportForm({ trailId, flush = false }: { trailId: number
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex min-h-12 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] px-8 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-950/10 transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-12 items-center justify-center rounded-full bg-[linear-gradient(135deg,#6d8f80,#c8ddcf)] px-8 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-slate-950/10 transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting ? 'Submitting...' : 'Submit Report'}
         </button>

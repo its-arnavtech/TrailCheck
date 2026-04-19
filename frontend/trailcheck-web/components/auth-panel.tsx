@@ -164,7 +164,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
 
   if (isLoadingUser) {
     return (
-      <div className={`${compact ? 'py-1 text-[var(--foreground)]/72' : 'rounded-[1.75rem] border border-white/35 bg-white/20 p-5 text-sm text-white/88 backdrop-blur-xl'}`}>
+      <div className={`${compact ? 'py-1 text-white/72' : 'glass-panel topo-ring rounded-[1.75rem] p-5 text-sm text-white/88'}`}>
         Checking sign-in status...
       </div>
     );
@@ -176,25 +176,39 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
         className={`${
           compact
             ? 'text-[var(--foreground)]'
-            : 'rounded-[1.75rem] border border-white/35 bg-transparent p-5 text-white shadow-[var(--shadow-soft)] backdrop-blur-xl'
+            : 'glass-panel topo-ring rounded-[1.75rem] p-5 text-white'
         } ${compact ? 'py-1' : ''}`}
       >
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-70">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]/62">
           Signed In
         </p>
-        <h3 className="mt-2 text-xl font-semibold tracking-tight">
+        <h3 className="mt-3 text-3xl text-white" data-display="true">
           {user.email}
         </h3>
-        <p className="mt-2 text-sm opacity-80">
+        <p className="mt-3 text-sm leading-7 opacity-80">
           You can submit protected trail reports and save parks to favorites or want-to-go lists with this account.
         </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-[1.1rem] border border-white/10 bg-white/6 px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.18em] text-white/42">Access</p>
+            <p className="mt-2 text-sm font-semibold text-white">Protected reports</p>
+          </div>
+          <div className="rounded-[1.1rem] border border-white/10 bg-white/6 px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.18em] text-white/42">Saved</p>
+            <p className="mt-2 text-sm font-semibold text-white">Favorites + wish list</p>
+          </div>
+          <div className="rounded-[1.1rem] border border-white/10 bg-white/6 px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.18em] text-white/42">Mode</p>
+            <p className="mt-2 text-sm font-semibold text-white">Trail dashboard</p>
+          </div>
+        </div>
         <button
           type="button"
           onClick={handleSignOut}
           className={`mt-4 flex w-full items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold transition ${
             compact
-              ? 'bg-[var(--accent-strong)] text-white hover:brightness-110'
-              : 'bg-white text-emerald-950 hover:bg-white/90'
+              ? 'bg-[var(--accent-strong)] text-slate-950 hover:brightness-110'
+              : 'bg-[linear-gradient(135deg,#6d8f80,#c8ddcf)] text-slate-950 hover:brightness-105'
           }`}
         >
           Sign out
@@ -206,22 +220,22 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
 
   return (
     <div
-      className={`${
-        compact
-          ? 'text-[var(--foreground)]'
-          : 'rounded-[1.75rem] border border-white/35 bg-transparent p-5 text-white shadow-[var(--shadow-soft)] backdrop-blur-xl'
-      } ${compact ? 'py-1' : ''}`}
-    >
+        className={`${
+          compact
+            ? 'text-[var(--foreground)]'
+            : 'glass-panel topo-ring rounded-[1.75rem] p-5 text-white'
+        } ${compact ? 'py-1' : ''}`}
+      >
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-70">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]/62">
             Account
           </p>
-          <h3 className="mt-2 text-xl font-semibold tracking-tight">
+          <h3 className="mt-3 text-3xl text-white" data-display="true">
             {compact ? 'Sign in to report' : 'Join the TrailCheck network'}
           </h3>
         </div>
-        <div className="flex rounded-full border border-current/15 p-1 text-xs">
+        <div className="flex rounded-full border border-current/15 bg-white/6 p-1 text-xs">
           <button
             type="button"
             onClick={() => setMode('signin')}
@@ -229,7 +243,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
               mode === 'signin'
                 ? compact
                   ? 'bg-[var(--accent-soft)] text-[var(--accent-strong)]'
-                  : 'bg-white text-emerald-950'
+                  : 'bg-[linear-gradient(135deg,#6d8f80,#c8ddcf)] text-slate-950'
                 : 'opacity-70'
             }`}
           >
@@ -242,7 +256,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
               mode === 'signup'
                 ? compact
                   ? 'bg-[var(--accent-soft)] text-[var(--accent-strong)]'
-                  : 'bg-white text-emerald-950'
+                  : 'bg-[linear-gradient(135deg,#6d8f80,#c8ddcf)] text-slate-950'
                 : 'opacity-70'
             }`}
           >
@@ -251,7 +265,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
         </div>
       </div>
 
-      <p className="mt-3 text-sm opacity-80">
+      <p className="mt-3 text-sm leading-7 opacity-80">
         {mode === 'signup'
           ? 'Create an account to keep report submissions authenticated.'
           : 'Use your account to access protected reporting routes.'}
@@ -267,7 +281,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
           className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
             compact
               ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
-              : 'border-white/35 bg-white/92 text-slate-900 focus:border-white focus:ring-4 focus:ring-white/30'
+              : 'border-white/10 bg-[rgba(6,12,16,0.42)] text-white placeholder:text-white/34 focus:border-white/28 focus:ring-4 focus:ring-white/10'
           }`}
           required
         />
@@ -280,7 +294,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
           className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
             compact
               ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
-              : 'border-white/35 bg-white/92 text-slate-900 focus:border-white focus:ring-4 focus:ring-white/30'
+              : 'border-white/10 bg-[rgba(6,12,16,0.42)] text-white placeholder:text-white/34 focus:border-white/28 focus:ring-4 focus:ring-white/10'
           }`}
           minLength={8}
           required
@@ -295,7 +309,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
             className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
               compact
                 ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
-                : 'border-white/35 bg-white/92 text-slate-900 focus:border-white focus:ring-4 focus:ring-white/30'
+                : 'border-white/10 bg-[rgba(6,12,16,0.42)] text-white placeholder:text-white/34 focus:border-white/28 focus:ring-4 focus:ring-white/10'
             }`}
             minLength={8}
             required
@@ -308,7 +322,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
             className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
               compact
                 ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
-                : 'border-white/35 bg-white/92 text-slate-900 focus:border-white focus:ring-4 focus:ring-white/30'
+                : 'border-white/10 bg-[rgba(6,12,16,0.42)] text-white focus:border-white/28 focus:ring-4 focus:ring-white/10'
             }`}
             required
           >
@@ -331,7 +345,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
             className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
               compact
                 ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
-                : 'border-white/35 bg-white/92 text-slate-900 focus:border-white focus:ring-4 focus:ring-white/30'
+                : 'border-white/10 bg-[rgba(6,12,16,0.42)] text-white placeholder:text-white/34 focus:border-white/28 focus:ring-4 focus:ring-white/10'
             }`}
             required
           />
@@ -350,7 +364,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
           className={`w-full rounded-2xl px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
             compact
               ? 'bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] text-white hover:brightness-105'
-              : 'bg-emerald-950 text-white hover:bg-emerald-900'
+              : 'bg-[linear-gradient(135deg,#6d8f80,#c8ddcf)] text-slate-950 hover:brightness-105'
           }`}
         >
           {isSubmitting
@@ -366,7 +380,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
             className={`rounded-2xl border px-4 py-3 text-sm ${
               compact
                 ? 'border-[var(--border)] bg-white/72 text-[var(--ink-on-light)]'
-                : 'border-white/20 bg-white/12 text-white'
+                : 'border-white/10 bg-white/6 text-white'
             }`}
           >
             <ul className="list-disc space-y-1 pl-5">

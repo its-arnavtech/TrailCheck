@@ -50,14 +50,14 @@ export default function FavoritesPanel() {
   }, []);
 
   return (
-    <div className="rounded-[1.75rem] border border-white/35 bg-[rgba(12,19,27,0.82)] p-5 text-white shadow-[0_24px_50px_rgba(15,23,42,0.28)] backdrop-blur-xl">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/65">
+    <div className="glass-panel topo-ring rounded-[1.75rem] p-5 text-white shadow-[var(--shadow-card)]">
+      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]/62">
         Favorites
       </p>
-      <h3 className="mt-2 text-xl font-semibold tracking-tight">
+      <h3 className="mt-3 text-3xl text-white" data-display="true">
         Your favorited parks
       </h3>
-      <p className="mt-2 text-sm text-white/78">
+      <p className="mt-2 text-sm text-white/72">
         This list belongs to the signed-in account only.
       </p>
 
@@ -71,7 +71,7 @@ export default function FavoritesPanel() {
             <Link
               key={park.parkSlug}
               href={`/parks/${park.parkSlug}`}
-              className="flex items-center justify-between rounded-2xl border border-white/12 bg-white/8 px-4 py-3 text-sm transition hover:bg-white/14"
+              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm transition hover:bg-white/10"
             >
               <span className="font-medium">{park.parkName}</span>
               <span className="text-white/62">{park.parkState}</span>

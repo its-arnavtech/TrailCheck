@@ -56,7 +56,7 @@ export default function SavedParksPanel() {
   const wantToGo = preferences.filter((preference) => preference.wantsToGo);
 
   return (
-    <div className="mt-5 rounded-[1.5rem] border border-current/12 bg-black/5 p-4">
+    <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-white/6 p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-70">
         Saved Parks
       </p>

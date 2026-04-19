@@ -14,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-scroll-behavior="smooth">
-      <body>
+      <body className="overflow-x-hidden">
         {children}
         <AppToaster />
       </body>

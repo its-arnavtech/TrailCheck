@@ -17,7 +17,7 @@ export default function ParkReportPanel({ trails, flush = false }: ParkReportPan
 
   if (selectableTrails.length === 0) {
     return (
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)]/80 px-4 py-4 text-sm leading-6 text-[var(--foreground)]/68">
+      <div className="rounded-2xl border border-white/10 bg-white/6 px-4 py-4 text-sm leading-6 text-white/68">
         Trail reporting will be available here once trail coverage is added for this park.
       </div>
     );
@@ -25,10 +25,10 @@ export default function ParkReportPanel({ trails, flush = false }: ParkReportPan
 
   return (
     <div className="space-y-5">
-      <div className={flush ? '' : 'rounded-[1.45rem] border border-[var(--border)] bg-[var(--surface)] px-4 py-4'}>
+      <div className={flush ? '' : 'rounded-[1.45rem] border border-white/10 bg-white/6 px-4 py-4'}>
         <label
           htmlFor="park-report-trail"
-          className={`mb-2 block text-sm font-semibold text-[var(--foreground)]/72 ${flush ? 'px-0' : ''}`}
+          className={`mb-2 block text-sm font-semibold text-white/72 ${flush ? 'px-0' : ''}`}
         >
           Choose a trail to report on
         </label>
@@ -36,7 +36,7 @@ export default function ParkReportPanel({ trails, flush = false }: ParkReportPan
           id="park-report-trail"
           value={selectedTrailId ?? ''}
           onChange={(event) => setSelectedTrailId(Number(event.target.value))}
-          className="w-full rounded-[1.1rem] border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--ink-on-light)] shadow-sm outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/10"
+          className="w-full rounded-[1.1rem] border border-white/10 bg-[rgba(6,12,16,0.42)] px-4 py-3 text-sm text-white shadow-sm outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/10"
         >
           {selectableTrails.map((trail) => (
             <option key={trail.id} value={trail.id}>

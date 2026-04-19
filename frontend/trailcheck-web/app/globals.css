@@ -1,46 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  --background: #dbe0e6;
-  --foreground: #27323d;
-  --ink-on-light: #111827;
-  --ink-on-light-muted: rgba(17, 24, 39, 0.62);
-  --surface: rgba(245, 247, 250, 0.82);
-  --surface-strong: #ffffff;
-  --surface-muted: #dbe2ea;
-  --border: rgba(65, 79, 96, 0.14);
-  --accent: #58728c;
-  --accent-strong: #3b5064;
-  --accent-soft: #dbe6f2;
-  --hero-start: #cbd3dc;
-  --hero-end: #aeb9c6;
-  --shadow-soft: 0 18px 50px rgba(45, 58, 74, 0.14);
+  --background: #091116;
+  --background-deep: #050b0f;
+  --foreground: #ecf1ea;
+  --foreground-muted: rgba(236, 241, 234, 0.72);
+  --ink-on-light: #11202a;
+  --ink-on-light-muted: rgba(17, 32, 42, 0.58);
+  --surface: rgba(13, 24, 30, 0.72);
+  --surface-strong: rgba(17, 32, 40, 0.88);
+  --surface-muted: rgba(30, 47, 56, 0.75);
+  --surface-elevated: rgba(240, 244, 240, 0.08);
+  --border: rgba(197, 219, 210, 0.12);
+  --border-strong: rgba(197, 219, 210, 0.2);
+  --accent: #6f8f80;
+  --accent-strong: #c9ddcf;
+  --accent-soft: rgba(111, 143, 128, 0.18);
+  --accent-gold: #d7c088;
+  --hero-start: rgba(13, 29, 32, 0.35);
+  --hero-end: rgba(6, 12, 16, 0.88);
+  --shadow-soft: 0 24px 80px rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 18px 48px rgba(0, 0, 0, 0.24);
+  --radius-panel: 1.75rem;
+  --radius-card: 1.35rem;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-sans: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   --font-mono: "Cascadia Code", "Courier New", monospace;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #11161d;
-    --foreground: #ecf2f8;
-    --ink-on-light: #111827;
-    --ink-on-light-muted: rgba(17, 24, 39, 0.62);
-    --surface: rgba(20, 27, 36, 0.84);
-    --surface-strong: #161d26;
-    --surface-muted: #202a36;
-    --border: rgba(196, 210, 226, 0.12);
-    --accent: #8ea7bf;
-    --accent-strong: #cad8e6;
-    --accent-soft: rgba(142, 167, 191, 0.14);
-    --hero-start: #2b3642;
-    --hero-end: #1c2732;
-    --shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.35);
-  }
 }
 
 * {
@@ -54,13 +44,25 @@ html {
 body {
   min-height: 100vh;
   color: var(--foreground);
-  font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background:
-    radial-gradient(circle at top left, rgba(187, 218, 233, 0.34), transparent 28%),
-    radial-gradient(circle at top right, rgba(185, 197, 211, 0.38), transparent 26%),
-    linear-gradient(180deg, color-mix(in srgb, var(--background) 86%, white 14%), var(--background));
+    radial-gradient(circle at top left, rgba(118, 151, 129, 0.22), transparent 24%),
+    radial-gradient(circle at top right, rgba(55, 88, 109, 0.22), transparent 26%),
+    radial-gradient(circle at 50% 18%, rgba(212, 192, 137, 0.08), transparent 24%),
+    linear-gradient(180deg, #102026 0%, #0b151a 42%, #081015 100%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at center, transparent 0 52%, rgba(4, 10, 14, 0.56) 100%);
+  opacity: 0.9;
+  z-index: -2;
 }
 
 body::before {
@@ -69,15 +71,22 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 58%),
-    repeating-linear-gradient(
-      102deg,
-      rgba(112, 127, 144, 0.08) 0px,
-      rgba(112, 127, 144, 0.08) 2px,
-      transparent 2px,
-      transparent 16px
-    );
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.34), transparent 92%);
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px),
+    repeating-radial-gradient(
+      circle at 18% 18%,
+      rgba(198, 219, 210, 0.08) 0 2px,
+      transparent 2px 14px
+    ),
+    repeating-radial-gradient(
+      circle at 82% 64%,
+      rgba(112, 143, 128, 0.08) 0 2px,
+      transparent 2px 18px
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 35%);
+  background-size: 24px 24px, 580px 580px, 640px 640px, 100% 100%;
+  opacity: 0.45;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.9), transparent 96%);
+  z-index: -1;
 }
 
 a {
@@ -93,6 +102,57 @@ option {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 28%, white 72%);
-  color: var(--foreground);
+  background: color-mix(in srgb, var(--accent) 40%, white 16%);
+  color: white;
+}
+
+h1,
+h2,
+h3,
+[data-display="true"] {
+  font-family: var(--font-serif);
+  letter-spacing: -0.02em;
+}
+
+.glass-panel {
+  background: linear-gradient(180deg, rgba(17, 32, 40, 0.82), rgba(10, 19, 24, 0.72));
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(18px);
+}
+
+.glass-panel-light {
+  background: linear-gradient(180deg, rgba(240, 244, 240, 0.16), rgba(255, 255, 255, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(18px);
+}
+
+.topo-ring {
+  position: relative;
+}
+
+.topo-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    repeating-radial-gradient(
+      circle at 22% 22%,
+      rgba(201, 221, 207, 0.11) 0 1px,
+      transparent 1px 14px
+    ),
+    repeating-radial-gradient(
+      circle at 74% 68%,
+      rgba(215, 192, 136, 0.09) 0 1px,
+      transparent 1px 18px
+    );
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.42), transparent 92%);
+  opacity: 0.4;
+}
+
+.section-shell {
+  @apply mx-auto w-full max-w-[min(100%,1440px)] px-4 sm:px-6 lg:px-8 xl:px-10;
 }
