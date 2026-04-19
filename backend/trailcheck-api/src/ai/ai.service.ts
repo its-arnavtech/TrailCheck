@@ -219,7 +219,13 @@ export class AiService {
   }
 
   isGeminiConfigured(): boolean {
-    return Boolean(this.configService.get<string>('GEMINI_API_KEY'));
+    const apiKey = this.configService.get<string>('GEMINI_API_KEY')?.trim();
+
+    if (!apiKey) {
+      return false;
+    }
+
+    return !['your-gemini-api-key', 'changeme', 'replace-me'].includes(apiKey);
   }
 
   private async collectParkContext(parkSlug: string): Promise<{
@@ -783,7 +789,7 @@ export class AiService {
   }
 
   private getClient(): GoogleGenAI {
-    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+    const apiKey = this.configService.get<string>('GEMINI_API_KEY')?.trim();
 
     if (!apiKey) {
       throw new InternalServerErrorException('Missing GEMINI_API_KEY');

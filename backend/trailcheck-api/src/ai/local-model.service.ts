@@ -13,7 +13,7 @@ const execFileAsync = promisify(execFile);
 @Injectable()
 export class LocalModelService {
   private readonly logger = new Logger(LocalModelService.name);
-  private readonly backendRoot = resolve(__dirname, '..', '..');
+  private readonly backendRoot = this.resolveBackendRoot();
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -122,6 +122,26 @@ export class LocalModelService {
       this.configService.get<string>('LOCAL_MODEL_TIMEOUT_MS') ?? 90000,
     );
     return Number.isFinite(configured) && configured > 0 ? configured : 90000;
+  }
+
+  private resolveBackendRoot(): string {
+    const candidates = [
+      process.cwd(),
+      resolve(__dirname, '..', '..'),
+      resolve(__dirname, '..', '..', '..'),
+      resolve(__dirname, '..', '..', '..', '..'),
+    ];
+
+    for (const candidate of candidates) {
+      if (
+        existsSync(resolve(candidate, 'package.json')) &&
+        existsSync(resolve(candidate, 'ml'))
+      ) {
+        return candidate;
+      }
+    }
+
+    return process.cwd();
   }
 
   private resolveFromRoot(relativeOrAbsolutePath: string): string {

@@ -108,10 +108,7 @@ export default async function Home() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {featurePillars.map((feature) => (
             <article key={feature.title} className="py-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent-strong)]/60">
-                Feature
-              </p>
-              <h2 className="mt-4 text-2xl text-white" data-display="true">
+              <h2 className="text-2xl text-white" data-display="true">
                 {feature.title}
               </h2>
               <p className="mt-3 text-sm leading-7 text-white/70">{feature.description}</p>
