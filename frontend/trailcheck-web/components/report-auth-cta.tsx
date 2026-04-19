@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
+import ModalShell from '@/components/modal-shell';
 import {
   AUTH_STATE_CHANGED_EVENT,
   getStoredAuthToken,
@@ -28,8 +29,8 @@ export default function ReportAuthCta() {
 
   if (signedInEmail) {
     return (
-      <div className="rounded-[1.35rem] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
+      <div className="rounded-[1.35rem] border border-emerald-300/16 bg-emerald-400/10 px-4 py-4 text-sm text-emerald-50">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-200/70">
           Signed in
         </p>
         <p className="mt-2 font-medium">{signedInEmail}</p>
@@ -42,23 +43,15 @@ export default function ReportAuthCta() {
       <button
         type="button"
         onClick={() => setIsAuthOpen(true)}
-        className="inline-flex min-h-11 items-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+        className="inline-flex min-h-11 items-center rounded-full bg-[linear-gradient(135deg,#6d8f80,#c8ddcf)] px-5 py-3 text-sm font-semibold text-slate-950 transition hover:brightness-110"
       >
         Login to report
       </button>
 
       {isAuthOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
-          onClick={() => setIsAuthOpen(false)}
-        >
-          <div
-            className="relative w-full max-w-md"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <AuthPanel />
-          </div>
-        </div>
+        <ModalShell onClose={() => setIsAuthOpen(false)}>
+          <AuthPanel />
+        </ModalShell>
       ) : null}
     </>
   );
