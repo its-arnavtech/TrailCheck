@@ -73,6 +73,9 @@ THROTTLE_LIMIT=120
 NPS_API_KEY="your-nps-api-key"
 GEMINI_API_KEY="your-gemini-api-key"
 GEMINI_MODEL="gemini-2.5-flash"
+PASSWORD_RESET_EMAIL_PROVIDER="disabled"
+MAIL_FROM_ADDRESS=""
+RESEND_API_KEY=""
 ```
 
 Create a `.env.local` file in `frontend/trailcheck-web` from `.env.example`:
@@ -86,6 +89,7 @@ Notes:
 - `JWT_SECRET` is required for sign-up, sign-in, and authenticated report submission.
 - `NPS_API_KEY` enables live National Park Service alerts.
 - `GEMINI_API_KEY` enables Gemini-generated summaries. Without it, the backend falls back to a non-AI summary path.
+- `PASSWORD_RESET_EMAIL_PROVIDER=resend` enables password reset emails. When set, you must also provide `MAIL_FROM_ADDRESS` and `RESEND_API_KEY`.
 
 ### 3. Run database migrations and seed data
 
@@ -189,11 +193,13 @@ This supports seeded park and trail data, user-submitted reports, and derived or
 - Set `NEXT_PUBLIC_API_BASE_URL=https://your-api-domain` in the frontend deployment.
 - Set `FRONTEND_ORIGIN=https://your-vercel-domain` in the backend deployment.
 - Set `DATABASE_URL` to a managed production database connection string.
+- Password reset email is disabled by default. To enable it in production, set `PASSWORD_RESET_EMAIL_PROVIDER=resend` plus valid `MAIL_FROM_ADDRESS` and `RESEND_API_KEY` values in the backend deployment.
 
 ## Production Security Defaults
 
 - The backend validates required env vars on boot and refuses production startup with a weak JWT secret.
 - Production startup refuses non-PostgreSQL `DATABASE_URL` values, which helps prevent mismatched or ephemeral database deployments.
+- Password reset email provider credentials are validated only when email delivery is explicitly enabled.
 - CORS is restricted to the configured frontend allowlist, Helmet headers are enabled, and request throttling is turned on globally.
 - `GET /health` is available for platform health checks and uptime probes.
 

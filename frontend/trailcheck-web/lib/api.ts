@@ -122,7 +122,6 @@ export type CreateReportInput = {
   conditionRating: number;
   surfaceCondition: string;
   note?: string;
-  reporterName?: string;
 };
 
 export type SigninInput = {
@@ -145,6 +144,10 @@ export type AuthResponse = {
   user: AuthenticatedUser;
 };
 
+export type GenericMessageResponse = {
+  message: string;
+};
+
 export type ParkPreference = {
   parkId: number;
   parkSlug: string;
@@ -157,6 +160,15 @@ export type ParkPreference = {
 export type UpdateParkPreferenceInput = {
   isFavorite: boolean;
   wantsToGo: boolean;
+};
+
+export type ForgotPasswordInput = {
+  email: string;
+};
+
+export type ResetPasswordInput = {
+  token: string;
+  password: string;
 };
 
 function getApiBaseUrl() {
@@ -311,6 +323,40 @@ export async function signin(input: SigninInput): Promise<AuthResponse> {
 
   if (!response.ok) {
     throw new Error(await parseError(response, 'Failed to sign in.'));
+  }
+
+  return response.json();
+}
+
+export async function requestPasswordReset(
+  input: ForgotPasswordInput,
+): Promise<GenericMessageResponse> {
+  const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+    method: 'POST',
+    headers: buildHeaders(undefined, { json: true }),
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await parseError(response, 'Failed to request password reset.'),
+    );
+  }
+
+  return response.json();
+}
+
+export async function resetPassword(
+  input: ResetPasswordInput,
+): Promise<GenericMessageResponse> {
+  const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+    method: 'POST',
+    headers: buildHeaders(undefined, { json: true }),
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response, 'Failed to reset password.'));
   }
 
   return response.json();

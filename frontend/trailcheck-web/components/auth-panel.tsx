@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { getCurrentUser, signin, signup, type AuthenticatedUser } from '@/lib/api';
@@ -10,6 +11,10 @@ import {
   getStoredAuthUser,
   setStoredSession,
 } from '@/lib/auth';
+import {
+  PASSWORD_POLICY_HINT,
+  passwordMeetsPolicy,
+} from '@/lib/password-policy';
 import SavedParksPanel from '@/components/saved-parks-panel';
 
 type AuthPanelProps = {
@@ -95,7 +100,8 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
   }
 
   const emailIsInvalid = mode === 'signup' && email.length > 0 && !hasValidEmail(email);
-  const passwordTooShort = mode === 'signup' && password.length > 0 && password.length < 8;
+  const passwordIsWeak =
+    mode === 'signup' && password.length > 0 && !passwordMeetsPolicy(password);
   const ageIsInvalid =
     mode === 'signup' &&
     age.length > 0 &&
@@ -106,6 +112,11 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
 
     if (mode === 'signup' && !hasValidEmail(email)) {
       toast.error('Please use a supported email provider such as Gmail, Yahoo, Outlook, iCloud, AOL, or Proton.');
+      return;
+    }
+
+    if (mode === 'signup' && !passwordMeetsPolicy(password)) {
+      toast.error(PASSWORD_POLICY_HINT);
       return;
     }
 
@@ -296,9 +307,23 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
               ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
               : 'border-white/10 bg-[rgba(6,12,16,0.42)] text-white placeholder:text-white/34 focus:border-white/28 focus:ring-4 focus:ring-white/10'
           }`}
-          minLength={8}
+          minLength={mode === 'signup' ? 12 : 8}
           required
         />
+        {mode === 'signin' ? (
+          <div className="flex justify-end">
+            <Link
+              href="/auth/forgot-password"
+              className={`text-sm font-medium underline underline-offset-4 transition ${
+                compact
+                  ? 'text-[var(--accent-strong)] hover:opacity-80'
+                  : 'text-white/88 hover:text-white'
+              }`}
+            >
+              Forgot password? Contact support
+            </Link>
+          </div>
+        ) : null}
         {mode === 'signup' ? (
           <input
             type="password"
@@ -311,7 +336,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
                 ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
                 : 'border-white/10 bg-[rgba(6,12,16,0.42)] text-white placeholder:text-white/34 focus:border-white/28 focus:ring-4 focus:ring-white/10'
             }`}
-            minLength={8}
+            minLength={12}
             required
           />
         ) : null}
@@ -357,7 +382,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
             (mode === 'signup' &&
               ((confirmPassword.length > 0 && password !== confirmPassword) ||
                 emailIsInvalid ||
-                passwordTooShort ||
+                passwordIsWeak ||
                 ageIsInvalid ||
                 age.length === 0))
           }
@@ -385,15 +410,15 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
           >
             <ul className="list-disc space-y-1 pl-5">
               <li>Email must be valid.</li>
-              <li>Password should be more than 8 characters.</li>
+              <li>{PASSWORD_POLICY_HINT}</li>
             </ul>
-            {emailIsInvalid || passwordTooShort ? (
+            {emailIsInvalid || passwordIsWeak || ageIsInvalid ? (
               <div className="mt-3 space-y-1 font-medium text-rose-300">
                 {emailIsInvalid ? (
                   <p>Email is not valid. Use a supported provider such as Gmail, Yahoo, Outlook, iCloud, AOL, or Proton.</p>
                 ) : null}
-                {passwordTooShort ? (
-                  <p>Password must be at least 8 characters long.</p>
+                {passwordIsWeak ? (
+                  <p>{PASSWORD_POLICY_HINT}</p>
                 ) : null}
                 {ageIsInvalid ? (
                   <p>Age must be a whole number between 1 and 120.</p>

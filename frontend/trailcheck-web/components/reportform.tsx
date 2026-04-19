@@ -53,8 +53,12 @@ export default function ReportForm({ trailId, flush = false }: { trailId: number
       setRating(3);
       setSurface('DRY');
       router.refresh();
-    } catch {
-      toast.error('Failed to submit report. Please try again.');
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to submit report. Please try again.';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

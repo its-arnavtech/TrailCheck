@@ -1,5 +1,6 @@
 const DEFAULT_DEV_FRONTEND_ORIGIN = 'http://localhost:3000';
 const POSTGRES_PROTOCOLS = ['postgres://', 'postgresql://'];
+const PASSWORD_RESET_EMAIL_PROVIDERS = ['disabled', 'resend'] as const;
 
 function parseAllowedOrigins(value?: string) {
   return (value ?? '')
@@ -19,6 +20,17 @@ function normalizePositiveInteger(value: string | undefined, fallback: number) {
   }
 
   return parsed;
+}
+
+function normalizeUrl(value: string | undefined, fallback: string) {
+  const candidate = (value ?? fallback).trim();
+
+  try {
+    const url = new URL(candidate);
+    return url.toString().replace(/\/$/, '');
+  } catch {
+    throw new Error(`Expected a valid URL but received "${candidate}".`);
+  }
 }
 
 export function validateEnvironment(config: Record<string, unknown>) {
@@ -66,6 +78,72 @@ export function validateEnvironment(config: Record<string, unknown>) {
     );
   }
 
+  const passwordResetTokenTtlMinutes = normalizePositiveInteger(
+    typeof config.PASSWORD_RESET_TOKEN_TTL_MINUTES === 'string'
+      ? config.PASSWORD_RESET_TOKEN_TTL_MINUTES
+      : undefined,
+    30,
+  );
+  if (
+    passwordResetTokenTtlMinutes < 15 ||
+    passwordResetTokenTtlMinutes > 60
+  ) {
+    throw new Error(
+      'PASSWORD_RESET_TOKEN_TTL_MINUTES must be between 15 and 60 minutes.',
+    );
+  }
+
+  const passwordResetMinResponseMs = normalizePositiveInteger(
+    typeof config.PASSWORD_RESET_MIN_RESPONSE_MS === 'string'
+      ? config.PASSWORD_RESET_MIN_RESPONSE_MS
+      : undefined,
+    350,
+  );
+
+  const passwordResetEmailProvider = String(
+    config.PASSWORD_RESET_EMAIL_PROVIDER ?? 'disabled',
+  ).toLowerCase();
+
+  if (
+    !PASSWORD_RESET_EMAIL_PROVIDERS.includes(
+      passwordResetEmailProvider as (typeof PASSWORD_RESET_EMAIL_PROVIDERS)[number],
+    )
+  ) {
+    throw new Error(
+      'PASSWORD_RESET_EMAIL_PROVIDER must be one of: disabled, resend.',
+    );
+  }
+
+  const frontendBaseUrl = normalizeUrl(
+    typeof config.FRONTEND_BASE_URL === 'string'
+      ? config.FRONTEND_BASE_URL
+      : frontendOrigins[0],
+    DEFAULT_DEV_FRONTEND_ORIGIN,
+  );
+
+  const mailFromAddress =
+    typeof config.MAIL_FROM_ADDRESS === 'string'
+      ? config.MAIL_FROM_ADDRESS.trim()
+      : '';
+  const resendApiKey =
+    typeof config.RESEND_API_KEY === 'string'
+      ? config.RESEND_API_KEY.trim()
+      : '';
+
+  if (passwordResetEmailProvider === 'resend') {
+    if (!mailFromAddress) {
+      throw new Error(
+        'MAIL_FROM_ADDRESS is required when PASSWORD_RESET_EMAIL_PROVIDER=resend.',
+      );
+    }
+
+    if (!resendApiKey) {
+      throw new Error(
+        'RESEND_API_KEY is required when PASSWORD_RESET_EMAIL_PROVIDER=resend.',
+      );
+    }
+  }
+
   return {
     ...config,
     NODE_ENV: nodeEnv,
@@ -89,6 +167,12 @@ export function validateEnvironment(config: Record<string, unknown>) {
         : undefined,
       120,
     ),
+    FRONTEND_BASE_URL: frontendBaseUrl,
+    PASSWORD_RESET_TOKEN_TTL_MINUTES: passwordResetTokenTtlMinutes,
+    PASSWORD_RESET_MIN_RESPONSE_MS: passwordResetMinResponseMs,
+    PASSWORD_RESET_EMAIL_PROVIDER: passwordResetEmailProvider,
+    MAIL_FROM_ADDRESS: mailFromAddress,
+    RESEND_API_KEY: resendApiKey,
   };
 }
 
