@@ -60,7 +60,18 @@ credentials/
 
 # Local training data artifacts
 backend/trailcheck-api/data/
+backend/trailcheck-api/.venv/
+backend/trailcheck-api/ml/__pycache__/
+backend/trailcheck-api/ml/**/__pycache__/
+backend/trailcheck-api/ml/.pytest_cache/
+backend/trailcheck-api/ml/.mypy_cache/
+backend/trailcheck-api/ml/.ruff_cache/
+backend/trailcheck-api/ml/**/*.pyc
+backend/trailcheck-api/scripts/**/__pycache__/
+backend/trailcheck-api/scripts/**/*.pyc
 backend/trailcheck-api/ml/models/*
 !backend/trailcheck-api/ml/models/.gitkeep
 backend/trailcheck-api/ml/data/outputs/*
 !backend/trailcheck-api/ml/data/outputs/.gitkeep
+backend/trailcheck-api/ml/data/outputs/*.log
+backend/trailcheck-api/ml/data/outputs/*.json

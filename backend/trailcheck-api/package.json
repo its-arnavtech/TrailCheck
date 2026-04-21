@@ -15,6 +15,7 @@
     "db:seed": "prisma db seed",
     "db:setup": "npm run db:migrate && npm run db:seed",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "local-model:serve": ".venv\\Scripts\\python.exe -m uvicorn ml.inference.server:app --host 127.0.0.1 --port 8001",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "start": "node dist/src/main.js",

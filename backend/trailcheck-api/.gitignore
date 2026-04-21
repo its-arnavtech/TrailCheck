@@ -64,3 +64,18 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 *.db-wal
 *.db-shm
 *.db.*
+
+# Python local model server / training artifacts
+.venv/
+ml/__pycache__/
+ml/**/__pycache__/
+ml/.pytest_cache/
+ml/.mypy_cache/
+ml/.ruff_cache/
+ml/**/*.pyc
+scripts/**/__pycache__/
+scripts/**/*.pyc
+ml/models/*
+!ml/models/.gitkeep
+ml/data/outputs/*
+!ml/data/outputs/.gitkeep

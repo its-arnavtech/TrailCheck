@@ -86,7 +86,7 @@ export class AiService {
       hazardAssessment,
       weather,
     );
-    const localResult = await this.tryLocalStructuredOutput({
+    const localResult = await this.tryLocalStructuredOutput('ask', {
       parkSlug: dto.parkSlug,
       parkName,
       alerts,
@@ -118,6 +118,15 @@ export class AiService {
     const localFailureMessage = this.describeLocalFailure(localResult);
 
     if (!this.isGeminiConfigured()) {
+      this.logRulesFallback(
+        'ask',
+        dto.parkSlug,
+        this.combineGenerationErrors(
+          localFailureMessage,
+          'GEMINI_API_KEY is missing',
+        ) ?? 'Gemini is not configured',
+      );
+
       return {
         parkSlug: dto.parkSlug,
         question: dto.question,
@@ -143,7 +152,13 @@ export class AiService {
     }
 
     try {
-      const answer = await this.generateAskAnswer(dto, context, fallbackNotice);
+      const answer = await this.generateAskAnswerWithLogging(
+        'ask',
+        dto.parkSlug,
+        dto,
+        context,
+        fallbackNotice,
+      );
 
       return {
         parkSlug: dto.parkSlug,
@@ -160,9 +175,13 @@ export class AiService {
         context,
       };
     } catch (error) {
-      this.logger.error(
-        'Gemini ask flow failed, returning fallback answer.',
-        error,
+      this.logRulesFallback(
+        'ask',
+        dto.parkSlug,
+        this.combineGenerationErrors(
+          localFailureMessage,
+          error instanceof Error ? error.message : 'Unknown Gemini error',
+        ) ?? 'Unknown generation failure',
       );
 
       return {
@@ -320,20 +339,72 @@ export class AiService {
     return answer;
   }
 
-  private async tryLocalStructuredOutput(params: {
-    parkSlug: string;
-    parkName: string;
-    alerts: NpsAlert[];
-    weather: ParkWeather | null;
-    hazardAssessment: SeasonalHazardAssessment;
-    hazards: DerivedHazard[];
-  }): Promise<LocalModelResult | null> {
+  private async tryLocalStructuredOutput(
+    flow: 'ask' | 'digest',
+    params: {
+      parkSlug: string;
+      parkName: string;
+      alerts: NpsAlert[];
+      weather: ParkWeather | null;
+      hazardAssessment: SeasonalHazardAssessment;
+      hazards: DerivedHazard[];
+    },
+  ): Promise<LocalModelResult | null> {
     if (!this.localModelService.isEnabled()) {
+      this.logger.log(
+        `[${flow}] Local model disabled for "${params.parkSlug}", skipping local generation.`,
+      );
       return null;
     }
 
+    const localTimeoutMs = this.localModelService.getTimeoutMs();
+    const attemptBudgetMs =
+      flow === 'digest'
+        ? this.getEffectiveLocalDigestBudgetMs(localTimeoutMs)
+        : localTimeoutMs;
     const localInput = this.buildLocalModelInput(params);
-    return this.localModelService.generate(localInput);
+    const startedAt = Date.now();
+
+    this.logger.log(
+      `[${flow}] Starting local generation for "${params.parkSlug}" (localTimeout=${localTimeoutMs}ms${flow === 'digest' ? `, digestBudget=${attemptBudgetMs}ms` : ''}).`,
+    );
+
+    try {
+      const result =
+        flow === 'digest'
+          ? await this.withTimeout(
+              this.localModelService.generate(localInput),
+              attemptBudgetMs,
+              `Local digest generation timed out after ${attemptBudgetMs}ms`,
+            )
+          : await this.localModelService.generate(localInput);
+
+      const elapsedMs = Date.now() - startedAt;
+      if (result.ok && result.output) {
+        this.logger.log(
+          `[${flow}] Local generation succeeded for "${params.parkSlug}" in ${elapsedMs}ms.`,
+        );
+      } else {
+        this.logger.warn(
+          `[${flow}] Local generation failed for "${params.parkSlug}" in ${elapsedMs}ms: ${this.describeLocalFailure(result) ?? 'Local model returned no structured output.'}`,
+        );
+      }
+
+      return result;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Unknown local model error';
+      this.logger.warn(
+        `[${flow}] Local generation threw for "${params.parkSlug}" after ${Date.now() - startedAt}ms: ${message}`,
+      );
+
+      return {
+        ok: false,
+        fallbackRecommended: true,
+        output: null,
+        errors: [message],
+      };
+    }
   }
 
   private buildLocalModelInput(params: {
@@ -505,17 +576,14 @@ export class AiService {
       weather,
     );
 
-    const localResult = await this.withTimeout(
-      this.tryLocalStructuredOutput({
-        parkSlug,
-        parkName,
-        alerts,
-        weather,
-        hazardAssessment,
-        hazards,
-      }),
-      this.getDigestGenerationTimeoutMs(),
-    ).catch(() => null);
+    const localResult = await this.tryLocalStructuredOutput('digest', {
+      parkSlug,
+      parkName,
+      alerts,
+      weather,
+      hazardAssessment,
+      hazards,
+    });
 
     const structuredOutput =
       localResult?.ok && localResult.output ? localResult.output : null;
@@ -544,16 +612,16 @@ export class AiService {
 
     if (this.isGeminiConfigured()) {
       try {
-        const answer = await this.withTimeout(
-          this.generateAskAnswer(
-            {
-              parkSlug,
-              question:
-                'What important conditions and hazards should visitors know right now?',
-            },
-            context,
-            fallbackNotice,
-          ),
+        const answer = await this.generateAskAnswerWithLogging(
+          'digest',
+          parkSlug,
+          {
+            parkSlug,
+            question:
+              'What important conditions and hazards should visitors know right now?',
+          },
+          context,
+          fallbackNotice,
           this.getDigestGenerationTimeoutMs(),
         );
 
@@ -571,6 +639,15 @@ export class AiService {
           weather,
         };
       } catch (error) {
+        this.logRulesFallback(
+          'digest',
+          parkSlug,
+          this.combineGenerationErrors(
+            localFailureMessage,
+            error instanceof Error ? error.message : 'Unknown Gemini error',
+          ) ?? 'Unknown generation failure',
+        );
+
         return {
           parkSlug,
           shortSummary: this.buildDigestSummary(
@@ -594,6 +671,15 @@ export class AiService {
         };
       }
     }
+
+    this.logRulesFallback(
+      'digest',
+      parkSlug,
+      this.combineGenerationErrors(
+        localFailureMessage,
+        'GEMINI_API_KEY is missing',
+      ) ?? 'Gemini is not configured',
+    );
 
     return {
       parkSlug,
@@ -806,17 +892,81 @@ export class AiService {
     return this.configService.get<string>('GEMINI_MODEL') ?? 'gemini-2.5-flash';
   }
 
-  private getDigestGenerationTimeoutMs(): number {
-    const configured = Number(
-      this.configService.get<string>('DIGEST_GENERATION_TIMEOUT_MS') ?? 2500,
-    );
-    return Number.isFinite(configured) && configured > 0 ? configured : 2500;
+  private getEffectiveLocalDigestBudgetMs(localTimeoutMs: number): number {
+    const digestTimeoutMs = this.getDigestGenerationTimeoutMs();
+    const minimumCompatibleBudgetMs = localTimeoutMs + 10000;
+
+    if (digestTimeoutMs < minimumCompatibleBudgetMs) {
+      this.logger.warn(
+        `DIGEST_GENERATION_TIMEOUT_MS=${digestTimeoutMs}ms is shorter than the local model timeout budget (${localTimeoutMs}ms). Using ${minimumCompatibleBudgetMs}ms so local generation can finish cleanly.`,
+      );
+      return minimumCompatibleBudgetMs;
+    }
+
+    return digestTimeoutMs;
   }
 
-  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  private getDigestGenerationTimeoutMs(): number {
+    const configured = Number(
+      this.configService.get<string>('DIGEST_GENERATION_TIMEOUT_MS') ?? 210000,
+    );
+    return Number.isFinite(configured) && configured > 0 ? configured : 210000;
+  }
+
+  private async generateAskAnswerWithLogging(
+    flow: 'ask' | 'digest',
+    parkSlug: string,
+    dto: AskDto,
+    context: RagDocument[],
+    notice: string,
+    timeoutMs?: number,
+  ): Promise<string> {
+    const startedAt = Date.now();
+    this.logger.log(
+      `[${flow}] Starting Gemini fallback for "${parkSlug}"${timeoutMs ? ` (timeout=${timeoutMs}ms)` : ''}.`,
+    );
+
+    try {
+      const answer = timeoutMs
+        ? await this.withTimeout(
+            this.generateAskAnswer(dto, context, notice),
+            timeoutMs,
+            `Gemini ${flow} generation timed out after ${timeoutMs}ms`,
+          )
+        : await this.generateAskAnswer(dto, context, notice);
+
+      this.logger.log(
+        `[${flow}] Gemini fallback succeeded for "${parkSlug}" in ${Date.now() - startedAt}ms.`,
+      );
+      return answer;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Unknown Gemini error';
+      this.logger.warn(
+        `[${flow}] Gemini fallback failed for "${parkSlug}" after ${Date.now() - startedAt}ms: ${message}`,
+      );
+      throw error;
+    }
+  }
+
+  private logRulesFallback(
+    flow: 'ask' | 'digest',
+    parkSlug: string,
+    reason: string,
+  ): void {
+    this.logger.warn(
+      `[${flow}] Returning rules fallback for "${parkSlug}": ${reason}`,
+    );
+  }
+
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    timeoutMessage = `Timed out after ${timeoutMs}ms`,
+  ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       const timeout = setTimeout(() => {
-        reject(new Error(`Timed out after ${timeoutMs}ms`));
+        reject(new Error(timeoutMessage));
       }, timeoutMs);
 
       promise.then(

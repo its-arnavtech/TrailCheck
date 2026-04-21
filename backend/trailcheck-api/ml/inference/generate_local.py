@@ -2,20 +2,19 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
 from pathlib import Path
 from typing import Any
-
-import torch
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 from ml.common import load_config, resolve_backend_path
-from ml.data.prompts import SYSTEM_PROMPT, build_user_message
-from ml.inference.load_adapter import load_model_with_adapter, load_tokenizer
-from ml.inference.validator import ValidationResult, validate_output_text
+from ml.inference.runtime import LocalInferenceEngine, build_example_from_input_context
+
+logger = logging.getLogger(__name__)
 
 
 def parse_args() -> argparse.Namespace:
@@ -39,184 +38,154 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--output-file",
+        help="Deprecated alias for --output-jsonl.",
+    )
+    parser.add_argument(
+        "--output-json",
+        help="Optional JSON output path for a single input prediction.",
+    )
+    parser.add_argument(
+        "--output-jsonl",
         help="Optional JSONL output path for batch predictions.",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite an existing output file instead of failing.",
+    )
+    parser.add_argument(
+        "--progress-every",
+        type=int,
+        default=1,
+        help="Print batch progress every N processed rows. Use 0 to disable progress logs.",
     )
     return parser.parse_args()
 
 
-def render_generation_prompt(tokenizer, messages: list[dict[str, str]]) -> str:
-    if getattr(tokenizer, "chat_template", None):
-        return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-
-    rendered = []
-    for message in messages:
-        rendered.append(f"{message['role'].upper()}:\n{message['content']}\n")
-    rendered.append("ASSISTANT:\n")
-    return "\n".join(rendered)
+def _default_batch_output_path(config: dict[str, Any]) -> Path:
+    return resolve_backend_path(config["data"]["output_dir"]) / "local_predictions.jsonl"
 
 
-def generate_once(
-    *,
-    model,
-    tokenizer,
-    messages: list[dict[str, str]],
-    inference_config: dict[str, Any],
-) -> str:
-    prompt = render_generation_prompt(tokenizer, messages)
-    model_inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+def resolve_output_path(args: argparse.Namespace, *, is_batch: bool, config: dict[str, Any]) -> Path | None:
+    raw_output = args.output_jsonl or args.output_file
+    if is_batch:
+        path = resolve_backend_path(raw_output) if raw_output else _default_batch_output_path(config)
+    else:
+        if raw_output:
+            raise ValueError("Batch output options (--output-jsonl/--output-file) cannot be used with --input-json.")
+        path = resolve_backend_path(args.output_json) if args.output_json else None
 
-    do_sample = bool(inference_config["do_sample"]) and float(inference_config["temperature"]) > 0
-    generation_kwargs = {
-        "max_new_tokens": int(inference_config["max_new_tokens"]),
-        "do_sample": do_sample,
-        "temperature": float(inference_config["temperature"]) if do_sample else None,
-        "top_p": float(inference_config["top_p"]) if do_sample else None,
-        "repetition_penalty": float(inference_config["repetition_penalty"]),
-        "pad_token_id": tokenizer.pad_token_id,
-        "eos_token_id": tokenizer.eos_token_id,
-    }
-    generation_kwargs = {key: value for key, value in generation_kwargs.items() if value is not None}
-
-    with torch.inference_mode():
-        output_tokens = model.generate(**model_inputs, **generation_kwargs)
-
-    generated_tokens = output_tokens[0][model_inputs["input_ids"].shape[1] :]
-    return tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
+    if path and path.exists() and not args.overwrite:
+        raise FileExistsError(
+            f"Output file already exists: {path}. Re-run with --overwrite to replace it."
+        )
+    return path
 
 
-def attempt_repair(
-    *,
-    model,
-    tokenizer,
-    inference_config: dict[str, Any],
-    original_messages: list[dict[str, str]],
-    invalid_output: str,
-) -> ValidationResult:
-    repair_messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {
-            "role": "user",
-            "content": (
-                "The previous answer did not validate against the required JSON schema.\n"
-                "Rewrite it as a valid JSON object using only the provided context.\n\n"
-                f"Original user context:\n{original_messages[-1]['content']}\n\n"
-                f"Invalid assistant output:\n{invalid_output}"
-            ),
-        },
-    ]
-    repaired_text = generate_once(
-        model=model,
-        tokenizer=tokenizer,
-        messages=repair_messages,
-        inference_config=inference_config,
-    )
-    return validate_output_text(repaired_text)
-
-
-def load_examples(args: argparse.Namespace) -> list[dict[str, Any]]:
+def load_examples(args: argparse.Namespace) -> tuple[list[dict[str, Any]], bool]:
     if args.input_json:
         input_path = resolve_backend_path(args.input_json)
         context = json.loads(input_path.read_text(encoding="utf-8"))
-        return [
-            {
-                "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": build_user_message(context)},
-                ],
-                "metadata": {
-                    "rowId": "single-input",
-                    "parkCode": context.get("parkCode"),
-                    "parkSlug": context.get("parkSlug"),
-                },
-            }
-        ]
+        return ([build_example_from_input_context(context)], False)
 
-    if args.dataset_file:
-        dataset_path = resolve_backend_path(args.dataset_file)
-        examples = []
-        with dataset_path.open("r", encoding="utf-8") as handle:
-            for line in handle:
-                if not line.strip():
-                    continue
-                record = json.loads(line)
-                examples.append(
-                    {
-                        "messages": record["messages"][:2],
-                        "metadata": record.get("metadata", {}),
-                    }
-                )
-        return examples
+    dataset_path = resolve_backend_path(
+        args.dataset_file or "ml/data/outputs/validation.jsonl"
+    )
+    examples = []
+    with dataset_path.open("r", encoding="utf-8") as handle:
+        for index, line in enumerate(handle):
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            metadata = dict(record.get("metadata", {}))
+            metadata.setdefault("rowId", f"row-{index:05d}")
+            examples.append(
+                {
+                    "messages": record["messages"][:2],
+                    "metadata": metadata,
+                    "inputContext": record.get("input_context"),
+                }
+            )
+    return examples, True
 
-    raise ValueError("Either --input-json or --dataset-file must be provided.")
+
+def write_single_result(path: Path, result: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def append_result(path: Path, result: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(result, ensure_ascii=False) + "\n")
 
 
 def main() -> None:
     args = parse_args()
     config = load_config(args.config)
-    model_config = config["model"]
-    inference_config = config["inference"]
-    quantization_config = config["quantization"]
-    adapter_path = resolve_backend_path(
-        args.adapter_path or config["training"]["output_dir"]
+    engine = LocalInferenceEngine(
+        config_path=args.config,
+        adapter_path=args.adapter_path,
     )
+    examples, is_batch = load_examples(args)
+    output_path = resolve_output_path(args, is_batch=is_batch, config=config)
+    total_examples = len(examples)
 
-    tokenizer = load_tokenizer(
-        model_name=model_config["base_model"],
-        trust_remote_code=bool(model_config["trust_remote_code"]),
-    )
-    model = load_model_with_adapter(
-        base_model_name=model_config["base_model"],
-        adapter_path=adapter_path,
-        quantization_config=quantization_config,
-        trust_remote_code=bool(model_config["trust_remote_code"]),
-    )
-    examples = load_examples(args)
+    if is_batch and output_path is not None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text("", encoding="utf-8")
 
     results: list[dict[str, Any]] = []
-    repair_attempts = int(inference_config["repair_attempts"])
 
-    for example in examples:
-        raw_text = generate_once(
-            model=model,
-            tokenizer=tokenizer,
-            messages=example["messages"],
-            inference_config=inference_config,
-        )
-        validation = validate_output_text(raw_text)
-
-        attempts = 0
-        while not validation.is_valid and attempts < repair_attempts:
-            attempts += 1
-            validation = attempt_repair(
-                model=model,
-                tokenizer=tokenizer,
-                inference_config=inference_config,
-                original_messages=example["messages"],
-                invalid_output=raw_text,
-            )
-
-        results.append(
-            {
-                "rowId": example["metadata"].get("rowId"),
-                "ok": validation.is_valid,
-                "fallbackRecommended": not validation.is_valid,
-                "output": validation.data,
-                "errors": validation.errors,
-                "rawText": validation.raw_text,
-                "extractedJson": validation.extracted_json,
-                "metadata": example["metadata"],
+    for index, example in enumerate(examples):
+        try:
+            result = engine.generate_from_example(example, index=index)
+            results.append(result)
+        except Exception as exc:
+            result = {
+                "rowId": example.get("metadata", {}).get("rowId", f"row-{index:05d}"),
+                "index": index,
+                "ok": False,
+                "fallbackRecommended": True,
+                "output": None,
+                "errors": [f"{type(exc).__name__}: {exc}"],
+                "rawText": "",
+                "extractedJson": None,
+                "repaired": False,
+                "repairAttemptsUsed": 0,
+                "metadata": dict(example.get("metadata", {})),
+                "inputContext": example.get("inputContext"),
             }
-        )
+            results.append(result)
 
-    if args.output_file:
-        output_path = resolve_backend_path(args.output_file)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with output_path.open("w", encoding="utf-8") as handle:
-            for result in results:
-                handle.write(json.dumps(result, ensure_ascii=False) + "\n")
+        if is_batch and output_path is not None:
+            append_result(output_path, result)
+            if args.progress_every > 0 and (
+                (index + 1) % args.progress_every == 0 or index + 1 == total_examples
+            ):
+                status = "ok" if result["ok"] else "failed"
+                print(
+                    f"[{index + 1}/{total_examples}] {result['rowId']} {status}",
+                    flush=True,
+                )
+
+    if is_batch:
+        if output_path is None:
+            raise ValueError("Batch inference requires an output path.")
+        summary = {
+            "rowsProcessed": len(results),
+            "rowsSucceeded": sum(1 for result in results if result["ok"]),
+            "rowsFailed": sum(1 for result in results if not result["ok"]),
+            "outputFile": str(output_path),
+        }
+        print(json.dumps(summary, indent=2))
     else:
-        print(json.dumps(results[0], indent=2))
+        result = results[0]
+        if output_path:
+            write_single_result(output_path, result)
+        print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     main()

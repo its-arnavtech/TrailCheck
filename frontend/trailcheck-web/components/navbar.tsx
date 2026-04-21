@@ -90,8 +90,8 @@ export default function NavBar({
 
   return (
     <>
-      <header className={`${home ? 'section-shell pt-4 sm:pt-5' : ''}`}>
-        <nav className="glass-panel topo-ring sticky top-4 z-30 rounded-[1.9rem] px-4 py-3 sm:px-5">
+      <header className={`${home ? 'section-shell ' : ''}sticky top-0 z-40 pt-4 sm:pt-5`}>
+        <nav className="glass-panel topo-ring rounded-[1.9rem] px-4 py-3 sm:px-5">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <Link href="/" className="mr-2 text-sm font-semibold uppercase tracking-[0.3em] text-[var(--accent-strong)]">
               TrailCheck
