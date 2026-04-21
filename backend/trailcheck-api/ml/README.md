@@ -84,11 +84,39 @@ python backend/trailcheck-api/ml/evaluation/evaluate_outputs.py `
   --predictions gemini=backend/trailcheck-api/ml/data/outputs/gemini_predictions.jsonl
 ```
 
+## Persistent Local Model Server
+
+Start the persistent server so the model and adapter are loaded once and reused across requests:
+
+```powershell
+cd backend/trailcheck-api
+.venv\Scripts\python.exe -m uvicorn ml.inference.server:app --host 127.0.0.1 --port 8001
+```
+
+Health check:
+
+```powershell
+Invoke-RestMethod -Method Get http://127.0.0.1:8001/health
+```
+
+Direct generation check:
+
+```powershell
+$body = @{
+  input = Get-Content backend/trailcheck-api/ml/data/outputs/sample_input.json | ConvertFrom-Json
+} | ConvertTo-Json -Depth 12
+
+Invoke-RestMethod -Method Post `
+  -Uri http://127.0.0.1:8001/generate `
+  -ContentType "application/json" `
+  -Body $body
+```
+
 ## Backend Integration Pattern
 
 The NestJS backend should:
 
-1. Call the local inference script or a thin Python service with the same structured weather and alert context.
+1. Call the persistent local model server with the same structured weather and alert context.
 2. Require `ok: true` and a schema-valid `output` payload.
 3. If validation fails, route the same context to Gemini and log the failed local output for later evaluation.
 4. Store successful local outputs as future fine-tuning examples and evaluation traces.
@@ -96,8 +124,10 @@ The NestJS backend should:
 Recommended backend environment variables:
 
 - `LOCAL_MODEL_ENABLED=true`
+- `LOCAL_MODEL_TRANSPORT=server`
+- `LOCAL_MODEL_SERVER_URL=http://127.0.0.1:8001`
 - `LOCAL_MODEL_PYTHON_BIN=python`
 - `LOCAL_MODEL_SCRIPT=ml/inference/generate_local.py`
 - `LOCAL_MODEL_CONFIG=ml/configs/trailcheck_qlora_4060.yaml`
 - `LOCAL_MODEL_ADAPTER_PATH=ml/models/trailcheck-qwen25-3b-json`
-- `LOCAL_MODEL_TIMEOUT_MS=90000`
+- `LOCAL_MODEL_TIMEOUT_MS=180000`

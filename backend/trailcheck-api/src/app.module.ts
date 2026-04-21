@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { resolve } from 'node:path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TrailsModule } from './trails/trails.module';
@@ -19,10 +20,18 @@ import { PrismaModule } from './prisma/primsa.module';
 import { CatalogSyncService } from './catalog/catalog-sync.service';
 import { RouteTimingInterceptor } from './common/interceptors/route-timing.interceptor';
 
+const ENV_FILE_CANDIDATES = [
+  resolve(process.cwd(), '.env'),
+  resolve(process.cwd(), 'backend/trailcheck-api/.env'),
+  resolve(__dirname, '..', '.env'),
+  resolve(__dirname, '..', '..', '.env'),
+];
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ENV_FILE_CANDIDATES,
       validate: validateEnvironment,
     }),
     ThrottlerModule.forRootAsync({

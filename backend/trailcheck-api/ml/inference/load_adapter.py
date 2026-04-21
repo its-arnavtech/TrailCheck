@@ -25,11 +25,46 @@ def build_quantization_config(quantization_config: dict[str, Any]) -> BitsAndByt
     )
 
 
-def load_tokenizer(model_name: str, trust_remote_code: bool = False):
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_name,
+def _has_local_tokenizer_files(path: str | Path) -> bool:
+    candidate = Path(path)
+    return (candidate / "tokenizer_config.json").exists() or (candidate / "tokenizer.json").exists()
+
+
+def _load_tokenizer(source: str | Path, *, trust_remote_code: bool, local_files_only: bool):
+    return AutoTokenizer.from_pretrained(
+        str(source),
         trust_remote_code=trust_remote_code,
+        local_files_only=local_files_only,
     )
+
+
+def load_tokenizer(
+    model_name: str,
+    trust_remote_code: bool = False,
+    tokenizer_path: str | Path | None = None,
+):
+    tokenizer = None
+
+    if tokenizer_path and _has_local_tokenizer_files(tokenizer_path):
+        tokenizer = _load_tokenizer(
+            tokenizer_path,
+            trust_remote_code=trust_remote_code,
+            local_files_only=True,
+        )
+    else:
+        try:
+            tokenizer = _load_tokenizer(
+                model_name,
+                trust_remote_code=trust_remote_code,
+                local_files_only=True,
+            )
+        except Exception:
+            tokenizer = _load_tokenizer(
+                model_name,
+                trust_remote_code=trust_remote_code,
+                local_files_only=False,
+            )
+
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     return tokenizer
@@ -43,11 +78,23 @@ def load_model_with_adapter(
     trust_remote_code: bool = False,
 ):
     quant_config = build_quantization_config(quantization_config)
-    base_model = AutoModelForCausalLM.from_pretrained(
-        base_model_name,
-        quantization_config=quant_config,
-        device_map="auto",
-        trust_remote_code=trust_remote_code,
-    )
+
+    try:
+        base_model = AutoModelForCausalLM.from_pretrained(
+            base_model_name,
+            quantization_config=quant_config,
+            device_map="auto",
+            trust_remote_code=trust_remote_code,
+            local_files_only=True,
+        )
+    except Exception:
+        base_model = AutoModelForCausalLM.from_pretrained(
+            base_model_name,
+            quantization_config=quant_config,
+            device_map="auto",
+            trust_remote_code=trust_remote_code,
+            local_files_only=False,
+        )
+
     base_model.config.use_cache = False
     return PeftModel.from_pretrained(base_model, str(adapter_path))

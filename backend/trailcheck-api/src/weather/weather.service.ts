@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { getParkMetadata } from '../parks/park-registry';
 
 type WeatherPayload = {
@@ -10,12 +11,13 @@ type WeatherPayload = {
 export class WeatherService {
   private readonly logger = new Logger(WeatherService.name);
   private readonly cacheTtlMs = 1000 * 60 * 10;
-  private readonly requestTimeoutMs = 3500;
   private readonly payloadCache = new Map<
     string,
     { expiresAt: number; value: WeatherPayload }
   >();
   private readonly inFlightPayloads = new Map<string, Promise<WeatherPayload>>();
+
+  constructor(private readonly configService: ConfigService) {}
 
   async getWeatherForPark(parkSlug: string): Promise<ParkWeather | null> {
     const payload = await this.getWeatherPayloadForPark(parkSlug);
@@ -59,44 +61,49 @@ export class WeatherService {
     }
 
     try {
-      const pointsRes = await fetch(
+      const pointsData = await this.fetchJsonWithTimeout(
         `https://api.weather.gov/points/${park.lat},${park.lng}`,
-        {
-          headers: { 'User-Agent': 'TrailCheck/1.0 (contact@trailcheck.dev)' },
-          signal: AbortSignal.timeout(this.requestTimeoutMs),
-        },
+        parkSlug,
+        'points',
       );
 
-      if (!pointsRes.ok) {
-        this.logger.error(`NWS points API error: ${pointsRes.status}`);
+      if (!pointsData) {
+        this.logger.warn(
+          `Proceeding without weather for "${parkSlug}" because the NWS points lookup did not complete successfully.`,
+        );
         return { raw: null, weather: null };
       }
-
-      const pointsData = await pointsRes.json();
       const forecastUrl = pointsData.properties?.forecast;
 
       if (!forecastUrl) {
+        this.logger.warn(
+          `Proceeding without weather for "${parkSlug}" because the NWS points response did not include a forecast URL.`,
+        );
         return {
           raw: { points: pointsData, forecast: null },
           weather: null,
         };
       }
 
-      const forecastRes = await fetch(forecastUrl, {
-        headers: { 'User-Agent': 'TrailCheck/1.0 (contact@trailcheck.dev)' },
-        signal: AbortSignal.timeout(this.requestTimeoutMs),
-      });
-
-      if (!forecastRes.ok) {
-        this.logger.error(`NWS forecast API error: ${forecastRes.status}`);
+      const forecastData = await this.fetchJsonWithTimeout(
+        forecastUrl,
+        parkSlug,
+        'forecast',
+      );
+      if (!forecastData) {
+        this.logger.warn(
+          `Proceeding without weather for "${parkSlug}" because the NWS forecast lookup did not complete successfully.`,
+        );
         return {
           raw: { points: pointsData, forecast: null },
           weather: null,
         };
       }
 
-      const forecastData = await forecastRes.json();
       const periods = forecastData.properties?.periods ?? [];
+      this.logger.log(
+        `Weather fetch for "${parkSlug}" completed successfully with ${periods.slice(0, 6).length} forecast periods.`,
+      );
 
       return {
         raw: {
@@ -117,9 +124,78 @@ export class WeatherService {
         },
       };
     } catch (error) {
-      this.logger.error('Failed to fetch NWS weather', error);
+      const message =
+        error instanceof Error ? error.message : 'Unknown weather error';
+      this.logger.error(
+        `Unexpected weather fetch failure for "${parkSlug}": ${message}`,
+      );
       return { raw: null, weather: null };
     }
+  }
+
+  private getRequestTimeoutMs(): number {
+    const configured = Number(
+      this.configService.get<string>('WEATHER_REQUEST_TIMEOUT_MS') ?? 3000,
+    );
+    return Number.isFinite(configured) && configured > 0 ? configured : 3000;
+  }
+
+  private async fetchJsonWithTimeout(
+    url: string,
+    parkSlug: string,
+    stage: 'points' | 'forecast',
+  ): Promise<any | null> {
+    const timeoutMs = this.getRequestTimeoutMs();
+    const startedAt = Date.now();
+
+    try {
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'TrailCheck/1.0 (contact@trailcheck.dev)' },
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      const elapsedMs = Date.now() - startedAt;
+
+      if (!response.ok) {
+        this.logger.warn(
+          `Weather ${stage} request for "${parkSlug}" failed with status ${response.status} after ${elapsedMs}ms.`,
+        );
+        return null;
+      }
+
+      const data = await response.json();
+      this.logger.log(
+        `Weather ${stage} request for "${parkSlug}" succeeded in ${elapsedMs}ms.`,
+      );
+      return data;
+    } catch (error) {
+      const elapsedMs = Date.now() - startedAt;
+      const message =
+        error instanceof Error ? error.message : 'Unknown weather fetch error';
+
+      if (this.isTimeoutError(error)) {
+        this.logger.warn(
+          `Weather ${stage} request for "${parkSlug}" timed out after ${elapsedMs}ms (budget ${timeoutMs}ms).`,
+        );
+        return null;
+      }
+
+      this.logger.error(
+        `Weather ${stage} request for "${parkSlug}" failed after ${elapsedMs}ms: ${message}`,
+      );
+      return null;
+    }
+  }
+
+  private isTimeoutError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+
+    return (
+      error.name === 'AbortError' ||
+      error.name === 'TimeoutError' ||
+      error.message.toLowerCase().includes('timed out')
+    );
   }
 }
 
