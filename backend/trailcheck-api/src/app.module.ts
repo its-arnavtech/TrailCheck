@@ -7,8 +7,8 @@ import { TrailsModule } from './trails/trails.module';
 import { ReportsModule } from './reports/reports.module';
 import { HazardsModule } from './hazards/hazards.module';
 import { ParksModule } from './parks/parks.module';
-import { ConfigModule } from '@nestjs/config';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { NpsService } from './nps/nps.service';
 import { NpsModule } from './nps/nps.module';
 import { WeatherService } from './weather/weather.service';
@@ -19,6 +19,7 @@ import { validateEnvironment } from './config/environment';
 import { PrismaModule } from './prisma/primsa.module';
 import { CatalogSyncService } from './catalog/catalog-sync.service';
 import { RouteTimingInterceptor } from './common/interceptors/route-timing.interceptor';
+import { ApiThrottlerGuard } from './common/guards/api-throttler.guard';
 
 const ENV_FILE_CANDIDATES = [
   resolve(process.cwd(), '.env'),
@@ -35,10 +36,11 @@ const ENV_FILE_CANDIDATES = [
       validate: validateEnvironment,
     }),
     ThrottlerModule.forRootAsync({
-      useFactory: () => [
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => [
         {
-          ttl: Number(process.env.THROTTLE_TTL_SECONDS ?? 60) * 1000,
-          limit: Number(process.env.THROTTLE_LIMIT ?? 120),
+          ttl: configService.get<number>('RATE_LIMIT_TTL', 60) * 1000,
+          limit: configService.get<number>('RATE_LIMIT_LIMIT', 100),
         },
       ],
     }),
@@ -60,7 +62,7 @@ const ENV_FILE_CANDIDATES = [
     WeatherService,
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: ApiThrottlerGuard,
     },
     {
       provide: APP_INTERCEPTOR,

@@ -25,7 +25,12 @@ export class TrailsService {
       select: {
         id: true,
         name: true,
-        park: true,
+        park: {
+          select: {
+            name: true,
+            slug: true,
+          },
+        },
       },
     });
   }

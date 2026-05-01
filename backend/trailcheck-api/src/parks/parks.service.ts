@@ -89,7 +89,13 @@ export class ParksService {
         OR: [{ isFavorite: true }, { wantsToGo: true }],
       },
       include: {
-        park: true,
+        park: {
+          select: {
+            slug: true,
+            name: true,
+            state: true,
+          },
+        },
       },
       orderBy: {
         park: {
@@ -113,6 +119,12 @@ export class ParksService {
 
     const park = await this.prisma.park.findUnique({
       where: { slug },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        state: true,
+      },
     });
 
     if (!park) {
@@ -151,6 +163,12 @@ export class ParksService {
 
     const park = await this.prisma.park.findUnique({
       where: { slug },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        state: true,
+      },
     });
 
     if (!park) {

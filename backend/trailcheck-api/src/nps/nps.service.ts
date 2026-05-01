@@ -13,7 +13,6 @@ export class NpsService {
   private readonly logger = new Logger(NpsService.name);
   private readonly baseUrl = 'https://developer.nps.gov/api/v1';
   private readonly cacheTtlMs = 1000 * 60 * 10;
-  private readonly requestTimeoutMs = 3500;
   private hasWarnedAboutApiKey = false;
   private readonly payloadCache = new Map<
     string,
@@ -77,11 +76,13 @@ export class NpsService {
       return { parkCode, raw: null, alerts: [] };
     }
 
-    const url = `${this.baseUrl}/alerts?parkCode=${parkCode}&api_key=${apiKey}`;
+    const url = new URL(`${this.baseUrl}/alerts`);
+    url.searchParams.set('parkCode', parkCode);
+    url.searchParams.set('api_key', apiKey);
 
     try {
       const response = await fetch(url, {
-        signal: AbortSignal.timeout(this.requestTimeoutMs),
+        signal: AbortSignal.timeout(this.getRequestTimeoutMs()),
       });
 
       if (!response.ok) {
@@ -100,6 +101,13 @@ export class NpsService {
       this.logger.error('Failed to fetch NPS alerts', error);
       return { parkCode, raw: null, alerts: [] };
     }
+  }
+
+  private getRequestTimeoutMs(): number {
+    const configured = Number(
+      this.config.get<string>('NPS_REQUEST_TIMEOUT_MS') ?? 3500,
+    );
+    return Number.isFinite(configured) && configured > 0 ? configured : 3500;
   }
 
   private getConfiguredApiKey() {

@@ -2,13 +2,12 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import ModalShell from '@/components/modal-shell';
 import {
-  AUTH_STATE_CHANGED_EVENT,
-  getStoredAuthToken,
-  getStoredAuthUser,
+  clearStoredSession,
 } from '@/lib/auth';
+import { useAuthSession } from '@/lib/use-auth-session';
 
 const AuthPanel = dynamic(() => import('@/components/auth-panel'));
 const FavoritesPanel = dynamic(() => import('@/components/favorites-panel'));
@@ -56,19 +55,8 @@ export default function NavBar({
 }: NavBarProps) {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
-  const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    function syncAuthState() {
-      const token = getStoredAuthToken();
-      const user = getStoredAuthUser();
-      setSignedInEmail(token ? user?.email ?? null : null);
-    }
-
-    syncAuthState();
-    window.addEventListener(AUTH_STATE_CHANGED_EVENT, syncAuthState);
-    return () => window.removeEventListener(AUTH_STATE_CHANGED_EVENT, syncAuthState);
-  }, []);
+  const { isLoading: isAuthLoading, user } = useAuthSession();
+  const signedInEmail = user?.email ?? null;
 
   const crumbs: NavCrumb[] = [{ href: '/', label: 'Home', current: !parkLabel && !trailLabel }];
 
@@ -134,12 +122,16 @@ export default function NavBar({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setIsAuthOpen(true)}
+                    onClick={() => clearStoredSession()}
                     className="inline-flex min-h-11 items-center rounded-full border border-emerald-300/18 bg-emerald-400/10 px-4 py-2 text-sm font-medium text-emerald-100"
                   >
                     {signedInEmail}
                   </button>
                 </>
+              ) : isAuthLoading ? (
+                <span className="inline-flex min-h-11 items-center rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm font-medium text-white/60">
+                  Checking session
+                </span>
               ) : (
                 <button
                   type="button"

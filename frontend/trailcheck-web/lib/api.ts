@@ -200,6 +200,14 @@ function getStoredAuthToken() {
   return window.localStorage.getItem('trailcheck.auth.token');
 }
 
+function requireStoredAuthToken() {
+  const token = getStoredAuthToken();
+  if (!token) {
+    throw new Error('Please sign in to continue.');
+  }
+  return token;
+}
+
 function buildHeaders(
   headers?: HeadersInit,
   options?: { json?: boolean; auth?: boolean },
@@ -379,6 +387,8 @@ export async function getCurrentUser(token?: string): Promise<AuthenticatedUser>
 }
 
 export async function createReport(input: CreateReportInput) {
+  requireStoredAuthToken();
+
   const response = await fetch(`${API_BASE_URL}/reports`, {
     method: 'POST',
     headers: buildHeaders(undefined, { json: true, auth: true }),
@@ -393,6 +403,8 @@ export async function createReport(input: CreateReportInput) {
 }
 
 export async function getMyParkPreferences(): Promise<ParkPreference[]> {
+  requireStoredAuthToken();
+
   const response = await fetch(`${API_BASE_URL}/parks/preferences/me`, {
     headers: buildHeaders(undefined, { auth: true }),
     cache: 'no-store',
@@ -406,6 +418,8 @@ export async function getMyParkPreferences(): Promise<ParkPreference[]> {
 }
 
 export async function getParkPreference(slug: string): Promise<ParkPreference> {
+  requireStoredAuthToken();
+
   const response = await fetch(`${API_BASE_URL}/parks/${slug}/preferences`, {
     headers: buildHeaders(undefined, { auth: true }),
     cache: 'no-store',
@@ -422,6 +436,8 @@ export async function updateParkPreference(
   slug: string,
   input: UpdateParkPreferenceInput,
 ): Promise<ParkPreference> {
+  requireStoredAuthToken();
+
   const response = await fetch(`${API_BASE_URL}/parks/${slug}/preferences`, {
     method: 'PUT',
     headers: buildHeaders(undefined, { json: true, auth: true }),

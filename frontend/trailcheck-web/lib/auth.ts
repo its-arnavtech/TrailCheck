@@ -29,8 +29,16 @@ export function getStoredAuthUser(): AuthenticatedUser | null {
   }
 
   try {
-    return JSON.parse(rawUser) as AuthenticatedUser;
+    const user = JSON.parse(rawUser) as Partial<AuthenticatedUser>;
+
+    if (typeof user.id !== 'number' || typeof user.email !== 'string') {
+      clearStoredSession();
+      return null;
+    }
+
+    return user as AuthenticatedUser;
   } catch {
+    clearStoredSession();
     return null;
   }
 }

@@ -4,20 +4,24 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { ParkPreference } from '@/lib/api';
 import {
-  AUTH_STATE_CHANGED_EVENT,
   PARK_PREFERENCES_CHANGED_EVENT,
-  getStoredAuthToken,
 } from '@/lib/auth';
 import { getCachedParkPreferences } from '@/lib/park-preferences-store';
+import { useAuthSession } from '@/lib/use-auth-session';
 
 export default function SavedParksPanel() {
   const [isLoading, setIsLoading] = useState(true);
   const [preferences, setPreferences] = useState<ParkPreference[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { isLoading: isAuthLoading, token } = useAuthSession();
 
   useEffect(() => {
     async function loadPreferences() {
-      if (!getStoredAuthToken()) {
+      if (isAuthLoading) {
+        return;
+      }
+
+      if (!token) {
         setPreferences([]);
         setErrorMessage(null);
         setIsLoading(false);
@@ -40,17 +44,15 @@ export default function SavedParksPanel() {
     }
 
     loadPreferences();
-    window.addEventListener(AUTH_STATE_CHANGED_EVENT, loadPreferences);
     window.addEventListener(PARK_PREFERENCES_CHANGED_EVENT, loadPreferences);
 
     return () => {
-      window.removeEventListener(AUTH_STATE_CHANGED_EVENT, loadPreferences);
       window.removeEventListener(
         PARK_PREFERENCES_CHANGED_EVENT,
         loadPreferences,
       );
     };
-  }, []);
+  }, [isAuthLoading, token]);
 
   const favorites = preferences.filter((preference) => preference.isFavorite);
   const wantToGo = preferences.filter((preference) => preference.wantsToGo);

@@ -155,6 +155,22 @@ export function validateEnvironment(config: Record<string, unknown>) {
       frontendOrigins.length > 0
         ? frontendOrigins.join(',')
         : DEFAULT_DEV_FRONTEND_ORIGIN,
+    RATE_LIMIT_TTL: normalizePositiveInteger(
+      typeof config.RATE_LIMIT_TTL === 'string'
+        ? config.RATE_LIMIT_TTL
+        : typeof config.THROTTLE_TTL_SECONDS === 'string'
+          ? config.THROTTLE_TTL_SECONDS
+          : undefined,
+      60,
+    ),
+    RATE_LIMIT_LIMIT: normalizePositiveInteger(
+      typeof config.RATE_LIMIT_LIMIT === 'string'
+        ? config.RATE_LIMIT_LIMIT
+        : typeof config.THROTTLE_LIMIT === 'string'
+          ? config.THROTTLE_LIMIT
+          : undefined,
+      100,
+    ),
     THROTTLE_TTL_SECONDS: normalizePositiveInteger(
       typeof config.THROTTLE_TTL_SECONDS === 'string'
         ? config.THROTTLE_TTL_SECONDS
