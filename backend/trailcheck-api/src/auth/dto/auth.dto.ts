@@ -47,7 +47,7 @@ export class AllowedEmailDomainConstraint
 export class AuthDto {
   @IsEmail()
   @Validate(AllowedEmailDomainConstraint)
-  @Transform(({ value }) => value.trim().toLowerCase())
+  @Transform(({ value }) => String(value ?? '').trim().toLowerCase())
   @MaxLength(320)
   email: string;
 

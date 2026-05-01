@@ -21,11 +21,13 @@ import type { JwtUser } from './jwt.strategy';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle({ default: { limit: 10, ttl: 60 * 1000 } })
   @Post('signup')
   signup(@Body() dto: SignupDto) {
     return this.authService.signup(dto);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60 * 1000 } })
   @Post('signin')
   signin(@Body() dto: AuthDto) {
     return this.authService.signin(dto);

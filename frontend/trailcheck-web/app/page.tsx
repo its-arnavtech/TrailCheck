@@ -2,7 +2,7 @@ import Image from 'next/image';
 import HomeHeader from '@/components/home-header';
 import Footer from '@/components/footer';
 import ParkCard from '@/components/park-card';
-import ParkMap from '@/components/park-map';
+import LazyParkMap from '@/components/lazy-park-map';
 import ParksExplorer from '@/components/parks-explorer';
 import SafetyDigest from '@/components/safety-digest';
 import { getParkDigest, getParks } from '../lib/api';
@@ -34,16 +34,21 @@ const featurePillars = [
 
 export default async function Home() {
   const parks = await getParks();
-  const heroVisual = await getParkVisual('yosemite', 'Yosemite');
-  const parkVisuals = await getParkVisualMap(parks);
-  const heroDigest = await getParkDigest('yosemite').catch(() => null);
   const featuredParks = featuredSlugs
     .map((slug) => parks.find((park) => park.slug === slug))
     .filter((park): park is NonNullable<(typeof parks)[number]> => Boolean(park));
-
-  const featuredDigests = await Promise.all(
-    featuredParks.map(async (park) => [park.slug, await getParkDigest(park.slug).catch(() => null)] as const),
-  );
+  const [heroVisual, parkVisuals, heroDigest, featuredDigests] =
+    await Promise.all([
+      getParkVisual('yosemite', 'Yosemite'),
+      getParkVisualMap(parks),
+      getParkDigest('yosemite').catch(() => null),
+      Promise.all(
+        featuredParks.map(
+          async (park) =>
+            [park.slug, await getParkDigest(park.slug).catch(() => null)] as const,
+        ),
+      ),
+    ]);
 
   const featuredDigestMap = Object.fromEntries(featuredDigests);
   const hasParks = parks.length > 0;
@@ -99,7 +104,7 @@ export default async function Home() {
           </div>
 
           <div className="relative lg:pl-4 lg:pt-0">
-            <ParkMap />
+            <LazyParkMap />
           </div>
         </div>
       </section>

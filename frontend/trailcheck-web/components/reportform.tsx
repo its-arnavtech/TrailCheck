@@ -1,14 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { createReport } from '@/lib/api';
-import {
-  AUTH_STATE_CHANGED_EVENT,
-  getStoredAuthToken,
-  getStoredAuthUser,
-} from '@/lib/auth';
+import { getStoredAuthToken } from '@/lib/auth';
+import { useAuthSession } from '@/lib/use-auth-session';
 
 export default function ReportForm({ trailId, flush = false }: { trailId: number; flush?: boolean }) {
   const router = useRouter();
@@ -16,19 +13,8 @@ export default function ReportForm({ trailId, flush = false }: { trailId: number
   const [rating, setRating] = useState(3);
   const [surface, setSurface] = useState('DRY');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    function syncAuthState() {
-      const token = getStoredAuthToken();
-      const user = getStoredAuthUser();
-      setSignedInEmail(token ? user?.email ?? null : null);
-    }
-
-    syncAuthState();
-    window.addEventListener(AUTH_STATE_CHANGED_EVENT, syncAuthState);
-    return () => window.removeEventListener(AUTH_STATE_CHANGED_EVENT, syncAuthState);
-  }, []);
+  const { isLoading: isAuthLoading, user } = useAuthSession();
+  const signedInEmail = user?.email ?? null;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -66,7 +52,11 @@ export default function ReportForm({ trailId, flush = false }: { trailId: number
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {signedInEmail ? (
+      {isAuthLoading ? (
+        <div className="rounded-[1.35rem] border border-white/10 bg-white/6 px-4 py-4 text-sm text-white/70">
+          Checking your session...
+        </div>
+      ) : signedInEmail ? (
         <div className="rounded-[1.35rem] border border-emerald-300/16 bg-emerald-400/10 px-4 py-4 text-sm text-emerald-50">
           Signed in as {signedInEmail}
         </div>

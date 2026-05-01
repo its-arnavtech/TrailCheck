@@ -21,7 +21,7 @@ async function bootstrap() {
   });
   app.use(helmet({ contentSecurityPolicy: false }));
   app.getHttpAdapter().getInstance().disable('x-powered-by');
-  if (isProduction) {
+  if (isProduction || process.env.TRUST_PROXY === 'true') {
     app.getHttpAdapter().getInstance().set('trust proxy', 1);
   }
   app.useGlobalPipes(

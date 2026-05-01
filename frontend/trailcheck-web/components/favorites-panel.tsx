@@ -4,20 +4,24 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { ParkPreference } from '@/lib/api';
 import {
-  AUTH_STATE_CHANGED_EVENT,
   PARK_PREFERENCES_CHANGED_EVENT,
-  getStoredAuthToken,
 } from '@/lib/auth';
 import { getCachedParkPreferences } from '@/lib/park-preferences-store';
+import { useAuthSession } from '@/lib/use-auth-session';
 
 export default function FavoritesPanel() {
   const [isLoading, setIsLoading] = useState(true);
   const [favorites, setFavorites] = useState<ParkPreference[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { isLoading: isAuthLoading, token } = useAuthSession();
 
   useEffect(() => {
     async function loadFavorites() {
-      if (!getStoredAuthToken()) {
+      if (isAuthLoading) {
+        return;
+      }
+
+      if (!token) {
         setFavorites([]);
         setErrorMessage(null);
         setIsLoading(false);
@@ -40,14 +44,12 @@ export default function FavoritesPanel() {
     }
 
     loadFavorites();
-    window.addEventListener(AUTH_STATE_CHANGED_EVENT, loadFavorites);
     window.addEventListener(PARK_PREFERENCES_CHANGED_EVENT, loadFavorites);
 
     return () => {
-      window.removeEventListener(AUTH_STATE_CHANGED_EVENT, loadFavorites);
       window.removeEventListener(PARK_PREFERENCES_CHANGED_EVENT, loadFavorites);
     };
-  }, []);
+  }, [isAuthLoading, token]);
 
   return (
     <div className="glass-panel topo-ring rounded-[1.75rem] p-5 text-white shadow-[var(--shadow-card)]">

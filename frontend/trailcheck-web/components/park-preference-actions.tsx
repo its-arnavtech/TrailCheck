@@ -7,13 +7,12 @@ import {
   updateParkPreference,
 } from '@/lib/api';
 import {
-  AUTH_STATE_CHANGED_EVENT,
   PARK_PREFERENCES_CHANGED_EVENT,
-  getStoredAuthToken,
   notifyParkPreferencesChanged,
 } from '@/lib/auth';
 import ParkFavoriteButton from '@/components/park-favorite-button';
 import { getCachedParkPreferences } from '@/lib/park-preferences-store';
+import { useAuthSession } from '@/lib/use-auth-session';
 
 type ParkPreferenceActionsProps = {
   parkSlug: string;
@@ -37,10 +36,14 @@ export default function ParkPreferenceActions({
   const [preference, setPreference] = useState<ParkPreference>(emptyPreference);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const { isLoading: isAuthLoading, token } = useAuthSession();
 
   useEffect(() => {
     async function syncPreference() {
-      const token = getStoredAuthToken();
+      if (isAuthLoading) {
+        return;
+      }
+
       const signedIn = Boolean(token);
 
       setIsSignedIn(signedIn);
@@ -71,14 +74,12 @@ export default function ParkPreferenceActions({
     }
 
     syncPreference();
-    window.addEventListener(AUTH_STATE_CHANGED_EVENT, syncPreference);
     window.addEventListener(PARK_PREFERENCES_CHANGED_EVENT, syncPreference);
 
     return () => {
-      window.removeEventListener(AUTH_STATE_CHANGED_EVENT, syncPreference);
       window.removeEventListener(PARK_PREFERENCES_CHANGED_EVENT, syncPreference);
     };
-  }, [parkName, parkSlug]);
+  }, [isAuthLoading, parkName, parkSlug, token]);
 
   async function savePreference(nextPreference: ParkPreference) {
     if (!isSignedIn) {

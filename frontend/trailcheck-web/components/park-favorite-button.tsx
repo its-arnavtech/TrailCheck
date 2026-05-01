@@ -4,12 +4,11 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { updateParkPreference } from '@/lib/api';
 import {
-  AUTH_STATE_CHANGED_EVENT,
   PARK_PREFERENCES_CHANGED_EVENT,
-  getStoredAuthToken,
   notifyParkPreferencesChanged,
 } from '@/lib/auth';
 import { getCachedParkPreferences } from '@/lib/park-preferences-store';
+import { useAuthSession } from '@/lib/use-auth-session';
 
 type ParkFavoriteButtonProps = {
   parkSlug: string;
@@ -37,10 +36,15 @@ export default function ParkFavoriteButton({
   const [wantsToGo, setWantsToGo] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const { isLoading: isAuthLoading, token } = useAuthSession();
 
   useEffect(() => {
     async function syncPreference() {
-      const signedIn = Boolean(getStoredAuthToken());
+      if (isAuthLoading) {
+        return;
+      }
+
+      const signedIn = Boolean(token);
       setIsSignedIn(signedIn);
 
       if (!signedIn) {
@@ -68,14 +72,12 @@ export default function ParkFavoriteButton({
     }
 
     syncPreference();
-    window.addEventListener(AUTH_STATE_CHANGED_EVENT, syncPreference);
     window.addEventListener(PARK_PREFERENCES_CHANGED_EVENT, syncPreference);
 
     return () => {
-      window.removeEventListener(AUTH_STATE_CHANGED_EVENT, syncPreference);
       window.removeEventListener(PARK_PREFERENCES_CHANGED_EVENT, syncPreference);
     };
-  }, [parkSlug]);
+  }, [isAuthLoading, parkSlug, token]);
 
   async function handleToggleFavorite(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();

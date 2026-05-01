@@ -1,31 +1,24 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import ModalShell from '@/components/modal-shell';
-import {
-  AUTH_STATE_CHANGED_EVENT,
-  getStoredAuthToken,
-  getStoredAuthUser,
-} from '@/lib/auth';
+import { useAuthSession } from '@/lib/use-auth-session';
 
 const AuthPanel = dynamic(() => import('@/components/auth-panel'));
 
 export default function ReportAuthCta() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
+  const { isLoading: isAuthLoading, user } = useAuthSession();
+  const signedInEmail = user?.email ?? null;
 
-  useEffect(() => {
-    function syncAuthState() {
-      const token = getStoredAuthToken();
-      const user = getStoredAuthUser();
-      setSignedInEmail(token ? user?.email ?? null : null);
-    }
-
-    syncAuthState();
-    window.addEventListener(AUTH_STATE_CHANGED_EVENT, syncAuthState);
-    return () => window.removeEventListener(AUTH_STATE_CHANGED_EVENT, syncAuthState);
-  }, []);
+  if (isAuthLoading) {
+    return (
+      <div className="rounded-[1.35rem] border border-white/10 bg-white/6 px-4 py-4 text-sm text-white/70">
+        Checking your session...
+      </div>
+    );
+  }
 
   if (signedInEmail) {
     return (
