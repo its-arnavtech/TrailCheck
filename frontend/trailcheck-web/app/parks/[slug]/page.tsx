@@ -3,7 +3,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ParkConditionsPanel } from '@/components/park-conditions-panel';
-import Footer from '@/components/footer';
 import ParkMapCard from '@/components/park-map-card';
 import PageNavbar from '@/components/page-navbar';
 import ParkPreferenceActions from '@/components/park-preference-actions';
@@ -179,8 +178,6 @@ export default async function ParkPage({ params }: ParkPageProps) {
           </div>
         </section>
       </div>
-
-      <Footer />
     </main>
   );
 }

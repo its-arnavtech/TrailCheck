@@ -40,7 +40,7 @@ export class SignupDto extends AuthDto {
 
   @Type(() => Number)
   @IsInt()
-  @Min(1)
+  @Min(13)
   @Max(120)
   age: number;
 }

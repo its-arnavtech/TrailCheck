@@ -105,7 +105,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
   const ageIsInvalid =
     mode === 'signup' &&
     age.length > 0 &&
-    (!/^\d+$/.test(age) || Number(age) < 1 || Number(age) > 120);
+    (!/^\d+$/.test(age) || Number(age) < 13 || Number(age) > 120);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -126,7 +126,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
     }
 
     if (mode === 'signup' && ageIsInvalid) {
-      toast.error('Age must be a whole number between 1 and 120.');
+      toast.error('Age must be a whole number between 13 and 120.');
       return;
     }
 
@@ -421,7 +421,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
                   <p>{PASSWORD_POLICY_HINT}</p>
                 ) : null}
                 {ageIsInvalid ? (
-                  <p>Age must be a whole number between 1 and 120.</p>
+                  <p>Age must be a whole number between 13 and 120.</p>
                 ) : null}
               </div>
             ) : null}

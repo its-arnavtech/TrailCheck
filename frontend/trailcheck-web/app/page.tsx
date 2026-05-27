@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import HomeHeader from '@/components/home-header';
-import Footer from '@/components/footer';
 import ParkCard from '@/components/park-card';
 import LazyParkMap from '@/components/lazy-park-map';
 import ParksExplorer from '@/components/parks-explorer';
@@ -189,8 +188,6 @@ export default async function Home() {
 
         <ParksExplorer parks={parks} visuals={parkVisuals} />
       </section>
-
-      <Footer />
     </main>
   );
 }

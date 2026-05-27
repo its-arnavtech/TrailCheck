@@ -2,7 +2,6 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import Footer from '@/components/footer';
 import HazardTag from '@/components/hazard-tag';
 import PageNavbar from '@/components/page-navbar';
 import ReportAuthCta from '@/components/report-auth-cta';
@@ -307,8 +306,6 @@ export default async function TrailPage({ params }: TrailPageProps) {
           </section>
         </div>
       </div>
-
-      <Footer />
     </main>
   );
 }

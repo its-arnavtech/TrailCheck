@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Footer() {
   return (
     <footer className="section-shell mt-14 pb-8 sm:pb-10">
@@ -18,6 +20,14 @@ export default function Footer() {
           <div className="max-w-xl space-y-3 pt-1 text-base leading-8 text-white/74 sm:text-lg">
             <p>National park conditions, distilled into a calmer field dashboard.</p>
             <p>Contact: its.arnavk.here@gmail.com</p>
+            <p>
+              <Link
+                href="/privacy"
+                className="font-semibold text-[var(--accent-strong)] underline underline-offset-4 transition hover:text-white"
+              >
+                Privacy Policy
+              </Link>
+            </p>
           </div>
         </div>
       </div>

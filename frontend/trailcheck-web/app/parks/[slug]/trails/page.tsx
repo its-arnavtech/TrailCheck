@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import Footer from '@/components/footer';
 import PageNavbar from '@/components/page-navbar';
 import ParkTrailsExplorer from '@/components/park-trails-explorer';
 import { getPark, getParkDigest } from '@/lib/api';
@@ -82,8 +81,6 @@ export default async function ParkTrailsPage({ params }: ParkTrailsPageProps) {
           />
         </section>
       </div>
-
-      <Footer />
     </main>
   );
 }
