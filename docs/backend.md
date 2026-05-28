@@ -112,23 +112,16 @@ This means park and trail content is source-controlled and reproducible.
 
 ## Environment variables
 
-Based on the root README and code usage, the backend expects:
+The backend reads its runtime configuration from a private local `.env` file or the deployment platform's secret store. Do not commit env files or env examples.
 
-```env
-DATABASE_URL="file:./dev.db"
-JWT_SECRET="replace-with-a-secure-secret"
-FRONTEND_ORIGIN="http://localhost:3000"
-PORT=3001
-NPS_API_KEY="your-nps-api-key"
-GEMINI_API_KEY="your-gemini-api-key"
-GEMINI_MODEL="gemini-2.5-flash"
-LOCAL_MODEL_ENABLED=true
-LOCAL_MODEL_PYTHON_BIN=python
-LOCAL_MODEL_SCRIPT=ml/inference/generate_local.py
-LOCAL_MODEL_CONFIG=ml/configs/trailcheck_qlora_4060.yaml
-LOCAL_MODEL_ADAPTER_PATH=ml/models/trailcheck-qwen25-3b-json
-LOCAL_MODEL_TIMEOUT_MS=90000
-```
+Expected config categories:
+
+- Database connection
+- JWT signing secret
+- Frontend origin/CORS
+- Optional NPS and Gemini API integrations
+- Optional local model runtime settings
+- Optional password reset email provider settings
 
 Notes:
 

@@ -60,36 +60,19 @@ npm install
 
 ### 2. Configure environment variables
 
-Create a `.env` file in `backend/trailcheck-api` from `.env.example`:
+Create local environment files manually. These files are intentionally ignored and should not be committed:
 
-```env
-NODE_ENV="development"
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/trailcheck?schema=public"
-JWT_SECRET="replace-with-a-secure-secret"
-FRONTEND_ORIGIN="http://localhost:3000"
-PORT=3001
-THROTTLE_TTL_SECONDS=60
-THROTTLE_LIMIT=120
-NPS_API_KEY="your-nps-api-key"
-GEMINI_API_KEY="your-gemini-api-key"
-GEMINI_MODEL="gemini-2.5-flash"
-PASSWORD_RESET_EMAIL_PROVIDER="disabled"
-MAIL_FROM_ADDRESS=""
-RESEND_API_KEY=""
-```
-
-Create a `.env.local` file in `frontend/trailcheck-web` from `.env.example`:
-
-```env
-NEXT_PUBLIC_API_BASE_URL="http://localhost:3001"
-```
+- Backend: `backend/trailcheck-api/.env`
+- Frontend: `frontend/trailcheck-web/.env.local`
 
 Notes:
 
+- The backend needs values for database connectivity, JWT signing, frontend origin/CORS, and optional NPS, Gemini, and email-provider integrations.
+- The frontend needs the public API base URL for the backend.
 - `JWT_SECRET` is required for sign-up, sign-in, and authenticated report submission.
 - `NPS_API_KEY` enables live National Park Service alerts.
 - `GEMINI_API_KEY` enables Gemini-generated summaries. Without it, the backend falls back to a non-AI summary path.
-- `PASSWORD_RESET_EMAIL_PROVIDER=resend` enables password reset emails. When set, you must also provide `MAIL_FROM_ADDRESS` and `RESEND_API_KEY`.
+- The password reset email provider is disabled unless configured with provider credentials in a private environment file or deployment secret store.
 
 ### 3. Run database migrations and seed data
 
@@ -188,12 +171,11 @@ This supports seeded park and trail data, user-submitted reports, and derived or
 ## Deployment Shape
 
 - Deploy `frontend/trailcheck-web` to Vercel.
-- Deploy `backend/trailcheck-api` as its own always-on service using the included `Dockerfile`.
-- If you use Render, import [`backend/trailcheck-api/render.yaml`](backend/trailcheck-api/render.yaml) for a managed web service config.
-- Set `NEXT_PUBLIC_API_BASE_URL=https://your-api-domain` in the frontend deployment.
-- Set `FRONTEND_ORIGIN=https://your-vercel-domain` in the backend deployment.
-- Set `DATABASE_URL` to a managed production database connection string.
-- Password reset email is disabled by default. To enable it in production, set `PASSWORD_RESET_EMAIL_PROVIDER=resend` plus valid `MAIL_FROM_ADDRESS` and `RESEND_API_KEY` values in the backend deployment.
+- Deploy `backend/trailcheck-api` as its own always-on service using a private container or platform build config.
+- Keep deployment manifests and production secret values in the hosting provider secret store, not in the public repo.
+- Set the frontend deployment to point at the backend API URL.
+- Set the backend deployment to allow the frontend origin and use a managed production database.
+- Password reset email is disabled by default. Enable it only after adding valid provider settings to the backend deployment secret store.
 
 ## Production Security Defaults
 
