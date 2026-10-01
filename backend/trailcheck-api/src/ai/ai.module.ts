@@ -6,11 +6,12 @@ import { AiController } from './ai.controller';
 import { HazardsModule } from '../hazards/hazards.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { LocalModelService } from './local-model.service';
+import { AiRateLimitGuard } from './ai-rate-limit.guard';
 
 @Module({
   imports: [NpsModule, WeatherModule, HazardsModule, PrismaModule],
   controllers: [AiController],
-  providers: [AiService, LocalModelService],
+  providers: [AiService, LocalModelService, AiRateLimitGuard],
   exports: [AiService],
 })
 export class AiModule {}

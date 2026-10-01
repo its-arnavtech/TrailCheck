@@ -12,7 +12,7 @@ There is **no trained adapter** and **no model evaluation** in this repository. 
 
 `ml/results/harness_smoke.json` is different. It scores a replay of the rule labels on the small committed fixture. Those numbers check the metric script. They are not Qwen quality.
 
-The NestJS chain is local model, then Gemini, then rules. See [Which path runs](#11-how-the-nestjs-backend-uses-the-model). Render does not have a GPU, and this repo does not ship an adapter, so the hosted API cannot be serving the 3B model unless a separate model server is configured. The response field `generationSource` is the source of truth for a given request.
+The NestJS chain is local model, then DeepSeek, then rules. See [Which path runs](#11-how-the-nestjs-backend-uses-the-model). This repo does not ship an adapter, so the local API does not serve the 3B model unless a separate model server is configured. The response field `generationSource` is the source of truth for a given request.
 
 ## 1. What the model is for
 
@@ -52,7 +52,7 @@ The local model flow looks like this:
 4. A QLoRA adapter is trained on top of a small instruct base model.
 5. At runtime, the backend builds fresh live context from NPS, NWS, and the internal hazard engine.
 6. The local model tries to generate a schema-valid JSON payload.
-7. If local generation fails validation or the adapter is missing, the backend falls back to Gemini or to a non-LLM summary.
+7. If local generation fails validation or the adapter is missing, the backend falls back to DeepSeek or to a non-LLM summary.
 
 This pipeline is split across these areas:
 
@@ -483,13 +483,13 @@ If local generation succeeds:
 If local generation fails:
 
 - the service records the failure message
-- it tries Gemini if `GEMINI_API_KEY` is configured
+- it tries DeepSeek if `DEEPSEEK_API_KEY` is configured and the daily cap allows another call
 - otherwise it falls back to a simple rule-based answer built from hazards, alerts, or forecast text
 
 This means TrailCheck uses a tiered generation strategy:
 
 1. local structured model
-2. Gemini
+2. DeepSeek
 3. non-LLM fallback
 
 ### 11.3 API endpoints affected
@@ -562,7 +562,7 @@ The script compares predictions against the gold validation set and reports metr
 It can compare multiple systems at once, including:
 
 - local model predictions
-- Gemini predictions exported in matching format
+- DeepSeek predictions exported in matching format
 
 This is a good fit for TrailCheck because accuracy is not only about matching a single label. The project also cares about:
 
@@ -585,7 +585,7 @@ What is not in git:
 - the processed NOAA and NPS source files (`backend/trailcheck-api/data/` is gitignored)
 - any QLoRA adapter from the reported RTX 4060 run
 
-The local path is not runnable from a clean clone until someone trains an adapter or points `LOCAL_MODEL_ADAPTER_PATH` at one. Until then the API uses Gemini when `GEMINI_API_KEY` is set, and the rules summary otherwise. `LOCAL_MODEL_ENABLED` defaults to true in code, but the server transport then fails closed when nothing is listening on the model port.
+The local path is not runnable from a clean clone until someone trains an adapter or points `LOCAL_MODEL_ADAPTER_PATH` at one. Until then the API uses DeepSeek when `DEEPSEEK_API_KEY` is set in the backend env file, and the rules summary otherwise. `LOCAL_MODEL_ENABLED` defaults to true in code, but the server transport then fails closed when nothing is listening on the model port. The example env file sets `LOCAL_MODEL_ENABLED=false` for a laptop that is not running the model server.
 
 ## 16. Limitations and tradeoffs
 
@@ -675,6 +675,6 @@ TrailCheck's model story is a hybrid that should be described in that order:
 - a QLoRA training config for Qwen2.5-3B-Instruct on one consumer GPU
 - no adapter and no model scores in this repository
 - strict JSON validation when a local model is actually running
-- a live backend chain: local model, then Gemini, then rules
+- a live backend chain: local model, then DeepSeek, then rules
 
-The hosted app on Vercel and Render is the full-stack product. It is not, by itself, evidence that the 3B model is serving traffic.
+The app is meant to run locally. An older Render and Vercel deployment is historical and is not evidence that the 3B model is serving traffic.

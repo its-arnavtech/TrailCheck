@@ -16,7 +16,7 @@ from ml.inference.validator import validate_output_text
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Evaluate local and Gemini structured predictions.")
+    parser = argparse.ArgumentParser(description="Evaluate local and saved structured predictions.")
     parser.add_argument("--gold", required=True, help="Gold JSONL path from build_dataset.py.")
     parser.add_argument(
         "--predictions",

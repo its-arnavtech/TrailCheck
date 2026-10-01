@@ -25,7 +25,7 @@ const contentPatterns = [
 ];
 
 const assignmentPattern =
-  /\b(JWT_SECRET|NPS_API_KEY|GEMINI_API_KEY|RESEND_API_KEY|DATABASE_URL|MAIL_FROM_ADDRESS)\b\s*[:=]\s*['"]([^'"]+)['"]/g;
+  /\b(JWT_SECRET|NPS_API_KEY|DEEPSEEK_API_KEY|RESEND_API_KEY|DATABASE_URL|MAIL_FROM_ADDRESS)\b\s*[:=]\s*['"]([^'"]+)['"]/g;
 
 const allowedAssignmentValues = new Set([
   '',

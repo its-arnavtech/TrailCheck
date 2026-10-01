@@ -1,6 +1,10 @@
 const DEFAULT_DEV_FRONTEND_ORIGIN = 'http://localhost:3000';
 const POSTGRES_PROTOCOLS = ['postgres://', 'postgresql://'];
 const PASSWORD_RESET_EMAIL_PROVIDERS = ['disabled', 'resend'] as const;
+const DEFAULT_DEEPSEEK_MODEL = 'deepseek-flash';
+const DEFAULT_DEEPSEEK_DAILY_LIMIT = 100;
+const DEFAULT_DEEPSEEK_MAX_OUTPUT_TOKENS = 256;
+const DEEPSEEK_MAX_OUTPUT_TOKENS_CEILING = 384;
 
 function readString(value: unknown, fallback = ''): string {
   if (typeof value === 'string') {
@@ -19,6 +23,22 @@ function parseAllowedOrigins(value?: string) {
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
+}
+
+function normalizeNonNegativeInteger(
+  value: string | undefined,
+  fallback: number,
+  name: string,
+) {
+  if (value === undefined || value.trim() === '') {
+    return fallback;
+  }
+
+  if (!/^\d+$/.test(value.trim())) {
+    throw new Error(`${name} must be a non-negative integer.`);
+  }
+
+  return Number.parseInt(value.trim(), 10);
 }
 
 function normalizePositiveInteger(value: string | undefined, fallback: number) {
@@ -199,6 +219,39 @@ export function validateEnvironment(config: Record<string, unknown>) {
     PASSWORD_RESET_EMAIL_PROVIDER: passwordResetEmailProvider,
     MAIL_FROM_ADDRESS: mailFromAddress,
     RESEND_API_KEY: resendApiKey,
+    DEEPSEEK_MODEL:
+      typeof config.DEEPSEEK_MODEL === 'string' && config.DEEPSEEK_MODEL.trim()
+        ? config.DEEPSEEK_MODEL.trim()
+        : DEFAULT_DEEPSEEK_MODEL,
+    DEEPSEEK_DAILY_LIMIT: normalizeNonNegativeInteger(
+      typeof config.DEEPSEEK_DAILY_LIMIT === 'string'
+        ? config.DEEPSEEK_DAILY_LIMIT
+        : undefined,
+      DEFAULT_DEEPSEEK_DAILY_LIMIT,
+      'DEEPSEEK_DAILY_LIMIT',
+    ),
+    DEEPSEEK_MAX_OUTPUT_TOKENS: Math.min(
+      normalizeNonNegativeInteger(
+        typeof config.DEEPSEEK_MAX_OUTPUT_TOKENS === 'string'
+          ? config.DEEPSEEK_MAX_OUTPUT_TOKENS
+          : undefined,
+        DEFAULT_DEEPSEEK_MAX_OUTPUT_TOKENS,
+        'DEEPSEEK_MAX_OUTPUT_TOKENS',
+      ) || DEFAULT_DEEPSEEK_MAX_OUTPUT_TOKENS,
+      DEEPSEEK_MAX_OUTPUT_TOKENS_CEILING,
+    ),
+    AI_RATE_LIMIT: normalizePositiveInteger(
+      typeof config.AI_RATE_LIMIT === 'string'
+        ? config.AI_RATE_LIMIT
+        : undefined,
+      20,
+    ),
+    AI_RATE_LIMIT_TTL_SECONDS: normalizePositiveInteger(
+      typeof config.AI_RATE_LIMIT_TTL_SECONDS === 'string'
+        ? config.AI_RATE_LIMIT_TTL_SECONDS
+        : undefined,
+      60,
+    ),
   };
 }
 

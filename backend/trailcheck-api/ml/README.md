@@ -25,7 +25,7 @@ Alternatives:
 - `data/`: dataset building and prompt construction
 - `training/`: QLoRA fine-tuning entrypoint
 - `inference/`: adapter loading, generation, and JSON validation
-- `evaluation/`: offline quality checks against held-out data and Gemini outputs
+- `evaluation/`: offline quality checks against held-out data and saved model outputs
 - `models/`: local adapter checkpoints
 
 Generated model-ready training datasets are written to `backend/trailcheck-api/ml/data/outputs/`. Raw processed weather and alert sources stay in `backend/trailcheck-api/data/processed/`.
@@ -81,13 +81,13 @@ python backend/trailcheck-api/ml/evaluation/evaluate_outputs.py `
   --predictions local=backend/trailcheck-api/ml/data/outputs/local_predictions.jsonl
 ```
 
-To compare a Gemini export as well:
+To compare a second export, such as DeepSeek answers saved as JSONL:
 
 ```powershell
 python backend/trailcheck-api/ml/evaluation/evaluate_outputs.py `
   --gold backend/trailcheck-api/ml/data/outputs/validation.jsonl `
   --predictions local=backend/trailcheck-api/ml/data/outputs/local_predictions.jsonl `
-  --predictions gemini=backend/trailcheck-api/ml/data/outputs/gemini_predictions.jsonl
+  --predictions deepseek=backend/trailcheck-api/ml/data/outputs/deepseek_predictions.jsonl
 ```
 
 ## Persistent Local Model Server
@@ -124,7 +124,7 @@ The NestJS backend should:
 
 1. Call the persistent local model server with the same structured weather and alert context.
 2. Require `ok: true` and a schema-valid `output` payload.
-3. If validation fails, route the same context to Gemini and log the failed local output for later evaluation.
+3. If validation fails, route the same context to DeepSeek and log the failed local output for later evaluation.
 4. Store successful local outputs as future fine-tuning examples and evaluation traces.
 
 Recommended backend environment variables:

@@ -62,7 +62,7 @@ describe('digest display', () => {
 
   it('names each generation path', () => {
     expect(getGenerationSourceLabel('local')).toBe('Local model');
-    expect(getGenerationSourceLabel('gemini')).toBe('Gemini');
+    expect(getGenerationSourceLabel('deepseek')).toBe('DeepSeek');
     expect(getGenerationSourceLabel('fallback')).toBe('Rules');
     expect(getGenerationSourceLabel(undefined)).toBe('Unavailable');
   });

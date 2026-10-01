@@ -15,10 +15,10 @@ TrailCheck is a full-stack web app for exploring U.S. national park trails, chec
 
 - Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS 4
 - Backend: NestJS 11, TypeScript
-- Database: Prisma ORM with PostgreSQL for local and production environments
+- Database: Prisma ORM with PostgreSQL
 - Auth: JWT + Passport
 - External data: National Park Service alerts, National Weather Service forecasts (`api.weather.gov`)
-- AI chain: optional local QLoRA model, then Gemini, then a rules summary. See [Which AI path runs](#which-ai-path-runs).
+- AI chain: optional local QLoRA model, then DeepSeek, then a rules summary. See [Which AI path runs](#which-ai-path-runs).
 
 ## Repository Structure
 
@@ -49,88 +49,106 @@ TrailCheck is a full-stack web app for exploring U.S. national park trails, chec
 - `POST /reports` for authenticated trail report submission
 - `POST /ai/ask` and `GET /ai/parks/:parkSlug/digest` for AI-assisted park condition summaries
 
-## Local Setup
+## Run locally on Windows
+
+Run the API and the web app on your machine. Secrets stay in a gitignored env file. The frontend talks to `http://localhost:3001` in development without a frontend API key.
+
+You need Node.js 22, npm, and either Docker Desktop or a native PostgreSQL 16 install.
 
 ### 1. Install dependencies
 
-```bash
-cd backend/trailcheck-api
-npm install
+From the repo root in PowerShell:
 
-cd ../../frontend/trailcheck-web
+```powershell
+cd backend\trailcheck-api
+npm install
+cd ..\..\frontend\trailcheck-web
 npm install
 ```
 
-### 2. Configure environment variables
+### 2. Create the backend env file
 
-Copy the examples and fill in local values. Commit the examples. Do not commit the copies:
-
-```bash
-cp backend/trailcheck-api/.env.example backend/trailcheck-api/.env
-cp frontend/trailcheck-web/.env.example frontend/trailcheck-web/.env.local
+```powershell
+cd backend\trailcheck-api
+copy .env.example .env
 ```
 
-Notes:
+Edit `backend\trailcheck-api\.env`. The API loads that file when you start it from `backend\trailcheck-api`. It also reads `backend\.env` if you put the same variables there. Both paths are gitignored. Commit `.env.example` only.
 
-- The backend needs database connectivity, a JWT signing secret of at least 32 characters, and the frontend origin for CORS.
-- The frontend needs `NEXT_PUBLIC_API_BASE_URL`.
-- `NPS_API_KEY` enables live National Park Service alerts. Without it, alert lists are empty.
-- `GEMINI_API_KEY` enables the Gemini step. Without it, the API uses the rules summary after the local model step fails or is disabled.
-- Leave `LOCAL_MODEL_ENABLED=false` unless you are running the Python model server and have a real adapter. The default in code is enabled, which only helps when that server is up.
-- Password reset email stays disabled until `PASSWORD_RESET_EMAIL_PROVIDER=resend` and the provider settings are present. Put those in the private env file, not in git.
+Set these for a working local API:
 
-### 3. Run database migrations and seed data
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `DATABASE_URL` | yes | PostgreSQL connection string. The example matches the Docker database. |
+| `JWT_SECRET` | yes | At least 32 random characters. |
+| `FRONTEND_ORIGIN` | yes for local CORS | `http://localhost:3000` |
+| `DEEPSEEK_API_KEY` | only for DeepSeek answers | Server-side DeepSeek key. Leave blank to use the rules summary. |
+| `NPS_API_KEY` | only for live alerts | National Park Service alerts. Leave blank for an empty alert list. |
 
-```bash
-cd backend/trailcheck-api
+Optional variables have defaults when omitted:
+
+| Variable | Default |
+| --- | --- |
+| `DEEPSEEK_MODEL` | `deepseek-flash` (DeepSeek V4.1 Flash) |
+| `DEEPSEEK_DAILY_LIMIT` | `100` DeepSeek calls per UTC day, then rules. `0` disables DeepSeek. |
+| `DEEPSEEK_MAX_OUTPUT_TOKENS` | `256`, and the server never sends more than `384` |
+| `AI_RATE_LIMIT` | `20` AI requests per window, per IP or per signed-in user |
+| `AI_RATE_LIMIT_TTL_SECONDS` | `60` |
+
+Do not create a `NEXT_PUBLIC_` variable for `DEEPSEEK_API_KEY`. The browser never receives that key.
+
+Leave `LOCAL_MODEL_ENABLED=false` unless you are running the Python model server and have a real adapter. Password reset email stays disabled until `PASSWORD_RESET_EMAIL_PROVIDER=resend` and `RESEND_API_KEY` are set in this same private file.
+
+### 3. Start PostgreSQL
+
+Docker Desktop:
+
+```powershell
+cd backend\trailcheck-api
 npm run db:start
+```
+
+That runs `docker compose` against the repo `compose.yaml` and publishes Postgres on `localhost:5432`.
+
+Native PostgreSQL instead of Docker:
+
+1. Install PostgreSQL 16 and start the Windows service.
+2. Create a database named `trailcheck`.
+3. Set `DATABASE_URL` in `backend\trailcheck-api\.env` to that instance. The example user `postgres` / password `postgres` matches the Docker service; change it if your local install uses different credentials.
+
+### 4. Migrate and seed
+
+```powershell
+cd backend\trailcheck-api
 npx prisma migrate deploy
 npx prisma db seed
 ```
 
-If Docker Desktop is not already running, start it first so the local PostgreSQL container can bind to `localhost:5432`.
+`npm run db:setup` runs those two commands after the database is up.
 
-For the backend package scripts, the equivalent commands are:
+### 5. Start the backend
 
-```bash
-cd backend/trailcheck-api
-npm run db:start
-npm run db:setup
-```
-
-You can inspect or stop the local database with:
-
-```bash
-cd backend/trailcheck-api
-npm run db:logs
-npm run db:stop
-```
-
-If you prefer the raw Prisma commands, they still work:
-
-```bash
-cd backend/trailcheck-api
-npx prisma migrate deploy
-npx prisma db seed
-```
-
-### 4. Start the backend
-
-```bash
-cd backend/trailcheck-api
+```powershell
+cd backend\trailcheck-api
 npm run start:dev
 ```
 
-The API runs on `http://localhost:3001` by default.
+The API listens on `http://localhost:3001`.
 
-### 5. Start the frontend
+### 6. Start the frontend
 
-```bash
-cd frontend/trailcheck-web
+```powershell
+cd frontend\trailcheck-web
 npm run dev
 ```
 
-The web app runs on `http://localhost:3000`.
+The web app listens on `http://localhost:3000` and calls `http://localhost:3001` in development even when `frontend\trailcheck-web\.env.local` does not exist. Copy `frontend\trailcheck-web\.env.example` to `.env.local` only if the API is on a different origin.
+
+## Hosting history
+
+The API previously ran on Render, and the web app could be deployed to Vercel. Render is no longer used. The supported setup is both apps on a local Windows machine.
+
+Vercel remains optional for the frontend only. A Vercel deployment cannot reach an API bound to `localhost` on a laptop. Set `NEXT_PUBLIC_API_BASE_URL` on that deployment only when the API has a public origin the browser can call.
 
 ## Available Scripts
 
@@ -175,10 +193,12 @@ This supports seeded park and trail data, user-submitted reports, and derived or
 | Order | Source value | When it runs |
 | --- | --- | --- |
 | 1 | `local` | `LOCAL_MODEL_ENABLED` is not `false`, and the local server or Python subprocess returns schema-valid JSON. The default transport calls `http://127.0.0.1:8001`. That process must be started separately and needs a saved QLoRA adapter. |
-| 2 | `gemini` | The local step is skipped, missing, or invalid, and `GEMINI_API_KEY` is set to a real key. |
-| 3 | `fallback` | The local step did not produce valid JSON and Gemini is unset or errors. The text comes from the hazard rules, NPS alerts, and the NWS forecast. |
+| 2 | `deepseek` | The local step is skipped, missing, or invalid, and `DEEPSEEK_API_KEY` is set to a real key, and the UTC-day request cap has not been reached. The model id defaults to `deepseek-flash` (DeepSeek V4.1 Flash) at `https://api.deepseek.com`. |
+| 3 | `fallback` | The local step did not produce valid JSON, and DeepSeek is unset, over the daily cap, or returns an error. The text comes from the hazard rules, NPS alerts, and the NWS forecast. |
 
-The hosted API on Render has no GPU. This repository does not contain an adapter checkpoint. A normal hosted request therefore does not run Qwen. It uses Gemini if the host has a key, otherwise the rules summary. The live `generationSource` value is the check. This repo cannot see the Render env, and these docs do not guess it.
+Digest responses are cached in memory for the UTC day. The cache key is the park slug plus that park's trail slugs, so park pages and trail pages share one digest and do not call DeepSeek again until the next UTC day. `POST /ai/ask` and `GET /ai/parks/:parkSlug/digest` are also limited per signed-in user, or per IP when the request has no valid token.
+
+This repository does not contain an adapter checkpoint. A normal local request therefore does not run Qwen unless you start the model server yourself. It uses DeepSeek when `DEEPSEEK_API_KEY` is set in the backend env file, and the rules summary otherwise. The response field `generationSource` is the check. The UI labels that value `DeepSeek`.
 
 The training examples are rule-generated, not hand-written. See [Model training](#model-training).
 
@@ -221,29 +241,23 @@ Replace the placeholder `model_eval.json` with that report only after the comman
 ## Current Notes
 
 - The top-level `README.md` is the one GitHub shows. Nested READMEs are narrower.
-- Local and hosted databases are PostgreSQL. `compose.yaml` starts the local database.
+- The local database is PostgreSQL. `compose.yaml` starts it, or you can use a native Windows install.
 - Do not describe the SFT set as hand-built, and do not quote model accuracy until `model_eval.json` is replaced with a real run.
+- Do not commit `.env` files. `DEEPSEEK_API_KEY` is read only by the NestJS process.
 
-## Deployment Shape
+## Production-mode checks
 
-- Deploy `frontend/trailcheck-web` to Vercel.
-- Deploy `backend/trailcheck-api` as its own always-on service using a private container or platform build config.
-- Keep deployment manifests and production secret values in the hosting provider secret store, not in the public repo.
-- Set the frontend deployment to point at the backend API URL.
-- Set the backend deployment to allow the frontend origin and use a managed production database.
-- Password reset email is disabled by default. Enable it only after adding valid provider settings to the backend deployment secret store.
+These apply when `NODE_ENV=production`. Local `npm run start:dev` does not require them.
 
-## Production Security Defaults
-
-- The backend validates required env vars on boot and refuses production startup with a weak JWT secret.
-- Production startup refuses non-PostgreSQL `DATABASE_URL` values, which helps prevent mismatched or ephemeral database deployments.
+- The backend validates required env vars on boot and refuses a JWT secret shorter than 32 characters.
+- Production startup refuses a non-PostgreSQL `DATABASE_URL`.
 - Password reset email provider credentials are validated only when email delivery is explicitly enabled.
-- CORS is restricted to the configured frontend allowlist, Helmet headers are enabled, and request throttling is turned on globally.
-- `GET /health` is available for platform health checks and uptime probes.
+- CORS is restricted to `FRONTEND_ORIGIN`, Helmet headers are enabled, and request throttling is turned on globally.
+- `GET /health` reports process and database status.
 
 ## Future Improvements
 
 - Add screenshots or a short product demo GIF
-- Document deployment steps for frontend and backend
+- Keep the Windows local setup notes current when the API commands change
 - Add an API reference section with example request/response payloads
 - Replace placeholder contact/footer content in the app with project ownership details

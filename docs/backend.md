@@ -27,7 +27,7 @@ From [`backend/trailcheck-api/package.json`](../backend/trailcheck-api/package.j
 - PostgreSQL
 - Passport JWT
 - Argon2
-- `@google/genai`
+- DeepSeek's OpenAI-compatible chat API (`https://api.deepseek.com`)
 - a Python local-model bridge
 
 ## Bootstrap
@@ -91,7 +91,7 @@ The Prisma schema lives at [`prisma/schema.prisma`](../backend/trailcheck-api/pr
 `ParkSnapshot`
 - raw park-context capture used by the AI flow
 - stores raw NPS and NWS payloads
-- can also store a Gemini reply
+- has an unused `geminiReply` column left from an earlier provider; the API does not write it
 
 ### Prisma service
 
@@ -119,7 +119,7 @@ Expected config categories:
 - Database connection
 - JWT signing secret
 - Frontend origin/CORS
-- Optional NPS and Gemini API integrations
+- Optional NPS and DeepSeek API integrations
 - Optional local model runtime settings
 - Optional password reset email provider settings
 
@@ -127,7 +127,7 @@ Notes:
 
 - `JWT_SECRET` is required for protected endpoints.
 - `NPS_API_KEY` enables live NPS alerts.
-- `GEMINI_API_KEY` enables the Gemini fallback path.
+- `DEEPSEEK_API_KEY` enables the DeepSeek fallback path. `DEEPSEEK_MODEL` defaults to `deepseek-flash`. `DEEPSEEK_DAILY_LIMIT` defaults to 100 calls per UTC day.
 - the local model is considered enabled unless `LOCAL_MODEL_ENABLED` is explicitly set to `false`.
 
 ## API routes
@@ -392,7 +392,7 @@ The AI orchestration layer lives in [`src/ai/ai.service.ts`](../backend/trailche
 - collect park context from Prisma, NPS, weather, and hazards
 - persist raw NPS/NWS snapshots when possible
 - try local structured generation first
-- fall back to Gemini
+- fall back to DeepSeek
 - fall back again to rules-based text
 
 ### Local model path
@@ -410,10 +410,10 @@ The AI orchestration layer lives in [`src/ai/ai.service.ts`](../backend/trailche
 The backend generation order is:
 
 1. local model, only when `LOCAL_MODEL_ENABLED` is not false and the configured server or adapter responds with schema-valid JSON
-2. Gemini, when `GEMINI_API_KEY` is set to a non-placeholder value
+2. DeepSeek V4.1 Flash (`deepseek-flash` at `https://api.deepseek.com`), when `DEEPSEEK_API_KEY` is set to a non-placeholder value and `DEEPSEEK_DAILY_LIMIT` has not been reached for the UTC day
 3. rules-based fallback from the hazard engine, NPS alerts, and the NWS forecast
 
-`generationSource` on the response is `local`, `gemini`, or `fallback`. Render does not run a GPU. With no adapter in this repo, a normal hosted request fails the local step and then uses Gemini or rules, depending on whether the host has `GEMINI_API_KEY`. This repository does not contain that host's env file, so do not claim a specific production provider beyond what `generationSource` returns.
+`generationSource` on the response is `local`, `deepseek`, or `fallback`. The key is read from the backend env file only. Output tokens are capped (`DEEPSEEK_MAX_OUTPUT_TOKENS`, hard ceiling 384), thinking mode is disabled, and prompts sent to DeepSeek keep a short context. Park digests are cached for the UTC day using the park slug and that park's trail slugs. `POST /ai/ask` and the digest route share a per-user rate limit, falling back to the client IP when the request has no valid JWT. With no adapter in this repo, a normal local request fails the local step and then uses DeepSeek or rules, depending on `DEEPSEEK_API_KEY`.
 
 ## Request flow by feature
 
@@ -450,12 +450,11 @@ npm run test:e2e
 npm run lint
 ```
 
-Typical local setup:
+Typical local setup is in the root README under "Run locally on Windows". From `backend/trailcheck-api`, after Postgres is up and `.env` exists:
 
 ```bash
-cd backend/trailcheck-api
 npm install
-npx prisma migrate dev
+npx prisma migrate deploy
 npx prisma db seed
 npm run start:dev
 ```

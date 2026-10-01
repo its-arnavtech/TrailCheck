@@ -17,8 +17,8 @@ export function getGenerationSourceLabel(
   switch (source) {
     case 'local':
       return 'Local model';
-    case 'gemini':
-      return 'Gemini';
+    case 'deepseek':
+      return 'DeepSeek';
     case 'fallback':
       return 'Rules';
     default:

@@ -23,8 +23,9 @@ import { ApiThrottlerGuard } from './common/guards/api-throttler.guard';
 
 const ENV_FILE_CANDIDATES = [
   resolve(process.cwd(), '.env'),
+  resolve(process.cwd(), '..', '.env'),
   resolve(process.cwd(), 'backend/trailcheck-api/.env'),
-  resolve(__dirname, '..', '.env'),
+  resolve(process.cwd(), 'backend/.env'),
   resolve(__dirname, '..', '..', '.env'),
 ];
 

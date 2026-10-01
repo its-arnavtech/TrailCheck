@@ -128,13 +128,7 @@ It provides:
 
 ### API base URL
 
-The frontend uses:
-
-```ts
-process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001'
-```
-
-So the frontend expects `.env.local` to define the backend origin when needed.
+In development, `lib/api.ts` uses `http://localhost:3001` when `NEXT_PUBLIC_API_BASE_URL` is unset. A production build requires the variable. Do not put backend secrets in frontend env files.
 
 ### Main functions
 
