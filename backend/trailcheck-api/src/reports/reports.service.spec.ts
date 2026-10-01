@@ -1,4 +1,4 @@
-import { HttpStatus } from '@nestjs/common';
+import { HttpStatus, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { ReportsService } from './reports.service';
 
@@ -33,8 +33,8 @@ describe('ReportsService', () => {
 
   it('allows a user with 0 reports today to submit', async () => {
     const tx = makeTransactionContext(0);
-    prisma.$transaction.mockImplementation(async (callback: (txArg: typeof tx) => unknown) =>
-      callback(tx),
+    prisma.$transaction.mockImplementation(
+      async (callback: (txArg: typeof tx) => unknown) => callback(tx),
     );
 
     const result = await service.create(
@@ -73,8 +73,8 @@ describe('ReportsService', () => {
 
   it('allows a user with 1 report today to submit', async () => {
     const tx = makeTransactionContext(1, 2);
-    prisma.$transaction.mockImplementation(async (callback: (txArg: typeof tx) => unknown) =>
-      callback(tx),
+    prisma.$transaction.mockImplementation(
+      async (callback: (txArg: typeof tx) => unknown) => callback(tx),
     );
 
     const result = await service.create(
@@ -91,8 +91,8 @@ describe('ReportsService', () => {
 
   it('rejects a user with 2 reports today', async () => {
     const tx = makeTransactionContext(2);
-    prisma.$transaction.mockImplementation(async (callback: (txArg: typeof tx) => unknown) =>
-      callback(tx),
+    prisma.$transaction.mockImplementation(
+      async (callback: (txArg: typeof tx) => unknown) => callback(tx),
     );
 
     await expect(
@@ -158,8 +158,8 @@ describe('ReportsService', () => {
 
   it('uses serializable isolation for concurrency protection', async () => {
     const tx = makeTransactionContext(0);
-    prisma.$transaction.mockImplementation(async (callback: (txArg: typeof tx) => unknown) =>
-      callback(tx),
+    prisma.$transaction.mockImplementation(
+      async (callback: (txArg: typeof tx) => unknown) => callback(tx),
     );
 
     await service.create(
@@ -171,11 +171,23 @@ describe('ReportsService', () => {
       { id: 44, email: 'hiker@gmail.com' },
     );
 
-    expect(prisma.$transaction).toHaveBeenCalledWith(
-      expect.any(Function),
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-      },
-    );
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    });
+  });
+
+  it('returns not found when the trail id does not exist', async () => {
+    prisma.$transaction.mockRejectedValue({ code: 'P2003' });
+
+    await expect(
+      service.create(
+        {
+          trailId: 999999,
+          conditionRating: 3,
+          surfaceCondition: 'DRY',
+        },
+        { id: 44, email: 'hiker@gmail.com' },
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 });

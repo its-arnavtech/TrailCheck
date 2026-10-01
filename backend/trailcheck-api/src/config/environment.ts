@@ -2,6 +2,18 @@ const DEFAULT_DEV_FRONTEND_ORIGIN = 'http://localhost:3000';
 const POSTGRES_PROTOCOLS = ['postgres://', 'postgresql://'];
 const PASSWORD_RESET_EMAIL_PROVIDERS = ['disabled', 'resend'] as const;
 
+function readString(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  return fallback;
+}
+
 function parseAllowedOrigins(value?: string) {
   return (value ?? '')
     .split(',')
@@ -34,7 +46,7 @@ function normalizeUrl(value: string | undefined, fallback: string) {
 }
 
 export function validateEnvironment(config: Record<string, unknown>) {
-  const nodeEnv = String(config.NODE_ENV ?? 'development');
+  const nodeEnv = readString(config.NODE_ENV, 'development');
   const isProduction = nodeEnv === 'production';
   const frontendOrigins = parseAllowedOrigins(
     typeof config.FRONTEND_ORIGIN === 'string'
@@ -50,7 +62,7 @@ export function validateEnvironment(config: Record<string, unknown>) {
     throw new Error('JWT_SECRET is required.');
   }
 
-  const jwtSecret = String(config.JWT_SECRET);
+  const jwtSecret = readString(config.JWT_SECRET);
   if (jwtSecret.length < 32) {
     throw new Error('JWT_SECRET must be at least 32 characters long.');
   }
@@ -61,7 +73,9 @@ export function validateEnvironment(config: Record<string, unknown>) {
     );
   }
 
-  if (isProduction && String(config.DATABASE_URL).startsWith('file:')) {
+  const databaseUrl = readString(config.DATABASE_URL);
+
+  if (isProduction && databaseUrl.startsWith('file:')) {
     throw new Error(
       'Production deployments should use a managed database instead of a local SQLite file.',
     );
@@ -69,9 +83,7 @@ export function validateEnvironment(config: Record<string, unknown>) {
 
   if (
     isProduction &&
-    !POSTGRES_PROTOCOLS.some((protocol) =>
-      String(config.DATABASE_URL).startsWith(protocol),
-    )
+    !POSTGRES_PROTOCOLS.some((protocol) => databaseUrl.startsWith(protocol))
   ) {
     throw new Error(
       'Production deployments must use a PostgreSQL DATABASE_URL.',
@@ -84,10 +96,7 @@ export function validateEnvironment(config: Record<string, unknown>) {
       : undefined,
     30,
   );
-  if (
-    passwordResetTokenTtlMinutes < 15 ||
-    passwordResetTokenTtlMinutes > 60
-  ) {
+  if (passwordResetTokenTtlMinutes < 15 || passwordResetTokenTtlMinutes > 60) {
     throw new Error(
       'PASSWORD_RESET_TOKEN_TTL_MINUTES must be between 15 and 60 minutes.',
     );
@@ -100,8 +109,9 @@ export function validateEnvironment(config: Record<string, unknown>) {
     350,
   );
 
-  const passwordResetEmailProvider = String(
-    config.PASSWORD_RESET_EMAIL_PROVIDER ?? 'disabled',
+  const passwordResetEmailProvider = readString(
+    config.PASSWORD_RESET_EMAIL_PROVIDER,
+    'disabled',
   ).toLowerCase();
 
   if (

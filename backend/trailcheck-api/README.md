@@ -23,7 +23,7 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+TrailCheck API: NestJS, Prisma, and PostgreSQL. Setup, the AI fallback chain, and the model pipeline are documented in the repository root `README.md` and in `docs/`. This folder also contains `ml/` for the rule-generated dataset and QLoRA training config. Copy `.env.example` to `.env` for local development. Do not commit secrets.
 
 ## Project setup
 

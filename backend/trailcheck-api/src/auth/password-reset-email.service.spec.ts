@@ -137,10 +137,14 @@ describe('PasswordResetEmailService', () => {
       messageId: 'email_123',
     });
     expect(logger.log).toHaveBeenCalledWith(
-      expect.stringContaining('Attempting Resend password reset delivery for user 7'),
+      expect.stringContaining(
+        'Attempting Resend password reset delivery for user 7',
+      ),
     );
     expect(logger.log).toHaveBeenCalledWith(
-      expect.stringContaining('Resend password reset delivery succeeded for user 7'),
+      expect.stringContaining(
+        'Resend password reset delivery succeeded for user 7',
+      ),
     );
   });
 });

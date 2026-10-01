@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TrailsController } from './trails.controller';
 import { TrailsService } from './trails.service';
-import { PrismaModule } from '../prisma/primsa.module';
+import { PrismaModule } from '../prisma/prisma.module';
 import { NpsModule } from '../nps/nps.module';
 import { WeatherModule } from '../weather/weather.module';
 

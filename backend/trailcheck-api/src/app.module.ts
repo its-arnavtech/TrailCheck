@@ -16,7 +16,7 @@ import { WeatherModule } from './weather/weather.module';
 import { AuthModule } from './auth/auth.module';
 import { AiModule } from './ai/ai.module';
 import { validateEnvironment } from './config/environment';
-import { PrismaModule } from './prisma/primsa.module';
+import { PrismaModule } from './prisma/prisma.module';
 import { CatalogSyncService } from './catalog/catalog-sync.service';
 import { RouteTimingInterceptor } from './common/interceptors/route-timing.interceptor';
 import { ApiThrottlerGuard } from './common/guards/api-throttler.guard';

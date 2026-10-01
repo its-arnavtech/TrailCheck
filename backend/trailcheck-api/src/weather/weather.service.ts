@@ -11,11 +11,15 @@ type WeatherPayload = {
 export class WeatherService {
   private readonly logger = new Logger(WeatherService.name);
   private readonly cacheTtlMs = 1000 * 60 * 10;
+  private readonly failureCacheTtlMs = 1000 * 60;
   private readonly payloadCache = new Map<
     string,
     { expiresAt: number; value: WeatherPayload }
   >();
-  private readonly inFlightPayloads = new Map<string, Promise<WeatherPayload>>();
+  private readonly inFlightPayloads = new Map<
+    string,
+    Promise<WeatherPayload>
+  >();
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -37,9 +41,10 @@ export class WeatherService {
 
     const request = this.fetchWeatherPayload(parkSlug)
       .then((value) => {
+        const ttl = value.weather ? this.cacheTtlMs : this.failureCacheTtlMs;
         this.payloadCache.set(parkSlug, {
           value,
-          expiresAt: Date.now() + this.cacheTtlMs,
+          expiresAt: Date.now() + ttl,
         });
         return value;
       })

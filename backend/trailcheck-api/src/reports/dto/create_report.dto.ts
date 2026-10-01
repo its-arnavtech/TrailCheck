@@ -35,8 +35,15 @@ export class CreateReportDto {
   surfaceCondition: string;
 
   @IsOptional()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+
+    const trimmed = String(value).trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  })
   @IsString()
-  @Transform(({ value }) => String(value ?? '').trim())
   @MaxLength(2000)
   @MinLength(1)
   note?: string;

@@ -70,6 +70,26 @@ async function main() {
     ),
   );
 
+  await prisma.hazard.deleteMany({
+    where: {
+      trail: {
+        slug: {
+          notIn: trailSlugs,
+        },
+      },
+    },
+  });
+
+  await prisma.trailReport.deleteMany({
+    where: {
+      trail: {
+        slug: {
+          notIn: trailSlugs,
+        },
+      },
+    },
+  });
+
   await prisma.trail.deleteMany({
     where: {
       slug: {
@@ -78,13 +98,43 @@ async function main() {
     },
   });
 
-  await prisma.park.deleteMany({
+  const staleParks = await prisma.park.findMany({
     where: {
       slug: {
         notIn: parkSlugs,
       },
     },
+    select: {
+      id: true,
+    },
   });
+  const staleParkIds = staleParks.map((park) => park.id);
+
+  if (staleParkIds.length > 0) {
+    await prisma.userParkPreference.deleteMany({
+      where: {
+        parkId: {
+          in: staleParkIds,
+        },
+      },
+    });
+
+    await prisma.parkSnapshot.deleteMany({
+      where: {
+        parkId: {
+          in: staleParkIds,
+        },
+      },
+    });
+
+    await prisma.park.deleteMany({
+      where: {
+        id: {
+          in: staleParkIds,
+        },
+      },
+    });
+  }
 
   console.log(`Seeded successfully with ${parkRecords.length} parks and ${trails.length} trails`);
 }

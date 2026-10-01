@@ -24,6 +24,11 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help="Prediction mapping in name=path form. Can be repeated.",
     )
+    parser.add_argument(
+        "--output",
+        default="",
+        help="Optional path to write the metrics JSON. The report is still printed.",
+    )
     return parser.parse_args()
 
 
@@ -186,7 +191,12 @@ def main() -> None:
             "metrics": evaluate_system(gold_by_row, predictions),
         }
 
-    print(json.dumps(report, indent=2))
+    rendered = json.dumps(report, indent=2)
+    if args.output:
+        output_path = resolve_backend_path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(rendered + "\n", encoding="utf-8")
+    print(rendered)
 
 
 if __name__ == "__main__":

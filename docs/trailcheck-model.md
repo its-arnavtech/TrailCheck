@@ -1,12 +1,18 @@
 # TrailCheck Model Training and Implementation
 
-This document explains the local TrailCheck model pipeline as it exists in this repository: what the model is supposed to do, what data it is trained on, how the training set is built, how supervised fine-tuning is configured, how inference works, and how the NestJS backend uses the model at runtime.
+This document describes the local TrailCheck model pipeline as it exists in this repository: what the model is for, how the training set is built, how QLoRA is configured, and which runtime path actually runs.
 
-It focuses on the local structured-output model under `backend/trailcheck-api/ml/`, not just the Gemini fallback path. The important distinction is:
+## Current status
 
-- The repository contains a real end-to-end local model pipeline.
-- The repository does not currently contain a trained adapter checkpoint in source control.
-- In practice, the backend is designed to prefer the local model when an adapter exists, then fall back to Gemini, then finally fall back to a rules-only summary.
+The supervised examples are **not hand-built**. `ml/data/build_dataset.py` generates them with deterministic rules from weather rows and NPS alert text. The model, if trained, imitates that rule policy. It does not learn from expert labels.
+
+The last recorded full build, noted in commit `ae20b74` and in an earlier draft of this document, contained **660** examples from **two** parks: Big Bend 366 and Yosemite 294, split 560 train / 100 validation. Those JSONL files are gitignored. A fresh clone does not contain them, and 660 is a dataset split count, not a model score.
+
+There is **no trained adapter** and **no model evaluation** in this repository. A QLoRA run was reported finished on an RTX 4060, but the adapter files were lost and are not in git history. `ml/results/model_eval.json` says `not yet run` until that training is repeated and `evaluate_outputs.py` is pointed at real predictions.
+
+`ml/results/harness_smoke.json` is different. It scores a replay of the rule labels on the small committed fixture. Those numbers check the metric script. They are not Qwen quality.
+
+The NestJS chain is local model, then Gemini, then rules. See [Which path runs](#11-how-the-nestjs-backend-uses-the-model). Render does not have a GPU, and this repo does not ship an adapter, so the hosted API cannot be serving the 3B model unless a separate model server is configured. The response field `generationSource` is the source of truth for a given request.
 
 ## 1. What the model is for
 
@@ -284,24 +290,19 @@ Generated files include:
 - `ml/data/outputs/manifest.json`
 - `ml/data/outputs/sample_input.json`
 
-### 7.1 Current local dataset metrics
+### 7.1 Recorded dataset split, not model metrics
 
-From the generated local artifacts currently present in `backend/trailcheck-api/ml/data/outputs/`:
+Commit `ae20b74` ("model metrics") recorded dataset split counts only. It did not record JSON-valid rate, risk accuracy, or hazard F1 for a trained model.
 
-- total structured examples: `660`
-- training examples: `560`
-- validation examples: `100`
-- effective validation share: `15.15%`
-- skipped rows during dataset build: `0`
-- date coverage in the generated set: `2024-01-01` through `2024-12-31`
-- park coverage in the generated set: `2` parks
-- examples by park: `big-bend = 366`, `yosemite = 294`
-- risk-level distribution: `MODERATE = 349`, `HIGH = 7`, `EXTREME = 304`
-- average hazards per example: `1.38`
-- average alerts per example: `2.55`
-- alert-context mode distribution: `park_current_fallback = 660`
+The recorded full build, which is **not** committed as JSONL, was:
 
-These numbers come from the local generated dataset files and manifest, not from committed model checkpoints.
+- 660 rule-generated examples
+- 560 train / 100 validation
+- 2 parks: `big-bend` 366, `yosemite` 294
+- dates in that build: 2024-01-01 through 2024-12-31
+- every row used `park_current_fallback` for alert context
+
+Do not quote the risk mix from that build (`MODERATE` 349, `HIGH` 7, `EXTREME` 304) as model performance. It describes the rule labels. Rebuild the processed CSVs and run `build_dataset.py` if you need to recompute it. The committed fixture under `ml/data/fixtures/` is a few rows for the CPU smoke test, not that 660-row set.
 
 ## 8. Exact training configuration
 
@@ -571,20 +572,20 @@ This is a good fit for TrailCheck because accuracy is not only about matching a 
 
 ## 15. Current repository state
 
-As of the current repo state:
+What is in git:
 
-- the training and inference code is present
-- the configuration file is present
-- the backend integration is present
-- generated dataset artifacts under `ml/data/outputs/` are not committed
-- the `ml/models/` directory contains only `.gitkeep`
+- dataset builder, QLoRA config, training script, inference code, and the metric script
+- a small fixture CSV set and `ml/configs/trailcheck_smoke.yaml` for a CPU smoke test
+- `ml/results/model_eval.json` with status `not yet run`
+- `ml/models/.gitkeep` only. No `adapter_config.json`
 
-That means the project currently ships the local model pipeline, but not a trained adapter artifact. In practical terms:
+What is not in git:
 
-- the local model path is implemented
-- the local model path is not immediately runnable from a clean clone unless someone trains or supplies an adapter
-- the backend is expected to fall back unless `LOCAL_MODEL_ADAPTER_PATH` points to a real saved adapter
-- the exact size of the latest generated train/validation set cannot be verified from source control alone because the output manifest is not committed
+- the 660-row JSONL from the two-park build
+- the processed NOAA and NPS source files (`backend/trailcheck-api/data/` is gitignored)
+- any QLoRA adapter from the reported RTX 4060 run
+
+The local path is not runnable from a clean clone until someone trains an adapter or points `LOCAL_MODEL_ADAPTER_PATH` at one. Until then the API uses Gemini when `GEMINI_API_KEY` is set, and the rules summary otherwise. `LOCAL_MODEL_ENABLED` defaults to true in code, but the server transport then fails closed when nothing is listening on the model port.
 
 ## 16. Limitations and tradeoffs
 
@@ -668,12 +669,12 @@ There is also an older and much simpler prototype dataset script at [`backend/tr
 
 ## 20. Bottom line
 
-TrailCheck's model story is best described as a hybrid safety generation system:
+TrailCheck's model story is a hybrid that should be described in that order:
 
-- deterministic data and hazard engineering
-- synthetic supervised labels
-- a small locally fine-tuned structured-output LLM
-- strict schema validation
-- a live backend fallback chain to Gemini and non-LLM summaries
+- deterministic hazard rules and rule-generated supervised examples, not a hand-labeled corpus
+- a QLoRA training config for Qwen2.5-3B-Instruct on one consumer GPU
+- no adapter and no model scores in this repository
+- strict JSON validation when a local model is actually running
+- a live backend chain: local model, then Gemini, then rules
 
-That is a practical architecture for a student or prototype production app because it keeps the local model bounded, inspectable, and replaceable while still giving the app a path toward domain-specific structured inference.
+The hosted app on Vercel and Render is the full-stack product. It is not, by itself, evidence that the 3B model is serving traffic.

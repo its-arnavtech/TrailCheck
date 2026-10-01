@@ -1,11 +1,11 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateParkPreferenceDto } from './dto/update-park-preference.dto';
-import { getStaticParkBySlug, getStaticParks } from '../catalog/static-park-data';
+import {
+  getStaticParkBySlug,
+  getStaticParks,
+} from '../catalog/static-park-data';
 
 @Injectable()
 export class ParksService {
@@ -132,7 +132,15 @@ export class ParksService {
       if (!staticPark) {
         throw new NotFoundException(`Park "${slug}" not found`);
       }
-      throw new NotFoundException(`Park "${slug}" not found`);
+
+      return {
+        parkId: staticPark.id,
+        parkSlug: staticPark.slug,
+        parkName: staticPark.name,
+        parkState: staticPark.state,
+        isFavorite: false,
+        wantsToGo: false,
+      };
     }
 
     const preference = await this.prisma.userParkPreference.findUnique({

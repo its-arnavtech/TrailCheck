@@ -4,7 +4,7 @@ This document covers the backend in `backend/trailcheck-api/`: architecture, mod
 
 ## Overview
 
-TrailCheck's backend is a NestJS 11 API backed by Prisma and SQLite. It combines:
+TrailCheck's backend is a NestJS 11 API backed by Prisma and PostgreSQL. It combines:
 
 - seeded park and trail data
 - user accounts and JWT auth
@@ -24,7 +24,7 @@ From [`backend/trailcheck-api/package.json`](../backend/trailcheck-api/package.j
 - NestJS 11
 - TypeScript
 - Prisma
-- SQLite
+- PostgreSQL
 - Passport JWT
 - Argon2
 - `@google/genai`
@@ -55,7 +55,7 @@ This means DTO validation is enforced globally and the frontend is expected to r
 - `AuthModule`
 - `AiModule`
 
-There is also a root route in [`src/app.controller.ts`](../backend/trailcheck-api/src/app.controller.ts) that still returns `"Hello World!"`, which looks like starter boilerplate rather than a product-facing health endpoint.
+The root route in [`src/app.controller.ts`](../backend/trailcheck-api/src/app.controller.ts) returns `"TrailCheck API is running."`. `GET /health` reports whether the API process is up and whether Prisma currently has a database connection.
 
 ## Database model
 
@@ -112,7 +112,7 @@ This means park and trail content is source-controlled and reproducible.
 
 ## Environment variables
 
-The backend reads its runtime configuration from a private local `.env` file or the deployment platform's secret store. Do not commit env files or env examples.
+The backend reads runtime configuration from a private `.env` file or the host's secret store. Commit `backend/trailcheck-api/.env.example` only. Do not commit real `.env` files or production secret values.
 
 Expected config categories:
 
@@ -135,7 +135,10 @@ Notes:
 ### Root
 
 `GET /`
-- returns `"Hello World!"`
+- returns `"TrailCheck API is running."`
+
+`GET /health`
+- returns `{ status, service, database, timestamp }`
 
 ### Auth
 
@@ -217,12 +220,14 @@ DTOs are validated globally through Nest's validation pipe.
 [`src/auth/dto/auth.dto.ts`](../backend/trailcheck-api/src/auth/dto/auth.dto.ts)
 - email must be valid
 - email provider must be one of the allowed domains
-- password min length is 8
+- sign-in password length is 8 to 128 characters
+- sign-up and password reset require 12 to 128 characters with uppercase, lowercase, a number, and a symbol
+- sign-up age must be an integer from 13 to 120
 
 [`src/auth/dto/signup.dto.ts`](../backend/trailcheck-api/src/auth/dto/signup.dto.ts)
 - extends auth DTO
 - `gender` must be a valid enum value
-- `age` must be an integer from 1 to 120
+- `age` must be an integer from 13 to 120
 
 ### Report DTO
 
@@ -302,7 +307,7 @@ Preference behavior is also intentionally clean:
 - fetches NPS alerts and weather in parallel with `Promise.allSettled`
 - degrades gracefully if one upstream fails
 
-One detail worth watching: the returned live-alert property is `NpsAlerts` with a capital `N`, while the frontend types expect `npsAlerts`.
+The trail detail payload uses `npsAlerts`, matching the frontend type. A missing trail id on `POST /reports` returns 404 instead of a Prisma foreign-key 500.
 
 ## Reports module
 
@@ -404,11 +409,11 @@ The AI orchestration layer lives in [`src/ai/ai.service.ts`](../backend/trailche
 
 The backend generation order is:
 
-1. local model
-2. Gemini
-3. rules-based fallback
+1. local model, only when `LOCAL_MODEL_ENABLED` is not false and the configured server or adapter responds with schema-valid JSON
+2. Gemini, when `GEMINI_API_KEY` is set to a non-placeholder value
+3. rules-based fallback from the hazard engine, NPS alerts, and the NWS forecast
 
-This is why the AI endpoints remain usable even when the local adapter is missing or Gemini is unavailable.
+`generationSource` on the response is `local`, `gemini`, or `fallback`. Render does not run a GPU. With no adapter in this repo, a normal hosted request fails the local step and then uses Gemini or rules, depending on whether the host has `GEMINI_API_KEY`. This repository does not contain that host's env file, so do not claim a specific production provider beyond what `generationSource` returns.
 
 ## Request flow by feature
 

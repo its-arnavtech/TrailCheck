@@ -10,6 +10,7 @@ import ParkTrailsExplorer from '@/components/park-trails-explorer';
 import ReportAuthCta from '@/components/report-auth-cta';
 import RiskBadge from '@/components/risk-badge';
 import { getPark, getParkDigest } from '@/lib/api';
+import { getDigestRiskLevel } from '@/lib/digest-display';
 import { getParkCoordinates } from '@/lib/park-globe-data';
 import { getParkVisual } from '@/lib/park-content';
 
@@ -32,8 +33,7 @@ export default async function ParkPage({ params }: ParkPageProps) {
     getParkDigest(park.slug).catch(() => null),
   ]);
   const coordinates = getParkCoordinates(park.slug);
-  const riskLevel =
-    digest?.structuredOutput?.riskLevel ?? digest?.hazards[0]?.severity?.toUpperCase() ?? 'LOW';
+  const riskLevel = getDigestRiskLevel(digest);
 
   return (
     <main className="min-h-screen pb-10">

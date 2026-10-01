@@ -101,6 +101,11 @@ export type ParkDigest = {
   generationSource: 'local' | 'gemini' | 'fallback';
   generationError: string | null;
   structuredOutput?: LocalStructuredOutput | null;
+  hazardAssessment?: {
+    riskLevel: 'low' | 'moderate' | 'high' | string;
+    season?: string;
+    profile?: string;
+  } | null;
   hazards: ParkConditionHazard[];
   alerts: NpsAlert[];
   weather: ParkWeather | null;

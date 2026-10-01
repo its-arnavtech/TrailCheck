@@ -68,7 +68,9 @@ export function getStaticParks(): StaticParkRecord[] {
   return parkCatalog;
 }
 
-export function getStaticParkBySlug(slug: string): StaticParkRecord | undefined {
+export function getStaticParkBySlug(
+  slug: string,
+): StaticParkRecord | undefined {
   return parkBySlug.get(slug);
 }
 

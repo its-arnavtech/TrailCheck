@@ -68,7 +68,10 @@ export class AiService {
     string,
     { expiresAt: number; value: ParkDigestResult }
   >();
-  private readonly inFlightDigests = new Map<string, Promise<ParkDigestResult>>();
+  private readonly inFlightDigests = new Map<
+    string,
+    Promise<ParkDigestResult>
+  >();
 
   constructor(
     private readonly configService: ConfigService,
@@ -592,9 +595,8 @@ export class AiService {
     if (structuredOutput) {
       return {
         parkSlug,
-        shortSummary: this.buildDigestSummaryFromStructuredOutput(
-          structuredOutput,
-        ),
+        shortSummary:
+          this.buildDigestSummaryFromStructuredOutput(structuredOutput),
         notification: this.truncateForPrompt(
           structuredOutput.notification,
           160,
@@ -683,7 +685,12 @@ export class AiService {
 
     return {
       parkSlug,
-      shortSummary: this.buildDigestSummary(fallbackNotice, hazards, alerts, weather),
+      shortSummary: this.buildDigestSummary(
+        fallbackNotice,
+        hazards,
+        alerts,
+        weather,
+      ),
       notification: this.truncateForPrompt(fallbackNotice, 160),
       generationSource: 'fallback',
       generationError: this.combineGenerationErrors(

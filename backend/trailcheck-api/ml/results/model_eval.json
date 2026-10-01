@@ -1,0 +1,8 @@
+{
+  "status": "not yet run",
+  "adapterPresent": false,
+  "baseModel": "Qwen/Qwen2.5-3B-Instruct",
+  "method": "4-bit QLoRA",
+  "metrics": null,
+  "note": "No trained adapter or model predictions are in this repository. A QLoRA run was reported finished on an RTX 4060, but the adapter files were lost and are not in git history. Dataset split counts are not model scores. After training on a consumer GPU, run ml/evaluation/evaluate_outputs.py and replace this file with that report."
+}

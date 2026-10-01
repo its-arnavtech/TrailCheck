@@ -66,7 +66,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
             error instanceof Error ? error.message : 'Unknown Prisma error';
 
           if (reason === 'startup') {
-            this.logger.warn(`Starting without a database connection: ${message}`);
+            this.logger.warn(
+              `Starting without a database connection: ${message}`,
+            );
           } else {
             this.logger.warn(`Database reconnect attempt failed: ${message}`);
           }

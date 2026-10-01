@@ -2,6 +2,7 @@ import type { ParkDigest } from '@/lib/api';
 import HazardTag from '@/components/hazard-tag';
 import RiskBadge from '@/components/risk-badge';
 import WeatherCard from '@/components/weather-card';
+import { getDigestRiskLevel, getGenerationSourceLabel } from '@/lib/digest-display';
 
 type SafetyDigestProps = {
   digest: ParkDigest | null;
@@ -9,21 +10,17 @@ type SafetyDigestProps = {
   compact?: boolean;
 };
 
-function getRiskLevel(digest: ParkDigest | null) {
-  return digest?.structuredOutput?.riskLevel ?? digest?.hazards[0]?.severity?.toUpperCase() ?? 'LOW';
-}
-
 export default function SafetyDigest({
   digest,
   parkName,
   compact = false,
 }: SafetyDigestProps) {
-  const riskLevel = getRiskLevel(digest);
+  const riskLevel = getDigestRiskLevel(digest);
   const weather = digest?.weather?.forecast ?? [];
   const hazards = digest?.hazards ?? [];
   const alerts = digest?.alerts ?? [];
   const recommendation = digest?.structuredOutput?.recommendedAction;
-  const sourceLabel = digest?.generationSource ?? 'Fallback';
+  const sourceLabel = getGenerationSourceLabel(digest?.generationSource);
 
   return (
     <section className="glass-panel topo-ring overflow-hidden rounded-[1.75rem] p-5 sm:p-6">

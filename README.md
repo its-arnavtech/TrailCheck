@@ -1,6 +1,6 @@
 # TrailCheck
 
-TrailCheck is a full-stack web app for exploring U.S. national park trails, checking current conditions, and reporting on-the-ground hazards. It combines a Next.js frontend, a NestJS API, a Prisma-backed database, and live park context from the National Park Service, weather data, and Gemini-powered condition summaries.
+TrailCheck is a full-stack web app for exploring U.S. national park trails, checking current conditions, and reporting on-the-ground hazards. It combines a Next.js frontend, a NestJS API, Prisma with PostgreSQL, live National Park Service alerts, National Weather Service forecasts, and a three-step text generator.
 
 ![TrailCheck system design](./sys_design_w_RAG.png)
 
@@ -9,7 +9,7 @@ TrailCheck is a full-stack web app for exploring U.S. national park trails, chec
 - Browse national parks and their trails from a single interface.
 - View trail details, recent reports, hazard information, weather, and NPS alerts.
 - Create an account, sign in, and submit trail condition reports.
-- Generate park condition digests with retrieval-augmented AI responses grounded in live park context.
+- Generate a park condition digest. The API fills the prompt with live NPS alerts, NWS forecast periods, and the in-process hazard rules. There is no vector index.
 
 ## Tech Stack
 
@@ -17,16 +17,19 @@ TrailCheck is a full-stack web app for exploring U.S. national park trails, chec
 - Backend: NestJS 11, TypeScript
 - Database: Prisma ORM with PostgreSQL for local and production environments
 - Auth: JWT + Passport
-- External data: National Park Service alerts, weather forecast data
-- AI: Google Gemini via `@google/genai`
+- External data: National Park Service alerts, National Weather Service forecasts (`api.weather.gov`)
+- AI chain: optional local QLoRA model, then Gemini, then a rules summary. See [Which AI path runs](#which-ai-path-runs).
 
 ## Repository Structure
 
 ```text
 .
-|-- frontend/trailcheck-web   # Next.js application
-|-- backend/trailcheck-api    # NestJS API + Prisma schema/seed
-`-- sys_design_w_RAG.png      # architecture diagram used above
+|-- frontend/trailcheck-web          # Next.js application
+|-- backend/trailcheck-api           # NestJS API, Prisma schema, and ml/
+|-- backend/trailcheck-api/ml        # rule-generated dataset, QLoRA config, eval
+|-- docs                             # backend, frontend, and model notes
+|-- compose.yaml                     # local PostgreSQL only
+`-- sys_design_w_RAG.png             # architecture sketch; the runtime is not a vector RAG index
 ```
 
 ## Core Features
@@ -60,19 +63,21 @@ npm install
 
 ### 2. Configure environment variables
 
-Create local environment files manually. These files are intentionally ignored and should not be committed:
+Copy the examples and fill in local values. Commit the examples. Do not commit the copies:
 
-- Backend: `backend/trailcheck-api/.env`
-- Frontend: `frontend/trailcheck-web/.env.local`
+```bash
+cp backend/trailcheck-api/.env.example backend/trailcheck-api/.env
+cp frontend/trailcheck-web/.env.example frontend/trailcheck-web/.env.local
+```
 
 Notes:
 
-- The backend needs values for database connectivity, JWT signing, frontend origin/CORS, and optional NPS, Gemini, and email-provider integrations.
-- The frontend needs the public API base URL for the backend.
-- `JWT_SECRET` is required for sign-up, sign-in, and authenticated report submission.
-- `NPS_API_KEY` enables live National Park Service alerts.
-- `GEMINI_API_KEY` enables Gemini-generated summaries. Without it, the backend falls back to a non-AI summary path.
-- The password reset email provider is disabled unless configured with provider credentials in a private environment file or deployment secret store.
+- The backend needs database connectivity, a JWT signing secret of at least 32 characters, and the frontend origin for CORS.
+- The frontend needs `NEXT_PUBLIC_API_BASE_URL`.
+- `NPS_API_KEY` enables live National Park Service alerts. Without it, alert lists are empty.
+- `GEMINI_API_KEY` enables the Gemini step. Without it, the API uses the rules summary after the local model step fails or is disabled.
+- Leave `LOCAL_MODEL_ENABLED=false` unless you are running the Python model server and have a real adapter. The default in code is enabled, which only helps when that server is up.
+- Password reset email stays disabled until `PASSWORD_RESET_EMAIL_PROVIDER=resend` and the provider settings are present. Put those in the private env file, not in git.
 
 ### 3. Run database migrations and seed data
 
@@ -163,10 +168,61 @@ The Prisma schema currently centers on:
 
 This supports seeded park and trail data, user-submitted reports, and derived or external hazard context.
 
+## Which AI path runs
+
+`POST /ai/ask` and `GET /ai/parks/:parkSlug/digest` share one chain. The JSON field `generationSource` says which step wrote the text.
+
+| Order | Source value | When it runs |
+| --- | --- | --- |
+| 1 | `local` | `LOCAL_MODEL_ENABLED` is not `false`, and the local server or Python subprocess returns schema-valid JSON. The default transport calls `http://127.0.0.1:8001`. That process must be started separately and needs a saved QLoRA adapter. |
+| 2 | `gemini` | The local step is skipped, missing, or invalid, and `GEMINI_API_KEY` is set to a real key. |
+| 3 | `fallback` | The local step did not produce valid JSON and Gemini is unset or errors. The text comes from the hazard rules, NPS alerts, and the NWS forecast. |
+
+The hosted API on Render has no GPU. This repository does not contain an adapter checkpoint. A normal hosted request therefore does not run Qwen. It uses Gemini if the host has a key, otherwise the rules summary. The live `generationSource` value is the check. This repo cannot see the Render env, and these docs do not guess it.
+
+The training examples are rule-generated, not hand-written. See [Model training](#model-training).
+
+## Model training
+
+Code lives in `backend/trailcheck-api/ml/`.
+
+- Labels are produced by `ml/data/build_dataset.py` from weather thresholds and NPS alert keywords.
+- The full 2024 build recorded in commit `ae20b74` had 660 examples from Big Bend and Yosemite (560 train / 100 validation). Those JSONL files are not in git. 660 is a split count, not a model score.
+- `ml/configs/trailcheck_qlora_4060.yaml` is a 4-bit QLoRA config for `Qwen/Qwen2.5-3B-Instruct` aimed at one RTX 4060-class GPU.
+- No adapter is committed. A training run was reported finished on that GPU, but the artifacts were lost. `ml/results/model_eval.json` says `not yet run`.
+- `ml/results/harness_smoke.json`, when present, scores a replay of the rule labels on the tiny fixture. It does not score Qwen.
+
+CPU smoke test, from `backend/trailcheck-api` after `pip install -r ml/requirements-smoke.txt`:
+
+```bash
+python -m unittest discover -s ml/tests -v
+```
+
+That builds the fixture dataset, checks JSON-valid rate and risk accuracy for the rules replay, and refuses to invent model metrics.
+
+GPU training, after installing a CUDA PyTorch wheel and `ml/requirements.txt`, and after rebuilding the processed CSVs the 4060 config points at:
+
+```bash
+python ml/data/build_dataset.py --config ml/configs/trailcheck_qlora_4060.yaml
+python ml/training/train_sft.py --config ml/configs/trailcheck_qlora_4060.yaml
+python ml/inference/generate_local.py \
+  --config ml/configs/trailcheck_qlora_4060.yaml \
+  --adapter-path ml/models/trailcheck-qwen25-3b-json \
+  --dataset-file ml/data/outputs/validation.jsonl \
+  --output-file ml/data/outputs/local_predictions.jsonl
+python ml/evaluation/evaluate_outputs.py \
+  --gold ml/data/outputs/validation.jsonl \
+  --predictions local=ml/data/outputs/local_predictions.jsonl \
+  --output ml/results/model_eval.json
+```
+
+Replace the placeholder `model_eval.json` with that report only after the command prints real metrics. The processed 2024 CSVs are gitignored and are not in a fresh clone, so the 660-row build has to be reconstructed from the scripts in `backend/trailcheck-api/scripts/` before the GPU command above can see them.
+
 ## Current Notes
 
-- The repo contains starter/template READMEs inside the frontend and backend folders; the top-level `README.md` is the one GitHub displays on the repository main page.
-- The backend now targets PostgreSQL consistently, including local development and Render production deployments.
+- The top-level `README.md` is the one GitHub shows. Nested READMEs are narrower.
+- Local and hosted databases are PostgreSQL. `compose.yaml` starts the local database.
+- Do not describe the SFT set as hand-built, and do not quote model accuracy until `model_eval.json` is replaced with a real run.
 
 ## Deployment Shape
 
