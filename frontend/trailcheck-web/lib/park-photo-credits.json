@@ -1,0 +1,569 @@
+{
+  "acadia": {
+    "imageUrl": "/images/parks/acadia-scenic.webp",
+    "imageAlt": "Sunset over Jordan Pond from South Bubble in Acadia National Park.",
+    "credit": "NPS Photo",
+    "pageUrl": "https://commons.wikimedia.org/wiki/File:A_view_at_sunset_of_Jordan_Pond_from_South_Bubble_(ce36f6ac-3a95-4d10-a73e-b8f44b8b5af8).jpg",
+    "sourceUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d7/A_view_at_sunset_of_Jordan_Pond_from_South_Bubble_%28ce36f6ac-3a95-4d10-a73e-b8f44b8b5af8%29.jpg",
+    "width": 1600,
+    "height": 565
+  },
+  "american-samoa": {
+    "imageUrl": "/images/parks/american-samoa.webp",
+    "imageAlt": "Tuafanua Trail",
+    "credit": "NPS Photo / Michael Larson",
+    "pageUrl": "https://www.nps.gov/npsa/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C84F643-1DD8-B71B-0BC6F3EA2E1F58AB.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "arches": {
+    "imageUrl": "/images/parks/arches.webp",
+    "imageAlt": "a broad, red arch with rock pinnacles in the background",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/arch/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C79931C-1DD8-B71B-0BF201E3DB540D04.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1065
+  },
+  "badlands": {
+    "imageUrl": "/images/parks/badlands.webp",
+    "imageAlt": "Layered badlands formations behind fields of green grass under cloudy and billowing clouds.",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/badl/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C82EE63-1DD8-B71B-0BD6EE0FDCB5D402.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1012
+  },
+  "big-bend": {
+    "imageUrl": "/images/parks/big-bend-scenic.webp",
+    "imageAlt": "Santa Elena Canyon in Big Bend National Park.",
+    "credit": "NPS / B. Trester",
+    "pageUrl": "https://www.nps.gov/bibe/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/8AEFBCCC-0C9E-92DD-5E2B311EC6DA0339.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1200
+  },
+  "biscayne": {
+    "imageUrl": "/images/parks/biscayne.webp",
+    "imageAlt": "Coral reef with two snorkelers diving below the surface",
+    "credit": "NPS image by Shaun Wolfe",
+    "pageUrl": "https://www.nps.gov/bisc/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C8717A4-1DD8-B71B-0B2EED68CFA7E008.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 857,
+    "height": 1200
+  },
+  "black-canyon-of-the-gunnison": {
+    "imageUrl": "/images/parks/black-canyon-of-the-gunnison.webp",
+    "imageAlt": "Black Canyon near Tomichi Point",
+    "credit": "NPS Photo/Lynch",
+    "pageUrl": "https://www.nps.gov/blca/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C81655F-1DD8-B71B-0B4BCFFDB74EE723.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1229,
+    "height": 819
+  },
+  "bryce-canyon": {
+    "imageUrl": "/images/parks/bryce-canyon.webp",
+    "imageAlt": "A red rock landscape and plateau forest glows with the morning sun",
+    "credit": "NPS Photo / Peter Densmore",
+    "pageUrl": "https://www.nps.gov/brca/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/61F08520-E14F-18F2-BF5F3D89482631BD.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "canyonlands": {
+    "imageUrl": "/images/parks/canyonlands.webp",
+    "imageAlt": "Small rounded canyons with large sandstone cliffs and mountains in the background",
+    "credit": "NPS/Rhodes Smartt",
+    "pageUrl": "https://www.nps.gov/cany/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/D074F5CF-90A6-0468-24D18A9B669CC859.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 900
+  },
+  "capitol-reef": {
+    "imageUrl": "/images/parks/capitol-reef.webp",
+    "imageAlt": "Wingate Sandstone cliffs behind historic barn and farmhouse",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/care/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C82E3C7-1DD8-B71B-0B4181834EE46AED.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1200
+  },
+  "carlsbad-caverns": {
+    "imageUrl": "/images/parks/carlsbad-caverns.webp",
+    "imageAlt": "Photo of Giant Dome and Twin Domes in the Big Room.",
+    "credit": "NPS / Michael Larson",
+    "pageUrl": "https://www.nps.gov/cave/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/29C3C977-AAE6-B7FD-3C107828D704A5CB.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "channel-islands": {
+    "imageUrl": "/images/parks/channel-islands-scenic.webp",
+    "imageAlt": "Prisoners Harbor on Santa Cruz Island, Channel Islands National Park.",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/articles/prisoners-harbor-coastal-wetland-restoration.htm",
+    "sourceUrl": "https://www.nps.gov/articles/images/4530bd82-7798-4149-be00-a5be8fdf0841HiResProxy.jpg?autorotate=false&maxwidth=1600",
+    "width": 1000,
+    "height": 750
+  },
+  "congaree": {
+    "imageUrl": "/images/parks/congaree.webp",
+    "imageAlt": "View of the Congaree River during the Fall",
+    "credit": "NPS",
+    "pageUrl": "https://www.nps.gov/cong/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C862C60-1DD8-B71B-0BB65F7B652BA840.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1068
+  },
+  "crater-lake": {
+    "imageUrl": "/images/parks/crater-lake.webp",
+    "imageAlt": "A view of Crater Lake and Wizard Island",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/crla/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C7B227E-1DD8-B71B-0BEECDD24771C381.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1200
+  },
+  "cuyahoga-valley": {
+    "imageUrl": "/images/parks/cuyahoga-valley.webp",
+    "imageAlt": "A yellow-and-red engine with number 6777 leads a passenger train along tracks through green trees.",
+    "credit": "NPS Photo / Robert George",
+    "pageUrl": "https://www.nps.gov/cuva/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/F7E15C5E-AF19-2C8B-7BC519C9BBDB06CC.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1070
+  },
+  "death-valley": {
+    "imageUrl": "/images/parks/death-valley.webp",
+    "imageAlt": "Low, warm light skims across pale sand dunes.",
+    "credit": "NPS",
+    "pageUrl": "https://www.nps.gov/deva/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/65DDA8C1-A47E-F7C3-656E1533A0ECD4C0.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 960,
+    "height": 1200
+  },
+  "denali": {
+    "imageUrl": "/images/parks/denali.webp",
+    "imageAlt": "a white colored sheep standing on a mountainside overlooking a green valley",
+    "credit": "NPS Photo / Nathan Kostegian",
+    "pageUrl": "https://www.nps.gov/dena/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C83CC90-1DD8-B71B-0B1F35E5ED96E36F.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "dry-tortugas": {
+    "imageUrl": "/images/parks/dry-tortugas.webp",
+    "imageAlt": "A few of the stars at night with a view of Fort Jefferson.",
+    "credit": "NPS Photo / Brett Seymour",
+    "pageUrl": "https://www.nps.gov/drto/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C81050F-1DD8-B71B-0B45EDC68B621860.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1068
+  },
+  "everglades": {
+    "imageUrl": "/images/parks/everglades.webp",
+    "imageAlt": "A sunset creates a silhouette of a cypress tree with needle-like leaves that is shaped like an 'N'.",
+    "credit": "NPS Photo by Miguel Salas",
+    "pageUrl": "https://www.nps.gov/ever/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/17EC840E-9926-2E09-F2DD47A282915BBB.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "gates-of-the-arctic": {
+    "imageUrl": "/images/parks/gates-of-the-arctic.webp",
+    "imageAlt": "Aerial view of the Alatna River as it winds through a valley",
+    "credit": "NPS Photo / Sean Tevebaugh",
+    "pageUrl": "https://www.nps.gov/gaar/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C7A8B6B-1DD8-B71B-0B8B89FE0C6B6F4F.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1068
+  },
+  "gateway-arch": {
+    "imageUrl": "/images/parks/gateway-arch.webp",
+    "imageAlt": "looking up at the curve of the Gateway Arch against the sky",
+    "credit": "NPS Photo/Sue Ford",
+    "pageUrl": "https://www.nps.gov/jeff/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/A6BB26F2-E35A-F940-E65C458BC5784713.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 900
+  },
+  "glacier": {
+    "imageUrl": "/images/parks/glacier.webp",
+    "imageAlt": "Jagged peaks rise out of a forested valley and an empty road curves off into the distance.",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/glac/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/C1C49B92-9BE9-6A08-F2C851A2A4ACEC8D.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "glacier-bay": {
+    "imageUrl": "/images/parks/glacier-bay.webp",
+    "imageAlt": "Cruising Glacier Bay",
+    "credit": "NPS / T. VandenBerg",
+    "pageUrl": "https://www.nps.gov/glba/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C791618-1DD8-B71B-0B113FBF2EC1D614.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1200
+  },
+  "grand-canyon": {
+    "imageUrl": "/images/parks/grand-canyon.webp",
+    "imageAlt": "At Sunset, swirling rain clouds above a vast canyon filled with colorful peaks and cliff walls. ",
+    "credit": "NPS/M. Quinn",
+    "pageUrl": "https://www.nps.gov/grca/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/6C7F2214-CE4D-E366-A283BE0F4E65F83B.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1543,
+    "height": 1200
+  },
+  "grand-teton": {
+    "imageUrl": "/images/parks/grand-teton.webp",
+    "imageAlt": "Granite mountains with a cloudy blue sky and green and yellow trees and plants in the foreground",
+    "credit": "NPS Photo/Tobiason",
+    "pageUrl": "https://www.nps.gov/grte/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/769E01AF-98C8-ECA3-7799030A09A7F685.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 858
+  },
+  "great-basin": {
+    "imageUrl": "/images/parks/great-basin.webp",
+    "imageAlt": "blue sky with green trees in mountain cirque",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/grba/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/FD29737E-9549-8EF4-90C1076486DE559A.jpeg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1200
+  },
+  "great-sand-dunes": {
+    "imageUrl": "/images/parks/great-sand-dunes.webp",
+    "imageAlt": "Grasslands, large dunes, and snow-capped peaks at sunset",
+    "credit": "NPS/Patrick Myers",
+    "pageUrl": "https://www.nps.gov/grsa/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/BC4ACB4C-0A6D-0188-E9A6AA1217827461.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1010
+  },
+  "great-smoky-mountains": {
+    "imageUrl": "/images/parks/great-smoky-mountains.webp",
+    "imageAlt": "A clear sky with a vast snowy mountain scene.",
+    "credit": "NPS / Bob Carr",
+    "pageUrl": "https://www.nps.gov/grsm/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/62D22291-ECC1-C9C6-D4C249F41BC599CC.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1200
+  },
+  "guadalupe-mountains": {
+    "imageUrl": "/images/parks/guadalupe-mountains.webp",
+    "imageAlt": "El Capitan with blooming claret cup cacti",
+    "credit": "NPS/Bieri",
+    "pageUrl": "https://www.nps.gov/gumo/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C825533-1DD8-B71B-0B6FDF436F604A3C.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1200
+  },
+  "haleakala": {
+    "imageUrl": "/images/parks/haleakala.webp",
+    "imageAlt": "'Ahinahina blooms in Haleakala crater",
+    "credit": "NPS",
+    "pageUrl": "https://www.nps.gov/hale/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3D05E583-1DD8-B71B-0BBFF82F7F78AF6A.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1200
+  },
+  "hawaii-volcanoes": {
+    "imageUrl": "/images/parks/hawaii-volcanoes.webp",
+    "imageAlt": "Fountains of molten lava erupting from within a crater next to a whirlwind formed from the eruption.",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/havo/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/DB1AA9A9-DDAE-CF83-7EDB42B91684D801.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "hot-springs": {
+    "imageUrl": "/images/parks/hot-springs.webp",
+    "imageAlt": "Stone entrance pillars in front of a row of four bathouses",
+    "credit": "NPS photo",
+    "pageUrl": "https://www.nps.gov/hosp/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/2417D601-FF9E-BFD8-5C6BD4375064FAD1.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1068
+  },
+  "indiana-dunes": {
+    "imageUrl": "/images/parks/indiana-dunes.webp",
+    "imageAlt": "Michigan Lake beach with green grassy dunes in the background, under a blue sky.",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/indu/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/9253EDFB-AAFD-E111-B985CD2747F5C48F.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1053
+  },
+  "isle-royale": {
+    "imageUrl": "/images/parks/isle-royale.webp",
+    "imageAlt": "Aerial View of Belle Harbor",
+    "credit": "NPS Photo / Paul Brown",
+    "pageUrl": "https://www.nps.gov/isro/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C7AC355-1DD8-B71B-0B9C2F07853F39F1.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1063
+  },
+  "joshua-tree": {
+    "imageUrl": "/images/parks/joshua-tree.webp",
+    "imageAlt": "The sky turns hues of pink and purple over a field of Joshua trees.",
+    "credit": "NPS / Emily Hassell",
+    "pageUrl": "https://www.nps.gov/jotr/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/306D0D93-9CCA-76E1-AD48268F8D7A7E3E.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "katmai": {
+    "imageUrl": "/images/parks/katmai.webp",
+    "imageAlt": "salmon jumping at waterfall",
+    "credit": "NPS/David Jacob",
+    "pageUrl": "https://www.nps.gov/katm/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C7A0FDB-1DD8-B71B-0B8933ACA92FE6B3.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1065
+  },
+  "kenai-fjords": {
+    "imageUrl": "/images/parks/kenai-fjords.webp",
+    "imageAlt": "A thin bay surrounded by mountains and ice",
+    "credit": "NPS Photo, S. Rainone",
+    "pageUrl": "https://www.nps.gov/kefj/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/BCC539E0-C12C-F7DF-5A919EE253882B5A.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1594,
+    "height": 1200
+  },
+  "kings-canyon": {
+    "imageUrl": "/images/parks/kings-canyon.webp",
+    "imageAlt": "A deep canyon with a forested floor and steep granite cliffs",
+    "credit": "NPS/Rick Cain",
+    "pageUrl": "https://www.nps.gov/seki/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C7A250B-1DD8-B71B-0BCF61A89A8B2970.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1050,
+    "height": 700
+  },
+  "kobuk-valley": {
+    "imageUrl": "/images/parks/kobuk-valley.webp",
+    "imageAlt": "sun setting on sand dunes",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/kova/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C7A1214-1DD8-B71B-0B00D823BD9BF4CF.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1200
+  },
+  "lake-clark": {
+    "imageUrl": "/images/parks/lake-clark.webp",
+    "imageAlt": "Photo of blue sky with fluffy white clouds reflect in calm lake with mountains in the background.",
+    "credit": "NPS Photo / James Kramer",
+    "pageUrl": "https://www.nps.gov/lacl/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C7A9F9E-1DD8-B71B-0B6CEC8EF3F377DA.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1200
+  },
+  "lassen-volcanic": {
+    "imageUrl": "/images/parks/lassen-volcanic.webp",
+    "imageAlt": "A frozen lake below snow-covered trees and peak",
+    "credit": "NPS Photo / Scott Arnaz",
+    "pageUrl": "https://www.nps.gov/lavo/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C873811-1DD8-B71B-0B9C62ED8E12E7B5.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1191
+  },
+  "mammoth-cave": {
+    "imageUrl": "/images/parks/mammoth-cave.webp",
+    "imageAlt": "Looking out from a large cave entrance with falling water and green trees shown over the entrance.",
+    "credit": "NPS Photo / J. Cooper",
+    "pageUrl": "https://www.nps.gov/maca/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/0DB94E27-0FF0-E98D-2F0AA9F8B4800869.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "mesa-verde": {
+    "imageUrl": "/images/parks/mesa-verde.webp",
+    "imageAlt": "Large cliff dwelling in cliff alcove",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/meve/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C7C0089-1DD8-B71B-0BC397BA671C0616.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1200
+  },
+  "mount-rainier": {
+    "imageUrl": "/images/parks/mount-rainier.webp",
+    "imageAlt": "A fan-shaped waterfall cascades over lava cliffs with a rainbow in its mist.",
+    "credit": "NPS Photo / E. Brouwer",
+    "pageUrl": "https://www.nps.gov/mora/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/69651BDC-C0D0-7128-B1DAD5D83D03963C.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "new-river-gorge": {
+    "imageUrl": "/images/parks/new-river-gorge.webp",
+    "imageAlt": "bend in the river",
+    "credit": "NPS photo/Louise McLaughlin",
+    "pageUrl": "https://www.nps.gov/neri/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C7E8F1F-1DD8-B71B-0B03B737CD7AE489.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 707
+  },
+  "north-cascades": {
+    "imageUrl": "/images/parks/north-cascades.webp",
+    "imageAlt": "boats on the water with mountains and trees surrounding",
+    "credit": "NPS Photo/D.Dixon",
+    "pageUrl": "https://www.nps.gov/noca/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C7A599D-1DD8-B71B-0BBDC12BEC5107B5.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1091
+  },
+  "olympic": {
+    "imageUrl": "/images/parks/olympic.webp",
+    "imageAlt": "A herd of elk crossing a river.",
+    "credit": "NPS Photo/Jon Preston",
+    "pageUrl": "https://www.nps.gov/olym/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C7B1DB4-1DD8-B71B-0B9DFEFDD398DB71.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1024,
+    "height": 685
+  },
+  "petrified-forest": {
+    "imageUrl": "/images/parks/petrified-forest.webp",
+    "imageAlt": "Sunlit Painted Desert hills of the Petrified Forest National Wilderness Area",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/pefo/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C7D8213-1DD8-B71B-0BE4A3B9394FD89A.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1063
+  },
+  "pinnacles": {
+    "imageUrl": "/images/parks/pinnacles.webp",
+    "imageAlt": "A massive rock spire with California condors flying above the peak.",
+    "credit": "NPS Photo/ Katherine Fielding",
+    "pageUrl": "https://www.nps.gov/pinn/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/9CCA8ED3-ABB9-CB69-EF4B32F2ADACEC47.jpeg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1157
+  },
+  "redwood": {
+    "imageUrl": "/images/parks/redwood.webp",
+    "imageAlt": "View from forest floor looking straight up. Ferns as seen close up and redwood trunks meet.",
+    "credit": "NPS Photo / Steve Olson",
+    "pageUrl": "https://www.nps.gov/redw/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/CD69DD56-E050-4F4E-DDF622317D38250E.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1060
+  },
+  "rocky-mountain": {
+    "imageUrl": "/images/parks/rocky-mountain.webp",
+    "imageAlt": "Cub Lake with reflections. Yellow and brown grasses line the edge of the lake.",
+    "credit": "NPS/J.Marino",
+    "pageUrl": "https://www.nps.gov/romo/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/8824D3C2-F84D-A622-C2DE87AC4B9A8BC9.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 803
+  },
+  "saguaro": {
+    "imageUrl": "/images/parks/saguaro.webp",
+    "imageAlt": "Saguaro flowers",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/sagu/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/5CB8B2F6-01B7-9A50-73702A355E4136B8.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "sequoia": {
+    "imageUrl": "/images/parks/sequoia.webp",
+    "imageAlt": "A steep granite slope leads from forest to a bare alpine landscape",
+    "credit": "NPS/Rick Cain",
+    "pageUrl": "https://www.nps.gov/seki/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C7A2835-1DD8-B71B-0B468E834049FBE4.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 800,
+    "height": 1200
+  },
+  "shenandoah": {
+    "imageUrl": "/images/parks/shenandoah.webp",
+    "imageAlt": "White-tailed bucks sparring in Big Meadows",
+    "credit": "NPS Photo / Neal Lewis",
+    "pageUrl": "https://www.nps.gov/shen/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/183B110E-E008-CDD3-EC95F668F6CC3657.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "theodore-roosevelt": {
+    "imageUrl": "/images/parks/theodore-roosevelt.webp",
+    "imageAlt": "A colorfully striped butte in the foreground overlooks a dark green badlands landscape",
+    "credit": "NPS Photo / Mark Meyers",
+    "pageUrl": "https://www.nps.gov/thro/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C793AD5-1DD8-B71B-0B4A3C1BFA5B4C83.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "virgin-islands": {
+    "imageUrl": "/images/parks/virgin-islands.webp",
+    "imageAlt": "Turquoise water laps white sandy shore fringed with lush green vegetation.",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/viis/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/1F0534AF-91EB-443B-41760F790BE42778.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1567,
+    "height": 1200
+  },
+  "voyageurs": {
+    "imageUrl": "/images/parks/voyageurs.webp",
+    "imageAlt": "Photograph of northern lights over a lake.",
+    "credit": "NPS Photo / Daniel Dendler",
+    "pageUrl": "https://www.nps.gov/voya/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/31EDB5D6-FA28-880B-80068EB62E6C86CC.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "white-sands": {
+    "imageUrl": "/images/parks/white-sands.webp",
+    "imageAlt": "White dunes in foreground with sun setting behind mountain.",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/whsa/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/7CA16410-A412-1F05-2D92EB04EEB27980.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1200
+  },
+  "wind-cave": {
+    "imageUrl": "/images/parks/wind-cave.webp",
+    "imageAlt": "Thin fins of calcite forming box-shaped openings, called boxwork, on a cave ceiling.",
+    "credit": "NPS Photo",
+    "pageUrl": "https://www.nps.gov/wica/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3DDEBDBA-0714-8856-F59E16D2DB6FCB4B.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1200
+  },
+  "wrangell-st-elias": {
+    "imageUrl": "/images/parks/wrangell-st-elias.webp",
+    "imageAlt": "Glaciers loom over the ocean with large snowy mountains rising into blue skies",
+    "credit": "NPS Photo/ Neal Herbert",
+    "pageUrl": "https://www.nps.gov/wrst/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C7AAD63-1DD8-B71B-0BCE10FFD741A687.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "yellowstone": {
+    "imageUrl": "/images/parks/yellowstone.webp",
+    "imageAlt": "The sun sets behind the sharp point of a snow-covered mountain; pink clouds are reflected in a pond",
+    "credit": "NPS / Jacob W. Frank",
+    "pageUrl": "https://www.nps.gov/yell/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/2815637A-9869-FC9C-99461D0B36AA1922.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "yosemite": {
+    "imageUrl": "/images/parks/yosemite.webp",
+    "imageAlt": "Glaciated valley with vertical cliffs.",
+    "credit": "NPS / Cindy Jacoby",
+    "pageUrl": "https://www.nps.gov/yose/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/3C84CAEC-1DD8-B71B-0BA0EEA50BB40F8B.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  },
+  "zion": {
+    "imageUrl": "/images/parks/zion.webp",
+    "imageAlt": "A triangular sandstone mountain overlooks green and yellow foliage. A cloudy blue sky is overhead.",
+    "credit": "NPS Photo / Shane Carte",
+    "pageUrl": "https://www.nps.gov/zion/index.htm",
+    "sourceUrl": "https://www.nps.gov/common/uploads/structured_data/68BFC1AC-BF96-629F-89D261D78F181C64.jpg?maxWidth=1800&maxHeight=1200&quality=90",
+    "width": 1600,
+    "height": 1067
+  }
+}

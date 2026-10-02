@@ -1,13 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import type { ParkPreference } from '@/lib/api';
-import {
-  PARK_PREFERENCES_CHANGED_EVENT,
-} from '@/lib/auth';
-import { getCachedParkPreferences } from '@/lib/park-preferences-store';
-import { useAuthSession } from '@/lib/use-auth-session';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import type { ParkPreference } from "@/lib/api";
+import { PARK_PREFERENCES_CHANGED_EVENT } from "@/lib/auth";
+import { getCachedParkPreferences } from "@/lib/park-preferences-store";
+import { useAuthSession } from "@/lib/use-auth-session";
 
 export default function SavedParksPanel() {
   const [isLoading, setIsLoading] = useState(true);
@@ -16,7 +14,10 @@ export default function SavedParksPanel() {
   const { isLoading: isAuthLoading, token } = useAuthSession();
 
   useEffect(() => {
+    let cancelled = false;
+    let version = 0;
     async function loadPreferences() {
+      const requestVersion = ++version;
       if (isAuthLoading) {
         return;
       }
@@ -32,14 +33,18 @@ export default function SavedParksPanel() {
 
       try {
         const savedPreferences = await getCachedParkPreferences();
+        if (cancelled || requestVersion !== version) return;
         setPreferences(savedPreferences);
         setErrorMessage(null);
       } catch (error) {
+        if (cancelled || requestVersion !== version) return;
         setErrorMessage(
-          error instanceof Error ? error.message : 'Failed to load saved parks.',
+          error instanceof Error
+            ? error.message
+            : "Failed to load saved parks.",
         );
       } finally {
-        setIsLoading(false);
+        if (!cancelled && requestVersion === version) setIsLoading(false);
       }
     }
 
@@ -47,6 +52,7 @@ export default function SavedParksPanel() {
     window.addEventListener(PARK_PREFERENCES_CHANGED_EVENT, loadPreferences);
 
     return () => {
+      cancelled = true;
       window.removeEventListener(
         PARK_PREFERENCES_CHANGED_EVENT,
         loadPreferences,
@@ -58,7 +64,7 @@ export default function SavedParksPanel() {
   const wantToGo = preferences.filter((preference) => preference.wantsToGo);
 
   return (
-    <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-white/6 p-4">
+    <div className="mt-5 rounded-[1.5rem] border border-ink/10 bg-[var(--surface-muted)] p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-70">
         Saved Parks
       </p>
@@ -96,7 +102,7 @@ type SavedParkListProps = {
 
 function SavedParkList({ title, emptyMessage, parks }: SavedParkListProps) {
   return (
-    <section className="rounded-[1.2rem] border border-current/10 bg-white/8 p-4">
+    <section className="rounded-[1.2rem] border border-current/10 bg-[var(--surface-muted)] p-4">
       <div className="flex items-center justify-between gap-3">
         <h4 className="text-sm font-semibold tracking-tight">{title}</h4>
         <span className="rounded-full border border-current/10 px-2.5 py-1 text-xs opacity-75">
@@ -110,7 +116,7 @@ function SavedParkList({ title, emptyMessage, parks }: SavedParkListProps) {
             <Link
               key={`${title}-${park.parkSlug}`}
               href={`/parks/${park.parkSlug}`}
-              className="flex items-center justify-between rounded-2xl border border-current/10 bg-white/10 px-3 py-3 text-sm transition hover:bg-white/16"
+              className="flex items-center justify-between rounded-2xl border border-current/10 bg-[var(--surface-muted)] px-3 py-3 text-sm transition hover:bg-[var(--surface-muted)]"
             >
               <span className="font-medium">{park.parkName}</span>
               <span className="opacity-65">{park.parkState}</span>

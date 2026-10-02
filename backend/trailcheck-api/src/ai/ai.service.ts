@@ -53,6 +53,7 @@ export interface AskResponse {
 }
 
 export interface ParkDigestResult {
+  dataAvailability?: { alerts: boolean; weather: boolean };
   parkSlug: string;
   shortSummary: string;
   notification: string;
@@ -604,6 +605,20 @@ export class AiService {
   }
 
   private async buildParkDigest(parkSlug: string): Promise<ParkDigestResult> {
+    const result = await this.buildParkDigestContent(parkSlug);
+    const payload = await this.npsService.getAlertsPayloadForPark(parkSlug);
+    return {
+      ...result,
+      dataAvailability: {
+        alerts: payload.raw !== null,
+        weather: result.weather !== null,
+      },
+    };
+  }
+
+  private async buildParkDigestContent(
+    parkSlug: string,
+  ): Promise<ParkDigestResult> {
     const { parkName, alerts, weather, hazardAssessment, hazards, context } =
       await this.collectParkContext(parkSlug);
     const fallbackNotice = this.hazardsService.buildNotice(

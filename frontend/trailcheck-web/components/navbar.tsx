@@ -1,162 +1,129 @@
-'use client';
-
-import dynamic from 'next/dynamic';
-import Link from 'next/link';
-import { useState } from 'react';
-import ModalShell from '@/components/modal-shell';
-import {
-  clearStoredSession,
-} from '@/lib/auth';
-import { useAuthSession } from '@/lib/use-auth-session';
-
-const AuthPanel = dynamic(() => import('@/components/auth-panel'));
-const FavoritesPanel = dynamic(() => import('@/components/favorites-panel'));
-
-type NavBarProps = {
+"use client";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { useState } from "react";
+import ModalShell from "@/components/modal-shell";
+import Icon from "@/components/ui-icon";
+import { clearStoredSession } from "@/lib/auth";
+import { useAuthSession } from "@/lib/use-auth-session";
+const AuthPanel = dynamic(() => import("@/components/auth-panel"));
+const FavoritesPanel = dynamic(() => import("@/components/favorites-panel"));
+type Props = {
   parkHref?: string;
   parkLabel?: string;
   trailHref?: string;
   trailLabel?: string;
   home?: boolean;
 };
-
-type NavCrumb = {
-  href?: string;
-  label: string;
-  current?: boolean;
-};
-
-function NavCrumbItem({ href, label, current = false }: NavCrumb) {
-  const className =
-    'inline-flex min-h-11 items-center px-1 py-2 text-sm font-semibold transition ' +
-    (current ? 'text-white' : 'text-white/66 hover:text-white');
-
-  if (href && !current) {
-    return (
-      <Link href={href} className={className}>
-        {label}
-      </Link>
-    );
-  }
-
-  return (
-    <span aria-current={current ? 'page' : undefined} className={className}>
-      {label}
-    </span>
-  );
-}
-
 export default function NavBar({
   parkHref,
   parkLabel,
-  trailHref,
   trailLabel,
   home = false,
-}: NavBarProps) {
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
-  const { isLoading: isAuthLoading, user } = useAuthSession();
-  const signedInEmail = user?.email ?? null;
-
-  const crumbs: NavCrumb[] = [{ href: '/', label: 'Home', current: !parkLabel && !trailLabel }];
-
-  if (parkLabel) {
-    crumbs.push({
-      href: trailLabel ? parkHref : undefined,
-      label: parkLabel,
-      current: !trailLabel,
-    });
-  }
-
-  if (trailLabel) {
-    crumbs.push({
-      href: trailHref,
-      label: trailLabel,
-      current: true,
-    });
-  }
-
+}: Props) {
+  const [authOpen, setAuthOpen] = useState(false);
+  const [savedOpen, setSavedOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { isLoading, user } = useAuthSession();
   return (
     <>
-      <header className={`${home ? 'section-shell ' : ''}sticky top-0 z-40 pt-4 sm:pt-5`}>
-        <nav className="glass-panel topo-ring rounded-[1.9rem] px-4 py-3 sm:px-5">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <Link href="/" className="mr-2 text-sm font-semibold uppercase tracking-[0.3em] text-[var(--accent-strong)]">
-              TrailCheck
-            </Link>
-
-            {home ? (
-              <>
-                <a href="#explore-parks" className="text-sm font-medium text-white/72 transition hover:text-white">
-                  Parks
-                </a>
-                <a href="#safety-digest" className="text-sm font-medium text-white/72 transition hover:text-white">
-                  Safety Digest
-                </a>
-                <a href="#featured-parks" className="text-sm font-medium text-white/72 transition hover:text-white">
-                  Featured
-                </a>
-              </>
+      <header className="site-header">
+        <nav className="section-shell nav-content" aria-label="Main navigation">
+          <Link href="/" className="wordmark" aria-label="TrailCheck home">
+            <span className="brand-mark">
+              <Icon name="mountain" size={26} />
+            </span>
+            trailcheck<span className="brand-dot">.</span>
+          </Link>
+          <div className="nav-links">
+            <Link href="/#explore-parks">Explore parks</Link>
+            <Link href="/#safety-digest">Plan your day</Link>
+            <Link href="/#park-map">The park map</Link>
+          </div>
+          <div className="nav-actions">
+            <button
+              className="nav-saved"
+              onClick={() => (user ? setSavedOpen(true) : setAuthOpen(true))}
+            >
+              <Icon name="heart" size={17} />
+              <span>Saved places</span>
+            </button>
+            {isLoading ? (
+              <span className="nav-loading">Loading…</span>
+            ) : user ? (
+              <button
+                className="button button-outline nav-account"
+                onClick={() => clearStoredSession()}
+                title={`Sign out of ${user.email}`}
+              >
+                Sign out
+              </button>
             ) : (
-              crumbs.map((crumb, index) => (
-                <div key={`${crumb.label}-${crumb.href ?? 'current'}`} className="flex items-center gap-3">
-                  {index > 0 ? (
-                    <span className="text-sm font-semibold text-white/24" aria-hidden="true">
-                      /
-                    </span>
-                  ) : null}
-                  <NavCrumbItem href={crumb.href} label={crumb.label} current={crumb.current} />
-                </div>
-              ))
+              <button
+                className="button button-forest nav-account"
+                onClick={() => setAuthOpen(true)}
+              >
+                Sign in <Icon name="arrow" size={15} />
+              </button>
             )}
-
-            <div className="ml-auto flex flex-wrap items-center gap-2">
-              {signedInEmail ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setIsFavoritesOpen(true)}
-                    className="inline-flex min-h-11 items-center rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
-                  >
-                    Saved parks
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => clearStoredSession()}
-                    className="inline-flex min-h-11 items-center rounded-full border border-emerald-300/18 bg-emerald-400/10 px-4 py-2 text-sm font-medium text-emerald-100"
-                  >
-                    {signedInEmail}
-                  </button>
-                </>
-              ) : isAuthLoading ? (
-                <span className="inline-flex min-h-11 items-center rounded-full border border-white/10 bg-white/6 px-4 py-2 text-sm font-medium text-white/60">
-                  Checking session
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsAuthOpen(true)}
-                  className="inline-flex min-h-11 items-center rounded-full bg-[linear-gradient(135deg,#6d8f80,#c8ddcf)] px-5 py-2 text-sm font-semibold text-slate-950 transition hover:brightness-105"
-                >
-                  Login / Sign up
-                </button>
-              )}
-            </div>
+            <button
+              className="nav-menu"
+              aria-label="Toggle navigation"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((value) => !value)}
+            >
+              <Icon name={menuOpen ? "close" : "menu"} />
+            </button>
           </div>
         </nav>
+        {menuOpen && (
+          <div className="mobile-navigation">
+            <Link href="/#explore-parks" onClick={() => setMenuOpen(false)}>
+              Explore parks
+            </Link>
+            <Link href="/#safety-digest" onClick={() => setMenuOpen(false)}>
+              Plan your day
+            </Link>
+            <Link href="/#park-map" onClick={() => setMenuOpen(false)}>
+              The park map
+            </Link>
+          </div>
+        )}
       </header>
-
-      {isAuthOpen ? (
-        <ModalShell onClose={() => setIsAuthOpen(false)}>
+      {!home && parkLabel && (
+        <nav className="breadcrumbs" aria-label="Breadcrumb">
+          <Link href="/">Home</Link>
+          <span>/</span>
+          {trailLabel && parkHref ? (
+            <Link href={parkHref}>{parkLabel}</Link>
+          ) : (
+            <span aria-current="page">{parkLabel}</span>
+          )}
+          {trailLabel && (
+            <>
+              <span>/</span>
+              <span aria-current="page">{trailLabel}</span>
+            </>
+          )}
+        </nav>
+      )}
+      {authOpen && (
+        <ModalShell
+          title="Your TrailCheck account"
+          onClose={() => setAuthOpen(false)}
+        >
           <AuthPanel />
         </ModalShell>
-      ) : null}
-
-      {isFavoritesOpen ? (
-        <ModalShell onClose={() => setIsFavoritesOpen(false)} widthClassName="max-w-lg">
+      )}
+      {savedOpen && (
+        <ModalShell
+          title="Your saved parks"
+          onClose={() => setSavedOpen(false)}
+          widthClassName="max-w-lg"
+        >
           <FavoritesPanel />
         </ModalShell>
-      ) : null}
+      )}
     </>
   );
 }
