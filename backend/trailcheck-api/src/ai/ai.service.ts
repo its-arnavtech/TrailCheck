@@ -1,10 +1,5 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GoogleGenAI } from '@google/genai';
 import { Prisma } from '@prisma/client';
 import { AskDto } from './dto/ask.dto';
 import { HazardsService } from '../hazards/hazards.service';
@@ -21,6 +16,18 @@ import type {
   LocalStructuredOutput,
 } from './local-model.types';
 import { getStaticParkBySlug } from '../catalog/static-park-data';
+import { DeepseekDailyBudget } from './deepseek-budget';
+import {
+  buildDigestCacheKey,
+  clampMaxOutputTokens,
+  DEEPSEEK_CHAT_COMPLETIONS_URL,
+  DEFAULT_DEEPSEEK_DAILY_LIMIT,
+  DEFAULT_DEEPSEEK_MAX_OUTPUT_TOKENS,
+  DEFAULT_DEEPSEEK_MODEL,
+  isUsableDeepseekApiKey,
+  redactSecret,
+  utcDayStamp,
+} from './deepseek.config';
 
 export interface RagDocument {
   id: string;
@@ -35,7 +42,7 @@ export interface AskResponse {
   question: string;
   answer: string;
   notice: string;
-  generationSource: 'local' | 'gemini' | 'fallback';
+  generationSource: 'local' | 'deepseek' | 'fallback';
   generationError: string | null;
   structuredOutput: LocalStructuredOutput | null;
   hazards: DerivedHazard[];
@@ -49,7 +56,7 @@ export interface ParkDigestResult {
   parkSlug: string;
   shortSummary: string;
   notification: string;
-  generationSource: 'local' | 'gemini' | 'fallback';
+  generationSource: 'local' | 'deepseek' | 'fallback';
   generationError: string | null;
   structuredOutput: LocalStructuredOutput | null;
   retrievedContext: RagDocument[];
@@ -62,13 +69,12 @@ export interface ParkDigestResult {
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
-  private readonly digestCacheTtlMs = 1000 * 60 * 5;
-  private aiClient: GoogleGenAI | null = null;
-  private readonly digestCache = new Map<
+  private readonly deepseekBudget: DeepseekDailyBudget;
+  private readonly digestCache = new Map<string, ParkDigestResult>();
+  private readonly inFlightDigests = new Map<
     string,
-    { expiresAt: number; value: ParkDigestResult }
+    Promise<ParkDigestResult>
   >();
-  private readonly inFlightDigests = new Map<string, Promise<ParkDigestResult>>();
 
   constructor(
     private readonly configService: ConfigService,
@@ -77,7 +83,9 @@ export class AiService {
     private readonly hazardsService: HazardsService,
     private readonly prisma: PrismaService,
     private readonly localModelService: LocalModelService,
-  ) {}
+  ) {
+    this.deepseekBudget = new DeepseekDailyBudget(this.getDailyLimit());
+  }
 
   async ask(dto: AskDto): Promise<AskResponse> {
     const { parkName, alerts, weather, hazardAssessment, hazards, context } =
@@ -117,14 +125,14 @@ export class AiService {
 
     const localFailureMessage = this.describeLocalFailure(localResult);
 
-    if (!this.isGeminiConfigured()) {
+    if (!this.isDeepseekConfigured()) {
       this.logRulesFallback(
         'ask',
         dto.parkSlug,
         this.combineGenerationErrors(
           localFailureMessage,
-          'GEMINI_API_KEY is missing',
-        ) ?? 'Gemini is not configured',
+          'DEEPSEEK_API_KEY is missing',
+        ) ?? 'DeepSeek is not configured',
       );
 
       return {
@@ -140,7 +148,7 @@ export class AiService {
         generationSource: 'fallback',
         generationError: this.combineGenerationErrors(
           localFailureMessage,
-          'GEMINI_API_KEY is missing',
+          'DEEPSEEK_API_KEY is missing',
         ),
         structuredOutput: null,
         hazards,
@@ -165,7 +173,7 @@ export class AiService {
         question: dto.question,
         answer,
         notice: fallbackNotice,
-        generationSource: 'gemini',
+        generationSource: 'deepseek',
         generationError: localFailureMessage,
         structuredOutput: null,
         hazards,
@@ -180,7 +188,7 @@ export class AiService {
         dto.parkSlug,
         this.combineGenerationErrors(
           localFailureMessage,
-          error instanceof Error ? error.message : 'Unknown Gemini error',
+          this.safeErrorMessage(error),
         ) ?? 'Unknown generation failure',
       );
 
@@ -197,7 +205,7 @@ export class AiService {
         generationSource: 'fallback',
         generationError: this.combineGenerationErrors(
           localFailureMessage,
-          error instanceof Error ? error.message : 'Unknown Gemini error',
+          this.safeErrorMessage(error),
         ),
         structuredOutput: null,
         hazards,
@@ -210,41 +218,33 @@ export class AiService {
   }
 
   async generateParkDigest(parkSlug: string): Promise<ParkDigestResult> {
-    const cached = this.digestCache.get(parkSlug);
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.value;
+    const cacheKey = this.digestCacheKey(parkSlug);
+    const cached = this.digestCache.get(cacheKey);
+    if (cached) {
+      return cached;
     }
 
-    const existingRequest = this.inFlightDigests.get(parkSlug);
+    const existingRequest = this.inFlightDigests.get(cacheKey);
     if (existingRequest) {
       return existingRequest;
     }
 
     const request = this.buildParkDigest(parkSlug)
       .then((value) => {
-        this.digestCache.set(parkSlug, {
-          value,
-          expiresAt: Date.now() + this.digestCacheTtlMs,
-        });
+        this.rememberDigest(cacheKey, value);
         return value;
       })
       .finally(() => {
-        this.inFlightDigests.delete(parkSlug);
+        this.inFlightDigests.delete(cacheKey);
       });
 
-    this.inFlightDigests.set(parkSlug, request);
+    this.inFlightDigests.set(cacheKey, request);
 
     return request;
   }
 
-  isGeminiConfigured(): boolean {
-    const apiKey = this.configService.get<string>('GEMINI_API_KEY')?.trim();
-
-    if (!apiKey) {
-      return false;
-    }
-
-    return !['your-gemini-api-key', 'changeme', 'replace-me'].includes(apiKey);
+  isDeepseekConfigured(): boolean {
+    return isUsableDeepseekApiKey(this.readDeepseekApiKey());
   }
 
   private async collectParkContext(parkSlug: string): Promise<{
@@ -316,24 +316,59 @@ export class AiService {
     context: RagDocument[],
     notice: string,
   ): Promise<string> {
-    const result = await this.getClient().models.generateContent({
-      model: this.getModelName(),
-      contents: this.buildAskPrompt(dto, context, notice),
-      config: {
-        temperature: 0,
-        topP: 0.9,
-        maxOutputTokens: 320,
+    const apiKey = this.readDeepseekApiKey();
+    if (!isUsableDeepseekApiKey(apiKey)) {
+      throw new Error('DEEPSEEK_API_KEY is missing');
+    }
+
+    if (!this.deepseekBudget.tryConsume()) {
+      throw new Error('DeepSeek daily request limit reached');
+    }
+
+    const model = this.getModelName();
+    const maxTokens = this.getMaxOutputTokens();
+    const response = await fetch(DEEPSEEK_CHAT_COMPLETIONS_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
       },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are TrailCheck. Use only the supplied park context. Do not invent closures or weather. Write 2 or 3 short sentences and end with one practical next step.',
+          },
+          {
+            role: 'user',
+            content: this.buildAskPrompt(dto, context, notice),
+          },
+        ],
+        max_tokens: maxTokens,
+        temperature: 0,
+        thinking: { type: 'disabled' },
+      }),
     });
 
-    const answer = result.text?.trim();
+    if (!response.ok) {
+      throw new Error(
+        `DeepSeek request failed with status ${response.status}.`,
+      );
+    }
+
+    const payload = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string | null } }>;
+    };
+    const answer = payload.choices?.[0]?.message?.content?.trim() ?? '';
 
     if (!answer) {
-      throw new Error('Gemini returned an empty answer.');
+      throw new Error('DeepSeek returned an empty answer.');
     }
 
     if (!this.isUsableAnswer(answer)) {
-      throw new Error('Gemini returned an incomplete answer.');
+      throw new Error('DeepSeek returned an incomplete answer.');
     }
 
     return answer;
@@ -592,9 +627,8 @@ export class AiService {
     if (structuredOutput) {
       return {
         parkSlug,
-        shortSummary: this.buildDigestSummaryFromStructuredOutput(
-          structuredOutput,
-        ),
+        shortSummary:
+          this.buildDigestSummaryFromStructuredOutput(structuredOutput),
         notification: this.truncateForPrompt(
           structuredOutput.notification,
           160,
@@ -610,7 +644,7 @@ export class AiService {
       };
     }
 
-    if (this.isGeminiConfigured()) {
+    if (this.isDeepseekConfigured()) {
       try {
         const answer = await this.generateAskAnswerWithLogging(
           'digest',
@@ -629,7 +663,7 @@ export class AiService {
           parkSlug,
           shortSummary: this.buildDigestSummaryFromAnswer(answer),
           notification: this.truncateForPrompt(fallbackNotice, 160),
-          generationSource: 'gemini',
+          generationSource: 'deepseek',
           generationError: localFailureMessage,
           structuredOutput: null,
           retrievedContext: context,
@@ -644,7 +678,7 @@ export class AiService {
           parkSlug,
           this.combineGenerationErrors(
             localFailureMessage,
-            error instanceof Error ? error.message : 'Unknown Gemini error',
+            this.safeErrorMessage(error),
           ) ?? 'Unknown generation failure',
         );
 
@@ -660,7 +694,7 @@ export class AiService {
           generationSource: 'fallback',
           generationError: this.combineGenerationErrors(
             localFailureMessage,
-            error instanceof Error ? error.message : 'Unknown Gemini error',
+            this.safeErrorMessage(error),
           ),
           structuredOutput: null,
           retrievedContext: context,
@@ -677,18 +711,23 @@ export class AiService {
       parkSlug,
       this.combineGenerationErrors(
         localFailureMessage,
-        'GEMINI_API_KEY is missing',
-      ) ?? 'Gemini is not configured',
+        'DEEPSEEK_API_KEY is missing',
+      ) ?? 'DeepSeek is not configured',
     );
 
     return {
       parkSlug,
-      shortSummary: this.buildDigestSummary(fallbackNotice, hazards, alerts, weather),
+      shortSummary: this.buildDigestSummary(
+        fallbackNotice,
+        hazards,
+        alerts,
+        weather,
+      ),
       notification: this.truncateForPrompt(fallbackNotice, 160),
       generationSource: 'fallback',
       generationError: this.combineGenerationErrors(
         localFailureMessage,
-        'GEMINI_API_KEY is missing',
+        'DEEPSEEK_API_KEY is missing',
       ),
       structuredOutput: null,
       retrievedContext: context,
@@ -715,27 +754,18 @@ export class AiService {
     notice: string,
   ): string {
     const serializedContext = context
+      .slice(0, 4)
       .map(
         (doc, index) =>
-          `${index + 1}. [${doc.source.toUpperCase()}] ${doc.title}\n${doc.content}`,
+          `${index + 1}. [${doc.source}] ${this.truncateForPrompt(doc.title, 60)}: ${this.truncateForPrompt(doc.content, 120)}`,
       )
-      .join('\n\n');
+      .join('\n');
 
     return [
-      'You are TrailCheck, a park conditions assistant.',
-      'Answer using only the context provided from NPS alerts, NWS weather, and derived hazards.',
-      'Do not invent closures, warnings, or park conditions.',
-      'Write 2 to 4 complete sentences.',
-      'Keep the answer concise, practical, and specific to the visitor question.',
-      'Lead with the most important safety or access impact.',
-      'If roads are closed or weather may affect access, say that directly.',
-      'End with one practical next step for the visitor.',
-      'If the available context is limited, say that directly.',
       `Park: ${dto.parkSlug}`,
-      `Visitor question: ${dto.question}`,
-      `Current notice: ${notice}`,
-      'Structured context:',
-      serializedContext || 'No context available.',
+      `Question: ${this.truncateForPrompt(dto.question, 180)}`,
+      `Notice: ${this.truncateForPrompt(notice, 140)}`,
+      serializedContext || 'No live context.',
     ].join('\n');
   }
 
@@ -874,22 +904,62 @@ export class AiService {
     return nonEmpty.length ? nonEmpty.join(' | ') : null;
   }
 
-  private getClient(): GoogleGenAI {
-    const apiKey = this.configService.get<string>('GEMINI_API_KEY')?.trim();
+  private digestCacheKey(parkSlug: string): string {
+    const trailSlugs =
+      getStaticParkBySlug(parkSlug)?.trails.map((trail) => trail.slug) ?? [];
+    return buildDigestCacheKey(parkSlug, trailSlugs);
+  }
 
-    if (!apiKey) {
-      throw new InternalServerErrorException('Missing GEMINI_API_KEY');
+  private rememberDigest(cacheKey: string, value: ParkDigestResult): void {
+    const today = utcDayStamp();
+    for (const key of this.digestCache.keys()) {
+      if (!key.startsWith(`${today}:`)) {
+        this.digestCache.delete(key);
+      }
+    }
+    this.digestCache.set(cacheKey, value);
+  }
+
+  private readDeepseekApiKey(): string {
+    const value = this.configService.get<string>('DEEPSEEK_API_KEY');
+    return typeof value === 'string' ? value.trim() : '';
+  }
+
+  private getDailyLimit(): number {
+    const raw = this.configService.get<string | number>('DEEPSEEK_DAILY_LIMIT');
+    if (raw === undefined || raw === null || raw === '') {
+      return DEFAULT_DEEPSEEK_DAILY_LIMIT;
     }
 
-    if (!this.aiClient) {
-      this.aiClient = new GoogleGenAI({ apiKey });
+    const parsed = typeof raw === 'number' ? raw : Number.parseInt(raw, 10);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return DEFAULT_DEEPSEEK_DAILY_LIMIT;
     }
 
-    return this.aiClient;
+    return Math.floor(parsed);
+  }
+
+  private getMaxOutputTokens(): number {
+    const raw = this.configService.get<string | number>(
+      'DEEPSEEK_MAX_OUTPUT_TOKENS',
+    );
+    if (raw === undefined || raw === null || raw === '') {
+      return DEFAULT_DEEPSEEK_MAX_OUTPUT_TOKENS;
+    }
+
+    const parsed = typeof raw === 'number' ? raw : Number.parseInt(raw, 10);
+    return clampMaxOutputTokens(parsed);
   }
 
   private getModelName(): string {
-    return this.configService.get<string>('GEMINI_MODEL') ?? 'gemini-2.5-flash';
+    const configured = this.configService.get<string>('DEEPSEEK_MODEL')?.trim();
+    return configured || DEFAULT_DEEPSEEK_MODEL;
+  }
+
+  private safeErrorMessage(error: unknown): string {
+    const raw =
+      error instanceof Error ? error.message : 'Unknown DeepSeek error';
+    return redactSecret(raw, this.readDeepseekApiKey());
   }
 
   private getEffectiveLocalDigestBudgetMs(localTimeoutMs: number): number {
@@ -923,7 +993,7 @@ export class AiService {
   ): Promise<string> {
     const startedAt = Date.now();
     this.logger.log(
-      `[${flow}] Starting Gemini fallback for "${parkSlug}"${timeoutMs ? ` (timeout=${timeoutMs}ms)` : ''}.`,
+      `[${flow}] Starting DeepSeek fallback for "${parkSlug}" model=${this.getModelName()}${timeoutMs ? ` timeout=${timeoutMs}ms` : ''}.`,
     );
 
     try {
@@ -931,21 +1001,20 @@ export class AiService {
         ? await this.withTimeout(
             this.generateAskAnswer(dto, context, notice),
             timeoutMs,
-            `Gemini ${flow} generation timed out after ${timeoutMs}ms`,
+            `DeepSeek ${flow} generation timed out after ${timeoutMs}ms`,
           )
         : await this.generateAskAnswer(dto, context, notice);
 
       this.logger.log(
-        `[${flow}] Gemini fallback succeeded for "${parkSlug}" in ${Date.now() - startedAt}ms.`,
+        `[${flow}] DeepSeek fallback succeeded for "${parkSlug}" in ${Date.now() - startedAt}ms.`,
       );
       return answer;
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown Gemini error';
+      const message = this.safeErrorMessage(error);
       this.logger.warn(
-        `[${flow}] Gemini fallback failed for "${parkSlug}" after ${Date.now() - startedAt}ms: ${message}`,
+        `[${flow}] DeepSeek fallback failed for "${parkSlug}" after ${Date.now() - startedAt}ms: ${message}`,
       );
-      throw error;
+      throw new Error(message);
     }
   }
 

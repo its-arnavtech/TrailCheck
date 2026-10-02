@@ -61,7 +61,9 @@ describe('LocalModelService', () => {
 
     global.fetch = jest
       .fn()
-      .mockRejectedValue(new Error('connect ECONNREFUSED 127.0.0.1:8001')) as typeof fetch;
+      .mockRejectedValue(
+        new Error('connect ECONNREFUSED 127.0.0.1:8001'),
+      ) as typeof fetch;
 
     const result = await service.generate({ parkSlug: 'yosemite' });
 

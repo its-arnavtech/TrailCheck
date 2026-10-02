@@ -444,10 +444,15 @@ def build_notification(hazards: list[dict[str, str]], alerts: list[dict[str, str
     if not hazards and not alerts:
         return "No major trail hazards stand out from the available weather and alert inputs."
 
+    if not hazards:
+        return "Active park advisories may affect trail conditions today."
+
     top_hazards = _join_labels([_format_hazard_name(item["type"]) for item in hazards[:2]])
     top_hazards = top_hazards[:1].upper() + top_hazards[1:]
     if alerts:
         return f"{top_hazards} plus active park advisories may affect trail conditions today."
+    if len(hazards) == 1:
+        return f"{top_hazards} is the main trail safety concern in the current park conditions."
     return f"{top_hazards} are the main trail safety concerns in the current park conditions."
 
 

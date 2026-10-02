@@ -13,6 +13,7 @@ export class NpsService {
   private readonly logger = new Logger(NpsService.name);
   private readonly baseUrl = 'https://developer.nps.gov/api/v1';
   private readonly cacheTtlMs = 1000 * 60 * 10;
+  private readonly failureCacheTtlMs = 1000 * 60;
   private hasWarnedAboutApiKey = false;
   private readonly payloadCache = new Map<
     string,
@@ -40,9 +41,10 @@ export class NpsService {
 
     const request = this.fetchAlertsPayload(parkSlug)
       .then((value) => {
+        const ttl = value.raw ? this.cacheTtlMs : this.failureCacheTtlMs;
         this.payloadCache.set(parkSlug, {
           value,
-          expiresAt: Date.now() + this.cacheTtlMs,
+          expiresAt: Date.now() + ttl,
         });
         return value;
       })

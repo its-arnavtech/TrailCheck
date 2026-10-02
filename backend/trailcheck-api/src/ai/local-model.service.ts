@@ -111,9 +111,11 @@ export class LocalModelService {
       });
 
       const elapsedMs = Date.now() - startedAt;
-      const payload = (await response.json()) as LocalModelResult | {
-        errors?: string[];
-      };
+      const payload = (await response.json()) as
+        | LocalModelResult
+        | {
+            errors?: string[];
+          };
 
       if (!response.ok) {
         const message =
@@ -290,7 +292,10 @@ export class LocalModelService {
       return `Local model config not found at ${config.configPath}.`;
     }
 
-    const adapterConfigPath = resolve(config.adapterPath, 'adapter_config.json');
+    const adapterConfigPath = resolve(
+      config.adapterPath,
+      'adapter_config.json',
+    );
     if (!existsSync(adapterConfigPath)) {
       return `Local model adapter is not ready at ${config.adapterPath}. Train or point LOCAL_MODEL_ADAPTER_PATH to a saved adapter first.`;
     }
@@ -357,7 +362,9 @@ export class LocalModelService {
       const extracted = this.extractFirstJsonObject(text);
       if (!extracted) {
         return {
-          ...this.buildFailureResult('Unable to parse local model JSON output.'),
+          ...this.buildFailureResult(
+            'Unable to parse local model JSON output.',
+          ),
           rawText: text,
         };
       }

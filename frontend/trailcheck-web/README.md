@@ -1,16 +1,6 @@
 ## Getting Started
 
-Create a local environment file and set the API base URL:
-
-```bash
-cp .env.example .env.local
-```
-
-Add your values:
-
-```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
-```
+`npm run dev` calls the local API at `http://localhost:3001` when `NEXT_PUBLIC_API_BASE_URL` is unset. Copy `.env.example` to `.env.local` only if the API is on another origin. Do not put `DEEPSEEK_API_KEY` or other backend secrets in this app.
 
 Then run the development server:
 

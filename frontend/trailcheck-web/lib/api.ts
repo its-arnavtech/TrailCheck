@@ -98,9 +98,14 @@ export type ParkDigest = {
   parkSlug: string;
   shortSummary: string;
   notification: string;
-  generationSource: 'local' | 'gemini' | 'fallback';
+  generationSource: 'local' | 'deepseek' | 'fallback';
   generationError: string | null;
   structuredOutput?: LocalStructuredOutput | null;
+  hazardAssessment?: {
+    riskLevel: 'low' | 'moderate' | 'high' | string;
+    season?: string;
+    profile?: string;
+  } | null;
   hazards: ParkConditionHazard[];
   alerts: NpsAlert[];
   weather: ParkWeather | null;
@@ -186,7 +191,7 @@ function getApiBaseUrl() {
   }
 
   throw new Error(
-    'NEXT_PUBLIC_API_BASE_URL is required in production so the frontend can reach the deployed API.',
+    'NEXT_PUBLIC_API_BASE_URL is required when NODE_ENV is production. Local dev uses http://localhost:3001.',
   );
 }
 

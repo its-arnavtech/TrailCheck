@@ -17,9 +17,7 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
     );
   }
 
-  protected async getErrorMessage(
-    _context: ExecutionContext,
-  ): Promise<string> {
+  protected async getErrorMessage(_context: ExecutionContext): Promise<string> {
     return 'Too many requests. Please slow down and try again shortly.';
   }
 }

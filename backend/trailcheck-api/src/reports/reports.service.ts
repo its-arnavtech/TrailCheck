@@ -3,6 +3,7 @@ import {
   HttpStatus,
   Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -72,6 +73,10 @@ export class ReportsService {
           throw error;
         }
 
+        if (this.isForeignKeyError(error)) {
+          throw new NotFoundException(`Trail ${dto.trailId} not found`);
+        }
+
         if (this.isSerializableRetryableError(error)) {
           if (attempt === SERIALIZABLE_RETRY_LIMIT) {
             this.logger.warn(
@@ -104,12 +109,20 @@ export class ReportsService {
     };
   }
 
-  private isSerializableRetryableError(error: unknown) {
+  private isPrismaErrorCode(error: unknown, code: string) {
     return (
       typeof error === 'object' &&
       error !== null &&
       'code' in error &&
-      (error as { code?: unknown }).code === 'P2034'
+      (error as { code?: unknown }).code === code
     );
+  }
+
+  private isSerializableRetryableError(error: unknown) {
+    return this.isPrismaErrorCode(error, 'P2034');
+  }
+
+  private isForeignKeyError(error: unknown) {
+    return this.isPrismaErrorCode(error, 'P2003');
   }
 }

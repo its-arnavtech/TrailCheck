@@ -197,12 +197,12 @@ export class AuthService {
         try {
           const deliveryResult =
             await this.passwordResetEmailService.sendPasswordResetEmail({
-            to: user.email,
-            resetUrl,
-            expiresAt,
-            userId: user.id,
-            emailFingerprint,
-          });
+              to: user.email,
+              resetUrl,
+              expiresAt,
+              userId: user.id,
+              emailFingerprint,
+            });
 
           if (deliveryResult.status === 'sent') {
             this.logger.log(
@@ -246,7 +246,9 @@ export class AuthService {
     });
 
     if (!user) {
-      this.logger.warn('Password reset rejected because the token was invalid.');
+      this.logger.warn(
+        'Password reset rejected because the token was invalid.',
+      );
       throw new BadRequestException(INVALID_RESET_TOKEN_MESSAGE);
     }
 
@@ -316,7 +318,9 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setMinutes(
       expiresAt.getMinutes() +
-        this.configService.getOrThrow<number>('PASSWORD_RESET_TOKEN_TTL_MINUTES'),
+        this.configService.getOrThrow<number>(
+          'PASSWORD_RESET_TOKEN_TTL_MINUTES',
+        ),
     );
     return expiresAt;
   }
@@ -330,10 +334,7 @@ export class AuthService {
   }
 
   private emailFingerprint(email: string) {
-    return createHash('sha256')
-      .update(email)
-      .digest('hex')
-      .slice(0, 12);
+    return createHash('sha256').update(email).digest('hex').slice(0, 12);
   }
 
   private async ensureMinimumResponseTime(startedAt: number) {

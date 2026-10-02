@@ -1,0 +1,26 @@
+{
+  "status": "measured",
+  "what": "rules_replay",
+  "note": "Scores compare the dataset builder's own held-out labels with a replay of those labels. This checks JSON validity and the metric script. It is not a QLoRA model score.",
+  "dataset": {
+    "recordCount": 8,
+    "trainCount": 6,
+    "validationCount": 2,
+    "source": "ml/data/fixtures",
+    "labelSource": "deterministic rules in ml/data/build_dataset.py"
+  },
+  "metrics": {
+    "rowsTotal": 2,
+    "rowsEvaluated": 2,
+    "rowsMissing": 0,
+    "missingRowIds": [],
+    "schemaValidity": 1.0,
+    "riskLevelAccuracy": 1.0,
+    "hazardPrecision": 1.0,
+    "hazardRecall": 1.0,
+    "hazardF1": 1.0,
+    "alertRecall": 1.0,
+    "notificationClarity": 1.0,
+    "conditionConsistency": 1.0
+  }
+}

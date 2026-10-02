@@ -28,9 +28,10 @@ lerna-debug.log*
 .env.production
 .env.local
 .env.*
-.env.example
-.env*.example
+!.env.example
+!**/.env.example
 *.env
+!.env.example
 
 # temp directory
 .temp
@@ -101,6 +102,7 @@ docker-compose*.yml
 docker-compose*.yaml
 compose*.yml
 compose*.yaml
+!/compose.yaml
 render.yaml
 render.yml
 

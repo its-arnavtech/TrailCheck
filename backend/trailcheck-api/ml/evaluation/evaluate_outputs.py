@@ -16,13 +16,18 @@ from ml.inference.validator import validate_output_text
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Evaluate local and Gemini structured predictions.")
+    parser = argparse.ArgumentParser(description="Evaluate local and saved structured predictions.")
     parser.add_argument("--gold", required=True, help="Gold JSONL path from build_dataset.py.")
     parser.add_argument(
         "--predictions",
         action="append",
         required=True,
         help="Prediction mapping in name=path form. Can be repeated.",
+    )
+    parser.add_argument(
+        "--output",
+        default="",
+        help="Optional path to write the metrics JSON. The report is still printed.",
     )
     return parser.parse_args()
 
@@ -186,7 +191,12 @@ def main() -> None:
             "metrics": evaluate_system(gold_by_row, predictions),
         }
 
-    print(json.dumps(report, indent=2))
+    rendered = json.dumps(report, indent=2)
+    if args.output:
+        output_path = resolve_backend_path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(rendered + "\n", encoding="utf-8")
+    print(rendered)
 
 
 if __name__ == "__main__":

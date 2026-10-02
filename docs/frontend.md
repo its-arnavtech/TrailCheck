@@ -58,7 +58,7 @@ The page is marked `dynamic = 'force-dynamic'`, so it always behaves like a live
 
 ### `/parks/[slug]`
 
-Implemented in [`app/parks/[slug]/page.tsx`](</c:/TrailCheck/frontend/trailcheck-web/app/parks/[slug]/page.tsx>).
+Implemented in [`app/parks/[slug]/page.tsx`](../frontend/trailcheck-web/app/parks/[slug]/page.tsx).
 
 This page loads:
 
@@ -79,7 +79,7 @@ It then renders:
 
 ### `/trails/[id]`
 
-Implemented in [`app/trails/[id]/page.tsx`](</c:/TrailCheck/frontend/trailcheck-web/app/trails/[id]/page.tsx>).
+Implemented in [`app/trails/[id]/page.tsx`](../frontend/trailcheck-web/app/trails/[id]/page.tsx).
 
 This page loads one trail via `getTrail(id)` and renders:
 
@@ -128,13 +128,7 @@ It provides:
 
 ### API base URL
 
-The frontend uses:
-
-```ts
-process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001'
-```
-
-So the frontend expects `.env.local` to define the backend origin when needed.
+In development, `lib/api.ts` uses `http://localhost:3001` when `NEXT_PUBLIC_API_BASE_URL` is unset. A production build requires the variable. Do not put backend secrets in frontend env files.
 
 ### Main functions
 
@@ -468,8 +462,8 @@ npm run dev
 - [`frontend/trailcheck-web/app/page.tsx`](../frontend/trailcheck-web/app/page.tsx)
 - [`frontend/trailcheck-web/app/layout.tsx`](../frontend/trailcheck-web/app/layout.tsx)
 - [`frontend/trailcheck-web/app/globals.css`](../frontend/trailcheck-web/app/globals.css)
-- [`frontend/trailcheck-web/app/parks/[slug]/page.tsx`](</c:/TrailCheck/frontend/trailcheck-web/app/parks/[slug]/page.tsx>)
-- [`frontend/trailcheck-web/app/trails/[id]/page.tsx`](</c:/TrailCheck/frontend/trailcheck-web/app/trails/[id]/page.tsx>)
+- [`frontend/trailcheck-web/app/parks/[slug]/page.tsx`](../frontend/trailcheck-web/app/parks/[slug]/page.tsx)
+- [`frontend/trailcheck-web/app/trails/[id]/page.tsx`](../frontend/trailcheck-web/app/trails/[id]/page.tsx)
 - [`frontend/trailcheck-web/lib/api.ts`](../frontend/trailcheck-web/lib/api.ts)
 - [`frontend/trailcheck-web/lib/auth.ts`](../frontend/trailcheck-web/lib/auth.ts)
 - [`frontend/trailcheck-web/lib/park-content.ts`](../frontend/trailcheck-web/lib/park-content.ts)

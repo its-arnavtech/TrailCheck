@@ -49,7 +49,8 @@ export class PasswordResetEmailService {
       } satisfies PasswordResetEmailResult;
     }
 
-    const apiKey = this.configService.get<string>('RESEND_API_KEY')?.trim() ?? '';
+    const apiKey =
+      this.configService.get<string>('RESEND_API_KEY')?.trim() ?? '';
     const from =
       this.configService.get<string>('MAIL_FROM_ADDRESS')?.trim() ?? '';
     const expiresInMinutes = this.configService.getOrThrow<number>(

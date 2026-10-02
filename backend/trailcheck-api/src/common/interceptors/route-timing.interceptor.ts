@@ -14,8 +14,13 @@ export class RouteTimingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const startedAt = performance.now();
     const http = context.switchToHttp();
-    const request = http.getRequest<{ method?: string; originalUrl?: string }>();
-    const response = http.getResponse<{ setHeader?: (name: string, value: string) => void }>();
+    const request = http.getRequest<{
+      method?: string;
+      originalUrl?: string;
+    }>();
+    const response = http.getResponse<{
+      setHeader?: (name: string, value: string) => void;
+    }>();
     const method = request?.method ?? 'UNKNOWN';
     const path = request?.originalUrl ?? 'unknown-route';
 

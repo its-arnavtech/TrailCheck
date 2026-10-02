@@ -24,7 +24,7 @@ const sections = [
       'Trail and park activity: trail reports you submit, including condition rating, surface condition, optional notes, creation time, the trail involved, and the email associated with the submitting account as the reporter name. We also store saved park preferences, including favorites and want-to-go lists.',
       'Device, log, and security information: IP address or forwarded IP address, request metadata, dates and times, authentication status, and similar operational records used for security, abuse prevention, rate limiting, diagnostics, and service reliability.',
       'Local browser storage: TrailCheck stores your authentication token and signed-in user record in your browser localStorage so the app can keep you signed in until the token expires or you sign out.',
-      'Third-party source data: TrailCheck uses National Park Service alert data, National Weather Service forecast data, Google Gemini or local model output when configured, map data, and Resend email delivery when password reset email delivery is enabled.',
+      'Third-party source data: TrailCheck uses National Park Service alert data, National Weather Service forecast data, DeepSeek or local model output when configured, map data, and Resend email delivery when password reset email delivery is enabled.',
     ],
   },
   {

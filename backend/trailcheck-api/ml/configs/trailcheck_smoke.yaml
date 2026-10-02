@@ -1,0 +1,61 @@
+project:
+  name: trailcheck-smoke
+
+data:
+  weather_file: ml/data/fixtures/park_weather_hazards_sample.csv
+  alerts_file: ml/data/fixtures/nps_alerts_sample.csv
+  current_alerts_file: ml/data/fixtures/park_weather_alerts_current_sample.csv
+  output_dir: ml/data/outputs/smoke
+  validation_ratio: 0.25
+  max_alerts_per_example: 4
+  use_current_alerts_fallback: true
+
+model:
+  base_model: Qwen/Qwen2.5-3B-Instruct
+  local_files_only: false
+  trust_remote_code: false
+
+quantization:
+  load_in_4bit: true
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_use_double_quant: true
+  bnb_4bit_compute_dtype: float16
+
+lora:
+  r: 8
+  alpha: 16
+  dropout: 0.05
+  bias: none
+  target_modules:
+    - q_proj
+    - v_proj
+
+training:
+  output_dir: ml/models/trailcheck-qwen25-3b-json
+  max_seq_length: 1024
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 1
+  learning_rate: 0.0002
+  num_train_epochs: 1
+  warmup_ratio: 0.0
+  weight_decay: 0.0
+  logging_steps: 1
+  save_steps: 50
+  eval_steps: 50
+  max_grad_norm: 0.3
+  lr_scheduler_type: cosine
+  fp16: false
+  bf16: false
+  gradient_checkpointing: false
+  seed: 42
+  optim: adamw_torch
+
+inference:
+  max_new_tokens: 128
+  temperature: 0.0
+  top_p: 1.0
+  repetition_penalty: 1.0
+  do_sample: false
+  repair_attempts: 0
+  validation_required: true

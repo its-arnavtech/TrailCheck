@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { AuthService } from './auth.service';
 import { PasswordResetEmailService } from './password-reset-email.service';
@@ -150,21 +154,23 @@ describe('AuthService', () => {
     expect(prisma.user.update).toHaveBeenCalledTimes(1);
 
     const updatePayload = prisma.user.update.mock.calls[0][0];
-    const resetUrl = passwordResetEmailService.sendPasswordResetEmail.mock.calls[0][0]
-      .resetUrl as string;
-    const emailPayload = passwordResetEmailService.sendPasswordResetEmail.mock.calls[0][0];
+    const resetUrl = passwordResetEmailService.sendPasswordResetEmail.mock
+      .calls[0][0].resetUrl as string;
+    const emailPayload =
+      passwordResetEmailService.sendPasswordResetEmail.mock.calls[0][0];
     const token = new URL(resetUrl).searchParams.get('token');
 
     expect(token).toMatch(/^[a-f0-9]{64}$/i);
-    expect(updatePayload.data.resetPasswordTokenHash).toMatch(/^[a-f0-9]{64}$/i);
+    expect(updatePayload.data.resetPasswordTokenHash).toMatch(
+      /^[a-f0-9]{64}$/i,
+    );
     expect(updatePayload.data.resetPasswordTokenHash).not.toBe(token);
     expect(updatePayload.data.resetPasswordExpiresAt).toBeInstanceOf(Date);
     expect(emailPayload.userId).toBe(7);
     expect(emailPayload.emailFingerprint).toMatch(/^[a-f0-9]{12}$/i);
-    expect(
-      prisma.user.update.mock.invocationCallOrder[0],
-    ).toBeLessThan(
-      passwordResetEmailService.sendPasswordResetEmail.mock.invocationCallOrder[0],
+    expect(prisma.user.update.mock.invocationCallOrder[0]).toBeLessThan(
+      passwordResetEmailService.sendPasswordResetEmail.mock
+        .invocationCallOrder[0],
     );
   });
 
@@ -180,7 +186,9 @@ describe('AuthService', () => {
         "If an account with that email exists, we've sent a password reset link.",
     });
     expect(prisma.user.update).not.toHaveBeenCalled();
-    expect(passwordResetEmailService.sendPasswordResetEmail).not.toHaveBeenCalled();
+    expect(
+      passwordResetEmailService.sendPasswordResetEmail,
+    ).not.toHaveBeenCalled();
   });
 
   it('builds the reset link from FRONTEND_BASE_URL', async () => {
@@ -194,9 +202,11 @@ describe('AuthService', () => {
       email: 'existing@gmail.com',
     });
 
-    const resetUrl = passwordResetEmailService.sendPasswordResetEmail.mock.calls[0][0]
-      .resetUrl as string;
-    expect(resetUrl.startsWith('https://trailcheck.app/auth/reset-password?token=')).toBe(true);
+    const resetUrl = passwordResetEmailService.sendPasswordResetEmail.mock
+      .calls[0][0].resetUrl as string;
+    expect(
+      resetUrl.startsWith('https://trailcheck.app/auth/reset-password?token='),
+    ).toBe(true);
   });
 
   it('resets the password, clears the token, and invalidates old sessions', async () => {
@@ -285,7 +295,9 @@ describe('AuthService', () => {
         "If an account with that email exists, we've sent a password reset link.",
     });
     expect(logger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Password reset email delivery failed for user 7'),
+      expect.stringContaining(
+        'Password reset email delivery failed for user 7',
+      ),
     );
   });
 
@@ -325,8 +337,8 @@ describe('AuthService', () => {
       email: 'existing@gmail.com',
     });
 
-    const resetUrl = passwordResetEmailService.sendPasswordResetEmail.mock.calls[0][0]
-      .resetUrl as string;
+    const resetUrl = passwordResetEmailService.sendPasswordResetEmail.mock
+      .calls[0][0].resetUrl as string;
     const token = new URL(resetUrl).searchParams.get('token');
     const allLogs = [
       ...logger.log.mock.calls.flat(),

@@ -27,9 +27,7 @@ export const allowedEmailDomains = [
 ];
 
 @ValidatorConstraint({ name: 'allowedEmailDomain', async: false })
-export class AllowedEmailDomainConstraint
-  implements ValidatorConstraintInterface
-{
+export class AllowedEmailDomainConstraint implements ValidatorConstraintInterface {
   validate(email: string) {
     const domain =
       String(email ?? '')
@@ -47,7 +45,11 @@ export class AllowedEmailDomainConstraint
 export class AuthDto {
   @IsEmail()
   @Validate(AllowedEmailDomainConstraint)
-  @Transform(({ value }) => String(value ?? '').trim().toLowerCase())
+  @Transform(({ value }) =>
+    String(value ?? '')
+      .trim()
+      .toLowerCase(),
+  )
   @MaxLength(320)
   email: string;
 

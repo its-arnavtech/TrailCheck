@@ -32,6 +32,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
       - name: Build
         run: npm run build
 
@@ -62,9 +68,13 @@ jobs:
       FRONTEND_ORIGIN: http://localhost:3000
       THROTTLE_TTL_SECONDS: 60
       THROTTLE_LIMIT: 120
-      GEMINI_API_KEY: ""
+      DEEPSEEK_API_KEY: ""
+      DEEPSEEK_MODEL: deepseek-flash
+      DEEPSEEK_DAILY_LIMIT: "100"
+      DEEPSEEK_MAX_OUTPUT_TOKENS: "256"
+      AI_RATE_LIMIT: "20"
+      AI_RATE_LIMIT_TTL_SECONDS: "60"
       NPS_API_KEY: ""
-      GEMINI_MODEL: gemini-2.5-flash
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -85,5 +95,60 @@ jobs:
       - name: Seed database
         run: npx prisma db seed
 
+      - name: Lint
+        run: npm run lint:check
+
+      - name: Test
+        run: npm test
+
+      - name: End-to-end
+        run: npm run test:e2e
+
       - name: Build
         run: npm run build
+
+  ml:
+    name: ML smoke
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/trailcheck-api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install smoke dependencies
+        run: pip install -r ml/requirements-smoke.txt
+
+      - name: Dataset, eval, and CPU smoke tests
+        run: python -m unittest discover -s ml/tests -v
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Scan tracked files
+        run: node scripts/scan-secrets.mjs
+
+      - name: Install gitleaks
+        run: |
+          curl -fsSL -o /tmp/gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+
+      - name: Scan full git history
+        run: /tmp/gitleaks detect --source . --config .gitleaks.toml --log-opts="--all" --redact

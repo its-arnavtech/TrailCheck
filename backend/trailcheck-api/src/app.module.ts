@@ -16,15 +16,16 @@ import { WeatherModule } from './weather/weather.module';
 import { AuthModule } from './auth/auth.module';
 import { AiModule } from './ai/ai.module';
 import { validateEnvironment } from './config/environment';
-import { PrismaModule } from './prisma/primsa.module';
+import { PrismaModule } from './prisma/prisma.module';
 import { CatalogSyncService } from './catalog/catalog-sync.service';
 import { RouteTimingInterceptor } from './common/interceptors/route-timing.interceptor';
 import { ApiThrottlerGuard } from './common/guards/api-throttler.guard';
 
 const ENV_FILE_CANDIDATES = [
   resolve(process.cwd(), '.env'),
+  resolve(process.cwd(), '..', '.env'),
   resolve(process.cwd(), 'backend/trailcheck-api/.env'),
-  resolve(__dirname, '..', '.env'),
+  resolve(process.cwd(), 'backend/.env'),
   resolve(__dirname, '..', '..', '.env'),
 ];
 

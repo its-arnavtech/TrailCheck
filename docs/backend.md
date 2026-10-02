@@ -4,7 +4,7 @@ This document covers the backend in `backend/trailcheck-api/`: architecture, mod
 
 ## Overview
 
-TrailCheck's backend is a NestJS 11 API backed by Prisma and SQLite. It combines:
+TrailCheck's backend is a NestJS 11 API backed by Prisma and PostgreSQL. It combines:
 
 - seeded park and trail data
 - user accounts and JWT auth
@@ -24,10 +24,10 @@ From [`backend/trailcheck-api/package.json`](../backend/trailcheck-api/package.j
 - NestJS 11
 - TypeScript
 - Prisma
-- SQLite
+- PostgreSQL
 - Passport JWT
 - Argon2
-- `@google/genai`
+- DeepSeek's OpenAI-compatible chat API (`https://api.deepseek.com`)
 - a Python local-model bridge
 
 ## Bootstrap
@@ -55,7 +55,7 @@ This means DTO validation is enforced globally and the frontend is expected to r
 - `AuthModule`
 - `AiModule`
 
-There is also a root route in [`src/app.controller.ts`](../backend/trailcheck-api/src/app.controller.ts) that still returns `"Hello World!"`, which looks like starter boilerplate rather than a product-facing health endpoint.
+The root route in [`src/app.controller.ts`](../backend/trailcheck-api/src/app.controller.ts) returns `"TrailCheck API is running."`. `GET /health` reports whether the API process is up and whether Prisma currently has a database connection.
 
 ## Database model
 
@@ -91,7 +91,7 @@ The Prisma schema lives at [`prisma/schema.prisma`](../backend/trailcheck-api/pr
 `ParkSnapshot`
 - raw park-context capture used by the AI flow
 - stores raw NPS and NWS payloads
-- can also store a Gemini reply
+- has an unused `geminiReply` column left from an earlier provider; the API does not write it
 
 ### Prisma service
 
@@ -112,14 +112,14 @@ This means park and trail content is source-controlled and reproducible.
 
 ## Environment variables
 
-The backend reads its runtime configuration from a private local `.env` file or the deployment platform's secret store. Do not commit env files or env examples.
+The backend reads runtime configuration from a private `.env` file or the host's secret store. Commit `backend/trailcheck-api/.env.example` only. Do not commit real `.env` files or production secret values.
 
 Expected config categories:
 
 - Database connection
 - JWT signing secret
 - Frontend origin/CORS
-- Optional NPS and Gemini API integrations
+- Optional NPS and DeepSeek API integrations
 - Optional local model runtime settings
 - Optional password reset email provider settings
 
@@ -127,7 +127,7 @@ Notes:
 
 - `JWT_SECRET` is required for protected endpoints.
 - `NPS_API_KEY` enables live NPS alerts.
-- `GEMINI_API_KEY` enables the Gemini fallback path.
+- `DEEPSEEK_API_KEY` enables the DeepSeek fallback path. `DEEPSEEK_MODEL` defaults to `deepseek-flash`. `DEEPSEEK_DAILY_LIMIT` defaults to 100 calls per UTC day.
 - the local model is considered enabled unless `LOCAL_MODEL_ENABLED` is explicitly set to `false`.
 
 ## API routes
@@ -135,7 +135,10 @@ Notes:
 ### Root
 
 `GET /`
-- returns `"Hello World!"`
+- returns `"TrailCheck API is running."`
+
+`GET /health`
+- returns `{ status, service, database, timestamp }`
 
 ### Auth
 
@@ -217,12 +220,14 @@ DTOs are validated globally through Nest's validation pipe.
 [`src/auth/dto/auth.dto.ts`](../backend/trailcheck-api/src/auth/dto/auth.dto.ts)
 - email must be valid
 - email provider must be one of the allowed domains
-- password min length is 8
+- sign-in password length is 8 to 128 characters
+- sign-up and password reset require 12 to 128 characters with uppercase, lowercase, a number, and a symbol
+- sign-up age must be an integer from 13 to 120
 
 [`src/auth/dto/signup.dto.ts`](../backend/trailcheck-api/src/auth/dto/signup.dto.ts)
 - extends auth DTO
 - `gender` must be a valid enum value
-- `age` must be an integer from 1 to 120
+- `age` must be an integer from 13 to 120
 
 ### Report DTO
 
@@ -302,7 +307,7 @@ Preference behavior is also intentionally clean:
 - fetches NPS alerts and weather in parallel with `Promise.allSettled`
 - degrades gracefully if one upstream fails
 
-One detail worth watching: the returned live-alert property is `NpsAlerts` with a capital `N`, while the frontend types expect `npsAlerts`.
+The trail detail payload uses `npsAlerts`, matching the frontend type. A missing trail id on `POST /reports` returns 404 instead of a Prisma foreign-key 500.
 
 ## Reports module
 
@@ -387,7 +392,7 @@ The AI orchestration layer lives in [`src/ai/ai.service.ts`](../backend/trailche
 - collect park context from Prisma, NPS, weather, and hazards
 - persist raw NPS/NWS snapshots when possible
 - try local structured generation first
-- fall back to Gemini
+- fall back to DeepSeek
 - fall back again to rules-based text
 
 ### Local model path
@@ -404,11 +409,11 @@ The AI orchestration layer lives in [`src/ai/ai.service.ts`](../backend/trailche
 
 The backend generation order is:
 
-1. local model
-2. Gemini
-3. rules-based fallback
+1. local model, only when `LOCAL_MODEL_ENABLED` is not false and the configured server or adapter responds with schema-valid JSON
+2. DeepSeek V4.1 Flash (`deepseek-flash` at `https://api.deepseek.com`), when `DEEPSEEK_API_KEY` is set to a non-placeholder value and `DEEPSEEK_DAILY_LIMIT` has not been reached for the UTC day
+3. rules-based fallback from the hazard engine, NPS alerts, and the NWS forecast
 
-This is why the AI endpoints remain usable even when the local adapter is missing or Gemini is unavailable.
+`generationSource` on the response is `local`, `deepseek`, or `fallback`. The key is read from the backend env file only. Output tokens are capped (`DEEPSEEK_MAX_OUTPUT_TOKENS`, hard ceiling 384), thinking mode is disabled, and prompts sent to DeepSeek keep a short context. Park digests are cached for the UTC day using the park slug and that park's trail slugs. `POST /ai/ask` and the digest route share a per-user rate limit, falling back to the client IP when the request has no valid JWT. With no adapter in this repo, a normal local request fails the local step and then uses DeepSeek or rules, depending on `DEEPSEEK_API_KEY`.
 
 ## Request flow by feature
 
@@ -445,12 +450,11 @@ npm run test:e2e
 npm run lint
 ```
 
-Typical local setup:
+Typical local setup is in the root README under "Run locally on Windows". From `backend/trailcheck-api`, after Postgres is up and `.env` exists:
 
 ```bash
-cd backend/trailcheck-api
 npm install
-npx prisma migrate dev
+npx prisma migrate deploy
 npx prisma db seed
 npm run start:dev
 ```

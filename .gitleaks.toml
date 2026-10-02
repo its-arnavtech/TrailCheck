@@ -1,0 +1,10 @@
+title = "TrailCheck"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "NestJS starter README CircleCI badge uses the placeholder token abc123def456. It is not a credential."
+paths = ['''backend/trailcheck-api/README.md''']
+regexTarget = "secret"
+regexes = ['''abc123def456''']
