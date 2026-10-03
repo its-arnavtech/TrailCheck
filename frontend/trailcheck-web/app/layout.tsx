@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import AppToaster from '@/components/app-toaster';
-import Footer from '@/components/footer';
+import AppToaster from "@/components/app-toaster";
+import Footer from "@/components/footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "TrailCheck",
-  description: "Live trail conditions, park alerts, weather, and visitor reports.",
+  description:
+    "Live trail conditions, park alerts, weather, and visitor reports.",
 };
 
 export default function RootLayout({
@@ -16,6 +17,9 @@ export default function RootLayout({
   return (
     <html lang="en" data-scroll-behavior="smooth">
       <body className="overflow-x-hidden">
+        <a href="#main-content" className="skip-link">
+          Skip to content
+        </a>
         {children}
         <Footer />
         <AppToaster />

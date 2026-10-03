@@ -1,136 +1,143 @@
-import type { ParkDigest } from '@/lib/api';
-import HazardTag from '@/components/hazard-tag';
-import RiskBadge from '@/components/risk-badge';
-import WeatherCard from '@/components/weather-card';
-import { getDigestRiskLevel, getGenerationSourceLabel } from '@/lib/digest-display';
-
-type SafetyDigestProps = {
+import type { ParkDigest } from "@/lib/api";
+import RiskBadge from "@/components/risk-badge";
+import WeatherCard from "@/components/weather-card";
+import Icon from "@/components/ui-icon";
+import {
+  getDigestRiskLevel,
+  getGenerationSourceLabel,
+} from "@/lib/digest-display";
+type Props = {
   digest: ParkDigest | null;
   parkName?: string;
   compact?: boolean;
 };
-
 export default function SafetyDigest({
   digest,
   parkName,
   compact = false,
-}: SafetyDigestProps) {
-  const riskLevel = getDigestRiskLevel(digest);
+}: Props) {
   const weather = digest?.weather?.forecast ?? [];
   const hazards = digest?.hazards ?? [];
   const alerts = digest?.alerts ?? [];
-  const recommendation = digest?.structuredOutput?.recommendedAction;
-  const sourceLabel = getGenerationSourceLabel(digest?.generationSource);
-
+  const missingAlerts = digest?.dataAvailability?.alerts === false;
+  const missingWeather = digest?.dataAvailability?.weather === false;
+  const noLiveData = missingAlerts && missingWeather;
   return (
-    <section className="glass-panel topo-ring overflow-hidden rounded-[1.75rem] p-5 sm:p-6">
-      <div className={`grid gap-6 ${compact ? 'xl:grid-cols-[1.16fr_0.84fr]' : 'xl:grid-cols-[1.22fr_0.78fr]'}`}>
-        <div className="space-y-4">
-          <div className="max-w-4xl">
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--accent-strong)]/64">
-                AI Safety Digest
+    <section className="conditions-card">
+      <div className="conditions-heading">
+        <div>
+          <p className="eyebrow">Know before you go</p>
+          <h2>
+            {parkName ? `${parkName} at a glance` : "Your safety readout"}
+          </h2>
+        </div>
+        <RiskBadge level={getDigestRiskLevel(digest)} />
+      </div>
+      {digest && (missingAlerts || missingWeather) && (
+        <div className="availability-note" role="status">
+          <p>
+            {noLiveData
+              ? "Live conditions are unavailable. The information below is seasonal planning context."
+              : `${missingAlerts ? "Park alerts" : "Weather"} are unavailable right now.`}{" "}
+            Check official park information before traveling.
+          </p>
+        </div>
+      )}
+      {digest ? (
+        <>
+          {!noLiveData && (
+            <p className="conditions-notification">{digest.notification}</p>
+          )}
+          <div className="conditions-summary">
+            <Icon name="shield" size={23} />
+            <div>
+              <h3>
+                {noLiveData
+                  ? "Seasonal planning context"
+                  : "The current picture"}
+              </h3>
+              <p>
+                {noLiveData
+                  ? "Weather and park bulletins could not be retrieved. Review seasonal hazards below and confirm current conditions with the park."
+                  : digest.shortSummary}
               </p>
-              <RiskBadge level={riskLevel} />
-            </div>
-            <h2 className="mt-4 text-3xl text-white sm:text-4xl" data-display="true">
-              {parkName ? `${parkName} at a glance` : 'Today’s safety readout'}
-            </h2>
-            <p className="mt-3 max-w-3xl text-base leading-8 text-white/74 sm:text-lg">
-              {digest?.notification ??
-                'The digest will appear here once live park conditions, alerts, and forecast signals are available.'}
-            </p>
-          </div>
-
-          <div className="rounded-[1.35rem] border border-white/10 bg-black/16 px-5 py-5 sm:px-6 sm:py-6">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/50">Summary</p>
-            <p className="mt-4 text-xl leading-10 text-white/88 sm:text-2xl sm:leading-[1.9]">
-              {digest?.shortSummary ??
-                'Live conditions are temporarily unavailable, but TrailCheck will keep this panel ready for the next successful refresh.'}
-            </p>
-            {recommendation ? (
-              <p className="mt-5 rounded-[1rem] border border-[var(--accent)]/22 bg-[var(--accent-soft)] px-5 py-4 text-base leading-8 text-[var(--accent-strong)] sm:text-lg">
-                {recommendation}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="rounded-[1.35rem] border border-white/10 bg-black/16 px-5 py-5 sm:px-6 sm:py-6">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/50">Active signals</p>
-              <span className="text-sm text-white/48">{hazards.length > 0 ? 'Live now' : 'Quiet feed'}</span>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-3">
-              {hazards.length > 0 ? (
-                hazards.slice(0, compact ? 4 : 6).map((hazard) => (
-                  <HazardTag key={hazard.id} label={hazard.title} severity={hazard.severity} />
-                ))
-              ) : (
-                <span className="text-base leading-8 text-white/62">No park-wide hazards are currently highlighted.</span>
+              {digest.structuredOutput?.recommendedAction && (
+                <p className="conditions-recommendation">
+                  {digest.structuredOutput.recommendedAction}
+                </p>
               )}
             </div>
           </div>
+        </>
+      ) : (
+        <div className="availability-note" role="status">
+          <h3>Live conditions are unavailable.</h3>
+          <p>
+            Check the park’s official alerts before you travel. We’ll show the
+            latest information when the connection returns.
+          </p>
         </div>
-
-        <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-            <div className="overflow-hidden rounded-[1.15rem] border border-orange-300/18 bg-[linear-gradient(135deg,rgba(92,43,21,0.92),rgba(192,94,51,0.26))] px-4 py-3 shadow-[0_14px_28px_rgba(0,0,0,0.18)]">
-              <p className="text-xs uppercase tracking-[0.18em] text-orange-100/72">Hazards</p>
-              <p className="mt-2 text-3xl font-semibold text-white">{hazards.length}</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.16em] text-orange-100/56">
-                Active trail signals
-              </p>
-            </div>
-            <div className="overflow-hidden rounded-[1.15rem] border border-sky-300/18 bg-[linear-gradient(135deg,rgba(19,60,88,0.92),rgba(75,138,192,0.24))] px-4 py-3 shadow-[0_14px_28px_rgba(0,0,0,0.18)]">
-              <p className="text-xs uppercase tracking-[0.18em] text-sky-100/72">Alerts</p>
-              <p className="mt-2 text-3xl font-semibold text-white">{alerts.length}</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.16em] text-sky-100/56">
-                NPS bulletin feed
-              </p>
-            </div>
-            <div className="overflow-hidden rounded-[1.15rem] border border-emerald-300/18 bg-[linear-gradient(135deg,rgba(22,69,58,0.92),rgba(119,173,147,0.24))] px-4 py-3 shadow-[0_14px_28px_rgba(0,0,0,0.18)]">
-              <p className="text-xs uppercase tracking-[0.18em] text-emerald-100/72">Source</p>
-              <p className="mt-2 text-base font-semibold text-white/92">
-                {sourceLabel}
-              </p>
-              <p className="mt-1 text-xs uppercase tracking-[0.16em] text-emerald-100/56">
-                Digest engine
-              </p>
-            </div>
-          </div>
-
-          {!compact && weather.length > 0 ? (
-            <div className="grid gap-3 md:grid-cols-2">
-              {weather.slice(0, 4).map((period) => (
-                <WeatherCard key={period.name} period={period} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-[1.35rem] border border-white/10 bg-black/16 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/44">Alerts digest</p>
-              <div className="mt-4 space-y-3">
-                {alerts.length > 0 ? (
-                  alerts.slice(0, 3).map((alert) => (
-                    <article key={alert.id} className="rounded-[1rem] border border-white/10 bg-white/6 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <p className="text-sm font-semibold text-white">{alert.title}</p>
-                        <span className="rounded-full border border-white/12 px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-white/56">
-                          {alert.category}
-                        </span>
-                      </div>
-                      <p className="mt-2 line-clamp-3 text-sm leading-6 text-white/68">
-                        {alert.description}
-                      </p>
-                    </article>
-                  ))
-                ) : (
-                  <p className="text-sm text-white/58">No active NPS alerts are currently attached to this park.</p>
-                )}
-              </div>
-            </div>
-          )}
+      )}
+      <div className="condition-metrics">
+        <div>
+          <span>Park hazards</span>
+          <strong>{digest ? hazards.length : "—"}</strong>
+          <small>{digest ? "Highlighted signals" : "Unavailable"}</small>
+        </div>
+        <div>
+          <span>Park alerts</span>
+          <strong>{digest && !missingAlerts ? alerts.length : "—"}</strong>
+          <small>
+            {digest && !missingAlerts ? "NPS bulletin feed" : "Unavailable"}
+          </small>
+        </div>
+        <div>
+          <span>Summary source</span>
+          <strong className="source-name">
+            {getGenerationSourceLabel(digest?.generationSource)}
+          </strong>
+          <small>Safety digest</small>
         </div>
       </div>
+      {digest && hazards.length > 0 && (
+        <div className="signal-grid">
+          {hazards.slice(0, compact ? 4 : 6).map((hazard) => (
+            <article key={hazard.id}>
+              <RiskBadge level={hazard.severity} subtle />
+              <h3>{hazard.title}</h3>
+              <p>{hazard.summary}</p>
+            </article>
+          ))}
+        </div>
+      )}
+      {digest && alerts.length > 0 && (
+        <div className="signal-grid">
+          {alerts.slice(0, 3).map((alert) => (
+            <article key={alert.id}>
+              <p className="eyebrow">{alert.category}</p>
+              <h3>{alert.title}</h3>
+              <p>{alert.description}</p>
+              {alert.url && (
+                <a
+                  href={alert.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-link"
+                >
+                  Read official alert <Icon name="arrow" size={14} />
+                </a>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+      {!compact && weather.length > 0 && (
+        <div className="weather-grid">
+          {weather.slice(0, 4).map((period) => (
+            <WeatherCard key={period.name} period={period} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

@@ -1,5 +1,6 @@
-import Link from 'next/link';
-import { ReactNode } from 'react';
+import Link from "next/link";
+import { ReactNode } from "react";
+import NavBar from "@/components/navbar";
 
 type AuthPageShellProps = {
   eyebrow: string;
@@ -15,28 +16,37 @@ export default function AuthPageShell({
   children,
 }: AuthPageShellProps) {
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10 sm:px-6">
-      <div className="w-full max-w-lg rounded-[2rem] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:p-8">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent-strong)]/80">
-              {eyebrow}
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--foreground)]">
-              {title}
-            </h1>
+    <main>
+      <NavBar />
+      <div className="auth-page-content">
+        <div className="w-full max-w-lg rounded-[2rem] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:p-8">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent-strong)]/80">
+                {eyebrow}
+              </p>
+              <h1
+                id="main-content"
+                tabIndex={-1}
+                className="mt-2 text-3xl font-semibold tracking-tight text-[var(--foreground)]"
+              >
+                {title}
+              </h1>
+            </div>
+            <Link
+              href="/"
+              className="text-sm font-medium text-[var(--accent-strong)] underline underline-offset-4 transition hover:opacity-80"
+            >
+              Back home
+            </Link>
           </div>
-          <Link
-            href="/"
-            className="text-sm font-medium text-[var(--accent-strong)] underline underline-offset-4 transition hover:opacity-80"
-          >
-            Back home
-          </Link>
+
+          <p className="mt-3 text-sm text-[var(--foreground)]/72">
+            {description}
+          </p>
+
+          <div className="mt-6">{children}</div>
         </div>
-
-        <p className="mt-3 text-sm text-[var(--foreground)]/72">{description}</p>
-
-        <div className="mt-6">{children}</div>
       </div>
     </main>
   );

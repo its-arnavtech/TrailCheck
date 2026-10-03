@@ -1,89 +1,37 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { getCurrentUser, type AuthenticatedUser } from './api';
+"use client";
+import { useEffect, useState } from "react";
+import { AUTH_STATE_CHANGED_EVENT } from "./auth";
 import {
-  AUTH_STATE_CHANGED_EVENT,
-  clearStoredSession,
-  getStoredAuthToken,
-  setStoredSession,
-} from './auth';
-
-type AuthSessionState = {
-  isLoading: boolean;
-  token: string | null;
-  user: AuthenticatedUser | null;
-};
-
-let cachedToken: string | null = null;
-let cachedUser: AuthenticatedUser | null = null;
-let inFlightSession: Promise<AuthSessionState> | null = null;
-
-export function resetAuthSessionCache() {
-  cachedToken = null;
-  cachedUser = null;
-  inFlightSession = null;
-}
-
-async function resolveAuthSession(): Promise<AuthSessionState> {
-  const token = getStoredAuthToken();
-
-  if (!token) {
-    resetAuthSessionCache();
-    return { isLoading: false, token: null, user: null };
-  }
-
-  if (cachedToken === token && cachedUser) {
-    return { isLoading: false, token, user: cachedUser };
-  }
-
-  if (inFlightSession) {
-    return inFlightSession;
-  }
-
-  inFlightSession = getCurrentUser(token)
-    .then((user) => {
-      cachedToken = token;
-      cachedUser = user;
-      setStoredSession(token, user);
-      return { isLoading: false, token, user };
-    })
-    .catch(() => {
-      clearStoredSession();
-      return { isLoading: false, token: null, user: null };
-    })
-    .finally(() => {
-      inFlightSession = null;
-    });
-
-  return inFlightSession;
-}
-
+  resolveAuthSession,
+  type AuthSessionState,
+} from "./auth-session-store";
+export { resetAuthSessionCache } from "./auth-session-store";
 export function useAuthSession(): AuthSessionState {
   const [session, setSession] = useState<AuthSessionState>({
     isLoading: true,
     token: null,
     user: null,
   });
-
   useEffect(() => {
     let cancelled = false;
-
+    let version = 0;
     async function syncSession() {
+      const requestVersion = ++version;
       const nextSession = await resolveAuthSession();
-      if (!cancelled) {
-        setSession(nextSession);
-      }
+      if (!cancelled && requestVersion === version) setSession(nextSession);
     }
-
     syncSession();
+    const storageChanged = (event: StorageEvent) => {
+      if (event.key === null || event.key?.startsWith("trailcheck.auth."))
+        syncSession();
+    };
     window.addEventListener(AUTH_STATE_CHANGED_EVENT, syncSession);
-
+    window.addEventListener("storage", storageChanged);
     return () => {
       cancelled = true;
       window.removeEventListener(AUTH_STATE_CHANGED_EVENT, syncSession);
+      window.removeEventListener("storage", storageChanged);
     };
   }, []);
-
   return session;
 }

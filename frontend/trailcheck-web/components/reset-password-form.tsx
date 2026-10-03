@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { FormEvent, useState } from 'react';
-import toast from 'react-hot-toast';
-import AuthPageShell from '@/components/auth-page-shell';
-import { resetPassword } from '@/lib/api';
+import Link from "next/link";
+import { FormEvent, useState } from "react";
+import toast from "react-hot-toast";
+import AuthPageShell from "@/components/auth-page-shell";
+import { resetPassword } from "@/lib/api";
 import {
   PASSWORD_POLICY_HINT,
   passwordMeetsPolicy,
-} from '@/lib/password-policy';
+} from "@/lib/password-policy";
 
 const RESET_TOKEN_PATTERN = /^[a-f0-9]{64}$/i;
 
@@ -20,8 +20,8 @@ export default function ResetPasswordForm({
   token: initialToken,
 }: ResetPasswordFormProps) {
   const token = initialToken.trim();
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -34,7 +34,7 @@ export default function ResetPasswordForm({
     event.preventDefault();
 
     if (tokenIsInvalid) {
-      toast.error('This password reset link is invalid or has expired.');
+      toast.error("This password reset link is invalid or has expired.");
       return;
     }
 
@@ -44,7 +44,7 @@ export default function ResetPasswordForm({
     }
 
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match.');
+      toast.error("Passwords do not match.");
       return;
     }
 
@@ -53,12 +53,12 @@ export default function ResetPasswordForm({
     try {
       await resetPassword({ token, password });
       setIsSubmitted(true);
-      toast.success('Password updated. You can sign in now.');
+      toast.success("Password updated. You can sign in now.");
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : 'Unable to reset your password.',
+          : "Unable to reset your password.",
       );
     } finally {
       setIsSubmitting(false);
@@ -94,6 +94,7 @@ export default function ResetPasswordForm({
             type="password"
             autoComplete="new-password"
             placeholder="New password"
+            aria-label="New password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--ink-on-light)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]"
@@ -105,6 +106,7 @@ export default function ResetPasswordForm({
             type="password"
             autoComplete="new-password"
             placeholder="Confirm new password"
+            aria-label="Confirm new password"
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
             className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface-strong)] px-4 py-3 text-sm text-[var(--ink-on-light)] outline-none transition focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent-soft)]"
@@ -131,10 +133,10 @@ export default function ResetPasswordForm({
             }
             className="w-full rounded-2xl bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] px-4 py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSubmitting ? 'Resetting password...' : 'Reset password'}
+            {isSubmitting ? "Resetting password..." : "Reset password"}
           </button>
           <p className="text-sm text-[var(--foreground)]/62">
-            Need a fresh link?{' '}
+            Need a fresh link?{" "}
             <Link
               href="/auth/forgot-password"
               className="font-medium text-[var(--accent-strong)] underline underline-offset-4"

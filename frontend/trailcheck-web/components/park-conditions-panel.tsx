@@ -1,5 +1,5 @@
-import { getParkDigest, type ParkDigest } from '@/lib/api';
-import SafetyDigest from '@/components/safety-digest';
+import { getParkDigest, type ParkDigest } from "@/lib/api";
+import SafetyDigest from "@/components/safety-digest";
 
 type ParkConditionsPanelProps = {
   parkSlug: string;
@@ -12,14 +12,17 @@ export async function ParkNotificationCard({
   parkName,
   digest,
 }: ParkConditionsPanelProps) {
-  const resolvedDigest = digest ?? (await getParkDigest(parkSlug).catch(() => null));
+  const resolvedDigest =
+    digest === undefined
+      ? await getParkDigest(parkSlug).catch(() => null)
+      : digest;
 
   return <SafetyDigest digest={resolvedDigest} parkName={parkName} compact />;
 }
 
 export function ParkNotificationCardFallback() {
   return (
-    <div className="h-64 w-full animate-pulse rounded-[1.75rem] bg-white/8 lg:max-w-xl" />
+    <div className="h-64 w-full animate-pulse rounded-[1.75rem] bg-[var(--surface-muted)] lg:max-w-xl" />
   );
 }
 
@@ -28,7 +31,10 @@ export async function ParkConditionsPanel({
   parkName,
   digest,
 }: ParkConditionsPanelProps) {
-  const resolvedDigest = digest ?? (await getParkDigest(parkSlug).catch(() => null));
+  const resolvedDigest =
+    digest === undefined
+      ? await getParkDigest(parkSlug).catch(() => null)
+      : digest;
 
   return <SafetyDigest digest={resolvedDigest} parkName={parkName} />;
 }
@@ -36,8 +42,8 @@ export async function ParkConditionsPanel({
 export function ParkConditionsPanelFallback() {
   return (
     <section className="space-y-4">
-      <div className="h-56 animate-pulse rounded-[1.75rem] bg-white/8" />
-      <div className="h-48 animate-pulse rounded-[1.75rem] bg-white/8" />
+      <div className="h-56 animate-pulse rounded-[1.75rem] bg-[var(--surface-muted)]" />
+      <div className="h-48 animate-pulse rounded-[1.75rem] bg-[var(--surface-muted)]" />
     </section>
   );
 }

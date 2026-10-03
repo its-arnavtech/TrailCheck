@@ -1,192 +1,186 @@
-import Image from 'next/image';
-import HomeHeader from '@/components/home-header';
-import ParkCard from '@/components/park-card';
-import LazyParkMap from '@/components/lazy-park-map';
-import ParksExplorer from '@/components/parks-explorer';
-import SafetyDigest from '@/components/safety-digest';
-import { getParkDigest, getParks } from '../lib/api';
-import { getParkVisual, getParkVisualMap } from '../lib/park-content';
-import trailcheckLogo from './trailcheck_logo-removebg-preview.png';
-
+import Image from "next/image";
+import Link from "next/link";
+import HomeHeader from "@/components/home-header";
+import ParkCard from "@/components/park-card";
+import ParksExplorer from "@/components/parks-explorer";
+import LazyParkMap from "@/components/lazy-park-map";
+import Icon from "@/components/ui-icon";
+import { getParks } from "@/lib/api";
+import { PARK_CATALOG } from "@/lib/park-catalog";
+import { getParkVisualMap } from "@/lib/park-content";
 export const revalidate = 600;
-
-const featuredSlugs = ['yosemite', 'zion', 'acadia'];
-
-const featurePillars = [
-  {
-    title: 'AI safety digest',
-    description: 'Risk summaries blend alerts, hazards, and forecast changes into a quick-read decision layer.',
-  },
-  {
-    title: 'Live conditions',
-    description: 'Track hazards, recent reports, and short-range weather without bouncing across sources.',
-  },
-  {
-    title: 'Scannable route pages',
-    description: 'Every trail page is structured for fast field reads, not walls of text.',
-  },
-  {
-    title: 'Authenticated reporting',
-    description: 'Protected submissions keep condition reports tied to real accounts and cleaner history.',
-  },
-];
-
 export default async function Home() {
   const parks = await getParks();
-  const featuredParks = featuredSlugs
-    .map((slug) => parks.find((park) => park.slug === slug))
-    .filter((park): park is NonNullable<(typeof parks)[number]> => Boolean(park));
-  const [heroVisual, parkVisuals, heroDigest, featuredDigests] =
-    await Promise.all([
-      getParkVisual('yosemite', 'Yosemite'),
-      getParkVisualMap(parks),
-      getParkDigest('yosemite').catch(() => null),
-      Promise.all(
-        featuredParks.map(
-          async (park) =>
-            [park.slug, await getParkDigest(park.slug).catch(() => null)] as const,
-        ),
-      ),
-    ]);
-
-  const featuredDigestMap = Object.fromEntries(featuredDigests);
-  const hasParks = parks.length > 0;
-
+  const available = parks.length > 0;
+  const catalog = available
+    ? parks
+    : PARK_CATALOG.map((park) => ({ ...park, trails: [] }));
+  const visuals = await getParkVisualMap(catalog);
+  const featured = ["yosemite", "zion", "acadia"]
+    .map((slug) => catalog.find((park) => park.slug === slug))
+    .filter((park) => !!park);
   return (
-    <main className="relative min-h-screen overflow-hidden pb-10">
-      <div className="absolute inset-0">
-        <Image
-          src={heroVisual.imageUrl}
-          alt={heroVisual.imageAlt}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,9,13,0.44),rgba(4,10,14,0.6)_24%,rgba(4,10,14,0.92)_72%,rgba(4,10,14,1)_100%)]" />
-      </div>
-
+    <main className="home-page">
       <HomeHeader />
-
-      <section className="section-shell relative z-10 pt-4 sm:pt-6 lg:pt-8">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.9fr)] lg:items-start">
-          <div className="max-w-3xl">
-            <div>
-              <Image
-                src={trailcheckLogo}
-                alt="TrailCheck"
-                priority
-                className="h-auto w-[280px] max-w-full sm:w-[360px] lg:w-[420px]"
-              />
-            </div>
-            <h1 className="mt-5 max-w-4xl text-5xl leading-[0.95] text-white sm:text-6xl xl:text-7xl" data-display="true">
-              Read the mountain mood before you lace up.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-white/76 sm:text-lg">
-              TrailCheck turns scattered park alerts, community signals, weather, and AI-generated safety insight into one calm, cinematic field dashboard.
-            </p>
-
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <a
-                href="#explore-parks"
-                className="inline-flex min-h-12 items-center justify-center rounded-full bg-[linear-gradient(135deg,#6d8f80,#c8ddcf)] px-6 py-3 text-sm font-semibold text-slate-950 transition hover:brightness-105"
-              >
-                Explore parks
-              </a>
-              <a
-                href="#safety-digest"
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/14 bg-white/6 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                See the digest
-              </a>
-            </div>
-          </div>
-
-          <div className="relative lg:pl-4 lg:pt-0">
-            <LazyParkMap />
-          </div>
-        </div>
-      </section>
-
-      <section className="section-shell relative z-10 mt-6">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {featurePillars.map((feature) => (
-            <article key={feature.title} className="py-2">
-              <h2 className="text-2xl text-white" data-display="true">
-                {feature.title}
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-white/70">{feature.description}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section id="safety-digest" className="section-shell relative z-10 mt-14">
-        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[var(--accent-strong)]/64">
-              Safety Digest
-            </p>
-            <h2 className="mt-3 text-4xl text-white sm:text-5xl" data-display="true">
-              A calmer read on park risk.
-            </h2>
-          </div>
-          <p className="max-w-xl text-sm leading-7 text-white/66 sm:text-base">
-            The digest showcases how TrailCheck explains risk without drowning visitors in tabs, feeds, or unstructured alerts.
+      <section className="hero scenic-panel">
+        <Image
+          src="/images/yosemite-inspired-hero.webp"
+          alt="Photorealistic artwork inspired by Yosemite Valley, with granite cliffs and a forested valley."
+          fill
+          preload
+          sizes="100vw"
+          className="hero-image"
+        />
+        <div className="hero-shade" />
+        <div className="section-shell hero-content">
+          <p className="hero-eyebrow">
+            <span /> A little closer to the wild
           </p>
-        </div>
-        <SafetyDigest digest={heroDigest} parkName="Yosemite" />
-      </section>
-
-      <section id="featured-parks" className="section-shell relative z-10 mt-14">
-        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[var(--accent-strong)]/64">
-              Featured Parks
-            </p>
-            <h2 className="mt-3 text-4xl text-white sm:text-5xl" data-display="true">
-              Spotlighted destinations with live context.
-            </h2>
-          </div>
-          <p className="max-w-xl text-sm leading-7 text-white/66 sm:text-base">
-            Featured parks surface the kind of high-signal experience the full catalog is moving toward.
+          <h1 id="main-content" tabIndex={-1}>
+            Your next adventure.
+            <br />
+            <em>A little more informed.</em>
+          </h1>
+          <p className="hero-description">
+            Find your park. Know the conditions.
+            <br />
+            Spend more time where you belong.
           </p>
+          <a href="#explore-parks" className="button button-cream">
+            Find your next trail <Icon name="arrow" size={18} />
+          </a>
         </div>
-
-        <div className="grid gap-5 lg:grid-cols-3">
-          {featuredParks.map((park) => (
+        <div className="section-shell hero-bottom">
+          <span>
+            <Icon name="compass" size={15} /> Yosemite Valley · Inspired scenery
+          </span>
+          <span>Explore with curiosity. Go with confidence.</span>
+        </div>
+      </section>
+      <div className="trust-strip section-shell">
+        <span>
+          <Icon name="mountain" /> {PARK_CATALOG.length} national parks
+        </span>
+        <span>
+          <Icon name="weather" /> Weather & park alerts
+        </span>
+        <span>
+          <Icon name="shield" /> Clearer safety insights
+        </span>
+        <span className="trust-note">Good days outside start here.</span>
+      </div>
+      <section id="featured-parks" className="section-shell editorial-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Places that stay with you</p>
+            <h2>A few favorites to get you going.</h2>
+          </div>
+          <a href="#explore-parks" className="text-link">
+            Explore all parks <Icon name="arrow" size={17} />
+          </a>
+        </div>
+        <div className="featured-grid">
+          {featured.map((park) => (
             <ParkCard
               key={park.slug}
               park={park}
-              visual={parkVisuals[park.slug]}
-              digest={featuredDigestMap[park.slug]}
+              visual={visuals[park.slug]}
               featured
+              available={available}
             />
           ))}
         </div>
       </section>
-
-      <section
-        id="explore-parks"
-        className="section-shell relative z-10 mt-14"
-      >
-        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <section id="safety-digest" className="section-shell editorial-section">
+        <div className="planning-banner">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[var(--accent-strong)]/64">
-              Explore
-            </p>
-            <h2 className="mt-3 text-4xl text-white sm:text-5xl" data-display="true">
-              National parks in the TrailCheck network.
+            <p className="eyebrow">Before the boots hit the trail</p>
+            <h2>
+              Wonder more.
+              <br />
+              <em>Worry a little less.</em>
             </h2>
+            <p>
+              A beautiful view is only part of the story. Get the weather, park
+              alerts, and community reports together, so you can plan the day
+              ahead.
+            </p>
+            <Link href="/parks/yosemite" className="button button-forest">
+              See park conditions <Icon name="arrow" size={18} />
+            </Link>
           </div>
-          <p className="max-w-xl text-sm leading-7 text-white/66 sm:text-base">
-            {hasParks
-              ? 'Use search to jump to a park, then drill into AI digest, hazards, weather, and trail pages.'
-              : 'Park data is temporarily unavailable, but the app shell is ready to reconnect.'}
+          <div className="planning-steps">
+            {[
+              {
+                icon: "compass" as const,
+                title: "Find your kind of outside",
+                text: "From quiet coastlines to towering granite. Search the whole national park directory.",
+              },
+              {
+                icon: "shield" as const,
+                title: "Get the full picture",
+                text: "Read available alerts, forecasts, and a concise safety digest before you go.",
+              },
+              {
+                icon: "heart" as const,
+                title: "Keep the good places close",
+                text: "Save favorites, build your wish list, and share what you find on the trail.",
+              },
+            ].map((step, index) => (
+              <div className="planning-step" key={step.title}>
+                <span className="step-icon">
+                  <Icon name={step.icon} size={23} />
+                </span>
+                <div>
+                  <span className="step-number">0{index + 1}</span>
+                  <h3>{step.title}</h3>
+                  <p>{step.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section id="explore-parks" className="section-shell editorial-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Your next chapter starts outside</p>
+            <h2>So many places. Your kind of adventure.</h2>
+          </div>
+          <p className="section-description">
+            Discover the national parks,
+            <br />
+            one extraordinary place at a time.
           </p>
         </div>
-
-        <ParksExplorer parks={parks} visuals={parkVisuals} />
+        <ParksExplorer
+          parks={catalog}
+          visuals={visuals}
+          available={available}
+        />
+      </section>
+      <section id="park-map" className="section-shell editorial-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Follow your curiosity</p>
+            <h2>A whole country of possibilities.</h2>
+          </div>
+          <p className="section-description">Choose a pin to explore a park.</p>
+        </div>
+        <div className="map-stage">
+          <LazyParkMap />
+        </div>
+      </section>
+      <section className="section-shell closing-note">
+        <Icon name="mountain" size={34} />
+        <h2>
+          Leave the scroll.
+          <br />
+          <em>Find the trail.</em>
+        </h2>
+        <a href="#explore-parks" className="text-link">
+          Let’s get outside <Icon name="arrow" size={17} />
+        </a>
       </section>
     </main>
   );

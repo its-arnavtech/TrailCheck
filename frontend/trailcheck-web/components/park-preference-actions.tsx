@@ -1,18 +1,15 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
-import {
-  type ParkPreference,
-  updateParkPreference,
-} from '@/lib/api';
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { type ParkPreference, updateParkPreference } from "@/lib/api";
 import {
   PARK_PREFERENCES_CHANGED_EVENT,
   notifyParkPreferencesChanged,
-} from '@/lib/auth';
-import ParkFavoriteButton from '@/components/park-favorite-button';
-import { getCachedParkPreferences } from '@/lib/park-preferences-store';
-import { useAuthSession } from '@/lib/use-auth-session';
+} from "@/lib/auth";
+import ParkFavoriteButton from "@/components/park-favorite-button";
+import { getCachedParkPreferences } from "@/lib/park-preferences-store";
+import { useAuthSession } from "@/lib/use-auth-session";
 
 type ParkPreferenceActionsProps = {
   parkSlug: string;
@@ -21,9 +18,9 @@ type ParkPreferenceActionsProps = {
 
 const emptyPreference = {
   parkId: 0,
-  parkSlug: '',
-  parkName: '',
-  parkState: '',
+  parkSlug: "",
+  parkName: "",
+  parkState: "",
   isFavorite: false,
   wantsToGo: false,
 } satisfies ParkPreference;
@@ -39,7 +36,10 @@ export default function ParkPreferenceActions({
   const { isLoading: isAuthLoading, token } = useAuthSession();
 
   useEffect(() => {
+    let cancelled = false;
+    let version = 0;
     async function syncPreference() {
+      const requestVersion = ++version;
       if (isAuthLoading) {
         return;
       }
@@ -58,6 +58,7 @@ export default function ParkPreferenceActions({
 
       try {
         const preferences = await getCachedParkPreferences();
+        if (cancelled || requestVersion !== version) return;
         const nextPreference =
           preferences.find((entry) => entry.parkSlug === parkSlug) ??
           emptyPreference;
@@ -67,9 +68,10 @@ export default function ParkPreferenceActions({
           parkName: nextPreference.parkName || parkName,
         });
       } catch {
+        if (cancelled || requestVersion !== version) return;
         setPreference(emptyPreference);
       } finally {
-        setIsLoading(false);
+        if (!cancelled && requestVersion === version) setIsLoading(false);
       }
     }
 
@@ -77,13 +79,17 @@ export default function ParkPreferenceActions({
     window.addEventListener(PARK_PREFERENCES_CHANGED_EVENT, syncPreference);
 
     return () => {
-      window.removeEventListener(PARK_PREFERENCES_CHANGED_EVENT, syncPreference);
+      cancelled = true;
+      window.removeEventListener(
+        PARK_PREFERENCES_CHANGED_EVENT,
+        syncPreference,
+      );
     };
   }, [isAuthLoading, parkName, parkSlug, token]);
 
   async function savePreference(nextPreference: ParkPreference) {
     if (!isSignedIn) {
-      toast.error('Sign in to save parks to your account.');
+      toast.error("Sign in to save parks to your account.");
       return;
     }
 
@@ -101,7 +107,7 @@ export default function ParkPreferenceActions({
       toast.error(
         error instanceof Error
           ? error.message
-          : 'Failed to update your park preferences.',
+          : "Failed to update your park preferences.",
       );
     } finally {
       setIsSaving(false);
@@ -109,18 +115,19 @@ export default function ParkPreferenceActions({
   }
 
   return (
-    <section className="rounded-[1.5rem] border border-white/20 bg-white/10 p-4 backdrop-blur-md sm:p-5">
+    <section className="rounded-[1.5rem] border border-ink/20 bg-[var(--surface-muted)] p-4 backdrop-blur-md sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/68">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink/68">
             Your Account
           </p>
-          <h2 className="mt-2 text-xl font-semibold tracking-tight text-white">
+          <h2 className="mt-2 text-xl font-semibold tracking-tight text-ink">
             Save {parkName} to your lists
           </h2>
         </div>
-        <p className="max-w-sm text-sm leading-6 text-white/76 sm:text-right">
-          Keep separate lists for parks you loved and parks you still want to visit.
+        <p className="max-w-sm text-sm leading-6 text-ink/76 sm:text-right">
+          Keep separate lists for parks you loved and parks you still want to
+          visit.
         </p>
       </div>
 
@@ -130,8 +137,8 @@ export default function ParkPreferenceActions({
           parkName={parkName}
           showLabel
           className="rounded-full border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70"
-          activeClassName="border-rose-200 bg-rose-500 text-white"
-          inactiveClassName="border-white/25 bg-white/12 text-white hover:bg-white/18"
+          activeClassName="border-rose-200 bg-rose-500 text-ink"
+          inactiveClassName="border-ink/25 bg-[var(--surface-muted)] text-ink hover:bg-[var(--surface-muted)]"
         />
         <button
           type="button"
@@ -144,20 +151,20 @@ export default function ParkPreferenceActions({
           }
           className={`rounded-full border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 ${
             preference.wantsToGo
-              ? 'border-sky-200 bg-sky-500 text-white'
-              : 'border-white/25 bg-white/12 text-white hover:bg-white/18'
+              ? "border-sky-200 bg-sky-500 text-ink"
+              : "border-ink/25 bg-[var(--surface-muted)] text-ink hover:bg-[var(--surface-muted)]"
           }`}
         >
-          {preference.wantsToGo ? 'On your want-to-go list' : 'Want to go'}
+          {preference.wantsToGo ? "On your want-to-go list" : "Want to go"}
         </button>
       </div>
 
-      <p className="mt-3 text-sm text-white/72">
+      <p className="mt-3 text-sm text-ink/72">
         {isLoading
-          ? 'Loading your saved park status...'
+          ? "Loading your saved park status..."
           : isSignedIn
-            ? 'These lists are stored per account and only affect your profile.'
-            : 'Sign in to save this park to your personal lists.'}
+            ? "These lists are stored per account and only affect your profile."
+            : "Sign in to save this park to your personal lists."}
       </p>
     </section>
   );

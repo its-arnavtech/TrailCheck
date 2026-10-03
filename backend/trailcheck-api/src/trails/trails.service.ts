@@ -36,7 +36,8 @@ export class TrailsService {
   }
 
   async findOne(id: number) {
-    const trail = this.prisma.isAvailable()
+    const databaseAvailable = this.prisma.isAvailable();
+    const trail = databaseAvailable
       ? await this.prisma.trail.findUnique({
           where: { id },
           select: {
@@ -53,6 +54,7 @@ export class TrailsService {
               },
             },
             hazards: {
+              where: { isActive: true },
               select: {
                 id: true,
                 type: true,
@@ -98,13 +100,20 @@ export class TrailsService {
 
     //fetch live data. return null if sm fails.
     const [npsAlerts, weather] = await Promise.allSettled([
-      this.nps.getAlertsForPark(trail.park.slug),
+      this.nps.getAlertsPayloadForPark(trail.park.slug),
       this.weather.getWeatherForPark(trail.park.slug),
     ]);
 
     return {
       ...trail,
-      npsAlerts: npsAlerts.status === 'fulfilled' ? npsAlerts.value : [],
+      dataAvailability: {
+        hazards: databaseAvailable,
+        reports: databaseAvailable,
+        alerts:
+          npsAlerts.status === 'fulfilled' && npsAlerts.value.raw !== null,
+        weather: weather.status === 'fulfilled' && weather.value !== null,
+      },
+      npsAlerts: npsAlerts.status === 'fulfilled' ? npsAlerts.value.alerts : [],
       weather: weather.status === 'fulfilled' ? weather.value : null,
     };
   }

@@ -1,27 +1,42 @@
-import USGlobePanel from './USGlobePanel';
-
+"use client";
+import { useState } from "react";
+import USGlobePanel from "./USGlobePanel";
+import type { ParkMapRegion } from "@/lib/park-map-data";
+const regions: { id: ParkMapRegion; label: string }[] = [
+  { id: "mainland", label: "Contiguous U.S." },
+  { id: "alaska", label: "Alaska" },
+  { id: "hawaii", label: "Hawaii" },
+  { id: "pacific", label: "American Samoa" },
+  { id: "caribbean", label: "Virgin Islands" },
+];
 export default function USMap3D() {
+  const [region, setRegion] = useState<ParkMapRegion>("mainland");
+  const active = regions.find((item) => item.id === region)!;
   return (
-    <section className="w-full max-w-[72rem] rounded-[2rem] border border-white/12 bg-[linear-gradient(180deg,rgba(4,10,18,0.72),rgba(4,10,18,0.5))] p-4 text-white shadow-[0_40px_120px_rgba(0,0,0,0.3)] backdrop-blur-xl sm:p-5">
-      <div className="mb-4 flex items-end justify-between gap-4 px-1">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/56">
-            U.S. Globe Scene
-          </p>
-          <h2 className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">
-            Explore the park map
-          </h2>
+    <section className="park-map-panel" aria-label="National park map">
+      <div className="map-toolbar">
+        <div className="map-regions" role="group" aria-label="Map region">
+          {regions.map((item) => (
+            <button
+              key={item.id}
+              aria-pressed={region === item.id}
+              onClick={() => setRegion(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
-        <p className="max-w-xs text-right text-xs leading-5 text-white/58 sm:text-sm">
-          Hover a marker to preview a park, then click it to open that park&apos;s page.
-        </p>
+        <p>Choose a marker to explore.</p>
       </div>
-
       <USGlobePanel
-        label="Contiguous U.S."
-        region="mainland"
+        key={region}
+        label={active.label}
+        region={region}
         className="min-h-[22rem] sm:min-h-[28rem] lg:min-h-[34rem]"
       />
+      <p className="map-attribution">
+        Map tiles © OpenStreetMap contributors · Boundaries: U.S. Census Bureau
+      </p>
     </section>
   );
 }

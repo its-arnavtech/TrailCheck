@@ -1,0 +1,86 @@
+[
+  {
+    "number": 38,
+    "state": "OPEN",
+    "title": "Park detail images depend on external thumbnails instead of bundled park assets",
+    "url": "https://github.com/its-arnavtech/TrailCheck/issues/38"
+  },
+  {
+    "number": 39,
+    "state": "OPEN",
+    "title": "Dialogs lack keyboard navigation, Escape dismissal, and accessible semantics",
+    "url": "https://github.com/its-arnavtech/TrailCheck/issues/39"
+  },
+  {
+    "number": 40,
+    "state": "OPEN",
+    "title": "Invalid login credentials are reported as an expired session",
+    "url": "https://github.com/its-arnavtech/TrailCheck/issues/40"
+  },
+  {
+    "number": 41,
+    "state": "OPEN",
+    "title": "Saved park cache can retain results from a previous account",
+    "url": "https://github.com/its-arnavtech/TrailCheck/issues/41"
+  },
+  {
+    "number": 42,
+    "state": "OPEN",
+    "title": "Submitted trail reports remain cached after router refresh",
+    "url": "https://github.com/its-arnavtech/TrailCheck/issues/42"
+  },
+  {
+    "number": 43,
+    "state": "OPEN",
+    "title": "Report fields and star rating buttons have no accessible names",
+    "url": "https://github.com/its-arnavtech/TrailCheck/issues/43"
+  },
+  {
+    "number": 44,
+    "state": "OPEN",
+    "title": "Unavailable park conditions are incorrectly labeled low risk",
+    "url": "https://github.com/its-arnavtech/TrailCheck/issues/44"
+  },
+  {
+    "number": 45,
+    "state": "OPEN",
+    "title": "An in-flight account check can restore a logged-out session",
+    "url": "https://github.com/its-arnavtech/TrailCheck/issues/45"
+  },
+  {
+    "number": 46,
+    "state": "OPEN",
+    "title": "Frontend dependency tree includes known critical and high advisories",
+    "url": "https://github.com/its-arnavtech/TrailCheck/issues/46"
+  },
+  {
+    "number": 47,
+    "state": "OPEN",
+    "title": "Backend dependency tree includes known middleware and tooling advisories",
+    "url": "https://github.com/its-arnavtech/TrailCheck/issues/47"
+  },
+  {
+    "number": 48,
+    "state": "OPEN",
+    "title": "Trail details include inactive hazards and conceal unavailable database data",
+    "url": "https://github.com/its-arnavtech/TrailCheck/issues/48"
+  },
+  {
+    "number": 49,
+    "state": "OPEN",
+    "title": "Yellowstone state abbreviations produce duplicate filters and missing results",
+    "url": "https://github.com/its-arnavtech/TrailCheck/issues/49"
+  },
+  {
+    "number": 50,
+    "state": "OPEN",
+    "title": "Park map excludes parks outside the contiguous United States",
+    "url": "https://github.com/its-arnavtech/TrailCheck/issues/50"
+  },
+  {
+    "number": 51,
+    "state": "OPEN",
+    "title": "Park detail map and report columns overflow phone viewports",
+    "url": "https://github.com/its-arnavtech/TrailCheck/issues/51"
+  }
+]

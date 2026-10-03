@@ -1,8 +1,8 @@
-import { clearStoredSession } from './auth';
+import { clearStoredSession } from "./auth";
+import { PARK_CATALOG } from "./park-catalog";
 
 const PARKS_REVALIDATE_SECONDS = 60 * 10;
 const PARK_DETAIL_REVALIDATE_SECONDS = 60 * 10;
-const TRAIL_DETAIL_REVALIDATE_SECONDS = 60 * 2;
 const PARK_DIGEST_REVALIDATE_SECONDS = 60 * 5;
 
 export type TrailSummary = {
@@ -15,6 +15,7 @@ export type TrailSummary = {
 };
 
 export type ParkSummary = {
+  offline?: boolean;
   name: string;
   state: string;
   slug: string;
@@ -67,8 +68,8 @@ export type ParkWeather = {
 export type ParkConditionHazard = {
   id: string;
   title: string;
-  severity: 'low' | 'moderate' | 'high';
-  source: 'nps' | 'nws' | 'combined';
+  severity: "low" | "moderate" | "high";
+  source: "nps" | "nws" | "combined";
   summary: string;
   evidence: string[];
   tags: string[];
@@ -76,7 +77,7 @@ export type ParkConditionHazard = {
 
 export type LocalStructuredHazard = {
   type: string;
-  severity: 'LOW' | 'MODERATE' | 'HIGH' | 'EXTREME';
+  severity: "LOW" | "MODERATE" | "HIGH" | "EXTREME";
   reason: string;
 };
 
@@ -87,7 +88,7 @@ export type LocalStructuredAlert = {
 };
 
 export type LocalStructuredOutput = {
-  riskLevel: 'LOW' | 'MODERATE' | 'HIGH' | 'EXTREME';
+  riskLevel: "LOW" | "MODERATE" | "HIGH" | "EXTREME";
   hazards: LocalStructuredHazard[];
   alerts: LocalStructuredAlert[];
   notification: string;
@@ -95,14 +96,15 @@ export type LocalStructuredOutput = {
 };
 
 export type ParkDigest = {
+  dataAvailability?: { alerts: boolean; weather: boolean };
   parkSlug: string;
   shortSummary: string;
   notification: string;
-  generationSource: 'local' | 'deepseek' | 'fallback';
+  generationSource: "local" | "deepseek" | "fallback";
   generationError: string | null;
   structuredOutput?: LocalStructuredOutput | null;
   hazardAssessment?: {
-    riskLevel: 'low' | 'moderate' | 'high' | string;
+    riskLevel: "low" | "moderate" | "high" | string;
     season?: string;
     profile?: string;
   } | null;
@@ -112,6 +114,12 @@ export type ParkDigest = {
 };
 
 export type TrailDetail = TrailSummary & {
+  dataAvailability?: {
+    hazards: boolean;
+    reports: boolean;
+    alerts: boolean;
+    weather: boolean;
+  };
   difficulty?: string | null;
   status?: string;
   lengthMiles?: number | null;
@@ -135,7 +143,7 @@ export type SigninInput = {
 };
 
 export type SignupInput = SigninInput & {
-  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  gender: "MALE" | "FEMALE" | "OTHER";
   age: number;
 };
 
@@ -179,36 +187,36 @@ export type ResetPasswordInput = {
 function getApiBaseUrl() {
   const configuredBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(
     /\/$/,
-    '',
+    "",
   );
 
   if (configuredBaseUrl) {
     return configuredBaseUrl;
   }
 
-  if (process.env.NODE_ENV !== 'production') {
-    return 'http://localhost:3001';
+  if (process.env.NODE_ENV !== "production") {
+    return "http://localhost:3001";
   }
 
   throw new Error(
-    'NEXT_PUBLIC_API_BASE_URL is required when NODE_ENV is production. Local dev uses http://localhost:3001.',
+    "NEXT_PUBLIC_API_BASE_URL is required when NODE_ENV is production. Local dev uses http://localhost:3001.",
   );
 }
 
 const API_BASE_URL = getApiBaseUrl();
 
 function getStoredAuthToken() {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return null;
   }
 
-  return window.localStorage.getItem('trailcheck.auth.token');
+  return window.localStorage.getItem("trailcheck.auth.token");
 }
 
 function requireStoredAuthToken() {
   const token = getStoredAuthToken();
   if (!token) {
-    throw new Error('Please sign in to continue.');
+    throw new Error("Please sign in to continue.");
   }
   return token;
 }
@@ -220,29 +228,34 @@ function buildHeaders(
   const nextHeaders = new Headers(headers);
 
   if (options?.json) {
-    nextHeaders.set('Content-Type', 'application/json');
+    nextHeaders.set("Content-Type", "application/json");
   }
 
   if (options?.auth) {
     const token = getStoredAuthToken();
     if (token) {
-      nextHeaders.set('Authorization', `Bearer ${token}`);
+      nextHeaders.set("Authorization", `Bearer ${token}`);
     }
   }
 
   return nextHeaders;
 }
 
-async function parseError(response: Response, fallbackMessage: string) {
-  if (response.status === 401) {
-    clearStoredSession();
-    return 'Your session has expired. Please sign in again.';
+async function parseError(
+  response: Response,
+  fallbackMessage: string,
+  authenticated = false,
+  requestToken: string | null = null,
+) {
+  if (response.status === 401 && authenticated) {
+    if (requestToken === getStoredAuthToken()) clearStoredSession();
+    return "Your session has expired. Please sign in again.";
   }
 
   try {
     const data = (await response.json()) as { message?: string | string[] };
     if (Array.isArray(data.message)) {
-      return data.message.join(', ');
+      return data.message.join(", ");
     }
     return data.message ?? fallbackMessage;
   } catch {
@@ -255,10 +268,10 @@ export async function getTrails(): Promise<TrailSummary[]> {
     const res = await fetch(`${API_BASE_URL}/trails`, {
       next: { revalidate: PARKS_REVALIDATE_SECONDS },
     });
-    if (!res.ok) throw new Error('Failed to load trails');
+    if (!res.ok) throw new Error("Failed to load trails");
     return res.json();
   } catch (error) {
-    console.warn('Unable to load trails from API.', error);
+    console.warn("Unable to load trails from API.", error);
     return [];
   }
 }
@@ -268,28 +281,40 @@ export async function getParks(): Promise<ParkSummary[]> {
     const res = await fetch(`${API_BASE_URL}/parks`, {
       next: { revalidate: PARKS_REVALIDATE_SECONDS },
     });
-    if (!res.ok) throw new Error('Failed to load parks');
-    return res.json();
+    if (!res.ok) throw new Error("Failed to load parks");
+    const parks: ParkSummary[] = await res.json();
+    return parks.map(normalizeParkState);
   } catch (error) {
-    console.warn('Unable to load parks from API.', error);
+    console.warn("Unable to load parks from API.", error);
     return [];
   }
 }
 
 export async function getPark(slug: string): Promise<ParkSummary | null> {
-  const response = await fetch(`${API_BASE_URL}/parks/${slug}`, {
-    next: { revalidate: PARK_DETAIL_REVALIDATE_SECONDS },
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/parks/${slug}`, {
+      next: { revalidate: PARK_DETAIL_REVALIDATE_SECONDS },
+      signal: AbortSignal.timeout(10000),
+    });
 
-  if (response.status === 404) {
-    return null;
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to load park ${slug}`);
+    }
+
+    return normalizeParkState(await response.json());
+  } catch {
+    const park = PARK_CATALOG.find((park) => park.slug === slug);
+    return park ? { ...park, trails: [], offline: true } : null;
   }
+}
 
-  if (!response.ok) {
-    throw new Error(`Failed to load park ${slug}`);
-  }
-
-  return response.json();
+function normalizeParkState(park: ParkSummary): ParkSummary {
+  const canonical = PARK_CATALOG.find((entry) => entry.slug === park.slug);
+  return canonical ? { ...park, state: canonical.state } : park;
 }
 
 export async function getParkDigest(slug: string): Promise<ParkDigest> {
@@ -298,7 +323,9 @@ export async function getParkDigest(slug: string): Promise<ParkDigest> {
   });
 
   if (!response.ok) {
-    throw new Error(await parseError(response, 'Failed to load park conditions.'));
+    throw new Error(
+      await parseError(response, "Failed to load park conditions."),
+    );
   }
 
   return response.json();
@@ -306,7 +333,7 @@ export async function getParkDigest(slug: string): Promise<ParkDigest> {
 
 export async function getTrail(id: string): Promise<TrailDetail | null> {
   const response = await fetch(`${API_BASE_URL}/trails/${id}`, {
-    next: { revalidate: TRAIL_DETAIL_REVALIDATE_SECONDS },
+    cache: "no-store",
   });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Failed to load trail ${id}`);
@@ -315,13 +342,15 @@ export async function getTrail(id: string): Promise<TrailDetail | null> {
 
 export async function signup(input: SignupInput): Promise<AuthResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-    method: 'POST',
+    method: "POST",
     headers: buildHeaders(undefined, { json: true }),
     body: JSON.stringify(input),
   });
 
   if (!response.ok) {
-    throw new Error(await parseError(response, 'Failed to create account.'));
+    throw new Error(
+      await parseError(response, "Failed to create account.", false),
+    );
   }
 
   return response.json();
@@ -329,13 +358,13 @@ export async function signup(input: SignupInput): Promise<AuthResponse> {
 
 export async function signin(input: SigninInput): Promise<AuthResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/signin`, {
-    method: 'POST',
+    method: "POST",
     headers: buildHeaders(undefined, { json: true }),
     body: JSON.stringify(input),
   });
 
   if (!response.ok) {
-    throw new Error(await parseError(response, 'Failed to sign in.'));
+    throw new Error(await parseError(response, "Failed to sign in.", false));
   }
 
   return response.json();
@@ -345,14 +374,14 @@ export async function requestPasswordReset(
   input: ForgotPasswordInput,
 ): Promise<GenericMessageResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
-    method: 'POST',
+    method: "POST",
     headers: buildHeaders(undefined, { json: true }),
     body: JSON.stringify(input),
   });
 
   if (!response.ok) {
     throw new Error(
-      await parseError(response, 'Failed to request password reset.'),
+      await parseError(response, "Failed to request password reset.", false),
     );
   }
 
@@ -363,75 +392,103 @@ export async function resetPassword(
   input: ResetPasswordInput,
 ): Promise<GenericMessageResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
-    method: 'POST',
+    method: "POST",
     headers: buildHeaders(undefined, { json: true }),
     body: JSON.stringify(input),
   });
 
   if (!response.ok) {
-    throw new Error(await parseError(response, 'Failed to reset password.'));
+    throw new Error(
+      await parseError(response, "Failed to reset password.", false),
+    );
   }
 
   return response.json();
 }
 
-export async function getCurrentUser(token?: string): Promise<AuthenticatedUser> {
+export async function getCurrentUser(
+  token?: string,
+): Promise<AuthenticatedUser> {
+  const requestToken = token ?? getStoredAuthToken();
   const response = await fetch(`${API_BASE_URL}/auth/me`, {
     headers: buildHeaders(
       token ? { Authorization: `Bearer ${token}` } : undefined,
       { auth: !token },
     ),
-    cache: 'no-store',
+    cache: "no-store",
   });
 
   if (!response.ok) {
-    throw new Error(await parseError(response, 'Failed to load profile.'));
+    throw new Error(
+      await parseError(response, "Failed to load profile.", true, requestToken),
+    );
   }
 
   return response.json();
 }
 
 export async function createReport(input: CreateReportInput) {
-  requireStoredAuthToken();
+  const requestToken = requireStoredAuthToken();
 
   const response = await fetch(`${API_BASE_URL}/reports`, {
-    method: 'POST',
+    method: "POST",
     headers: buildHeaders(undefined, { json: true, auth: true }),
     body: JSON.stringify(input),
   });
 
   if (!response.ok) {
-    throw new Error(await parseError(response, 'Failed to submit report.'));
+    throw new Error(
+      await parseError(
+        response,
+        "Failed to submit report.",
+        true,
+        requestToken,
+      ),
+    );
   }
 
   return response.json();
 }
 
 export async function getMyParkPreferences(): Promise<ParkPreference[]> {
-  requireStoredAuthToken();
+  const requestToken = requireStoredAuthToken();
 
   const response = await fetch(`${API_BASE_URL}/parks/preferences/me`, {
     headers: buildHeaders(undefined, { auth: true }),
-    cache: 'no-store',
+    cache: "no-store",
   });
 
   if (!response.ok) {
-    throw new Error(await parseError(response, 'Failed to load saved parks.'));
+    throw new Error(
+      await parseError(
+        response,
+        "Failed to load saved parks.",
+        true,
+        requestToken,
+      ),
+    );
   }
 
   return response.json();
 }
 
 export async function getParkPreference(slug: string): Promise<ParkPreference> {
-  requireStoredAuthToken();
+  const requestToken = requireStoredAuthToken();
 
   const response = await fetch(`${API_BASE_URL}/parks/${slug}/preferences`, {
     headers: buildHeaders(undefined, { auth: true }),
-    cache: 'no-store',
+    cache: "no-store",
   });
 
   if (!response.ok) {
-    throw new Error(await parseError(response, 'Failed to load park preference.'));
+    throw new Error(
+      await parseError(
+        response,
+        "Failed to load park preference.",
+        true,
+        requestToken,
+      ),
+    );
   }
 
   return response.json();
@@ -441,16 +498,23 @@ export async function updateParkPreference(
   slug: string,
   input: UpdateParkPreferenceInput,
 ): Promise<ParkPreference> {
-  requireStoredAuthToken();
+  const requestToken = requireStoredAuthToken();
 
   const response = await fetch(`${API_BASE_URL}/parks/${slug}/preferences`, {
-    method: 'PUT',
+    method: "PUT",
     headers: buildHeaders(undefined, { json: true, auth: true }),
     body: JSON.stringify(input),
   });
 
   if (!response.ok) {
-    throw new Error(await parseError(response, 'Failed to update park preference.'));
+    throw new Error(
+      await parseError(
+        response,
+        "Failed to update park preference.",
+        true,
+        requestToken,
+      ),
+    );
   }
 
   return response.json();

@@ -1,35 +1,34 @@
-import Link from 'next/link';
-
+import Link from "next/link";
+import Icon from "@/components/ui-icon";
 export default function Footer() {
   return (
-    <footer className="section-shell mt-14 pb-8 sm:pb-10">
-      <div className="glass-panel topo-ring rounded-[2rem] px-6 py-8 sm:px-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--accent-strong)]/62">
-              TrailCheck
-            </p>
-            <h2 className="mt-3 text-3xl text-white sm:text-4xl" data-display="true">
-              Trail intelligence for safer days outside.
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-white/68 sm:text-base">
-              Live park alerts, weather, trail reports, and AI safety digests designed to help visitors make faster, more grounded decisions.
-            </p>
-          </div>
-
-          <div className="max-w-xl space-y-3 pt-1 text-base leading-8 text-white/74 sm:text-lg">
-            <p>National park conditions, distilled into a calmer field dashboard.</p>
-            <p>Contact: its.arnavk.here@gmail.com</p>
-            <p>
-              <Link
-                href="/privacy"
-                className="font-semibold text-[var(--accent-strong)] underline underline-offset-4 transition hover:text-white"
-              >
-                Privacy Policy
-              </Link>
-            </p>
-          </div>
+    <footer className="site-footer">
+      <div className="section-shell footer-main">
+        <div>
+          <Link href="/" className="wordmark">
+            <Icon name="mountain" size={28} />
+            trailcheck.
+          </Link>
+          <p>
+            For the places worth getting lost in.
+            <br />
+            And the information that helps you get home.
+          </p>
         </div>
+        <div className="footer-links">
+          <Link href="/#explore-parks">Explore parks</Link>
+          <Link href="/#park-map">Park map</Link>
+          <Link href="/photo-credits">Photo credits</Link>
+          <Link href="/privacy">Privacy</Link>
+          <a href="https://github.com/its-arnavtech/TrailCheck">
+            GitHub <Icon name="arrow" size={14} />
+          </a>
+        </div>
+      </div>
+      <div className="section-shell footer-bottom">
+        <span>© {new Date().getFullYear()} TrailCheck</span>
+        <span>Made for a life outside.</span>
+        <span>Scenic hero artwork generated with AI.</span>
       </div>
     </footer>
   );

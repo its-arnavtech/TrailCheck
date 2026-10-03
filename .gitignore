@@ -8,6 +8,8 @@
 /out
 /.turbo
 /.cache
+/.npm-cache/
+/.pip-cache/
 /.vercel
 *.tsbuildinfo
 next-env.d.ts

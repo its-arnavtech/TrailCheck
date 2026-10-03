@@ -316,6 +316,7 @@ describe('AiService fallback chain', () => {
 
     const first = await service.generateParkDigest('yosemite');
     const second = await service.generateParkDigest('yosemite');
+    expect(first.dataAvailability).toEqual({ alerts: true, weather: false });
 
     expect(first.generationSource).toBe('deepseek');
     expect(second).toEqual(first);

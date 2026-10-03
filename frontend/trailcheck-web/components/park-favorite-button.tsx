@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
-import { updateParkPreference } from '@/lib/api';
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { updateParkPreference } from "@/lib/api";
 import {
   PARK_PREFERENCES_CHANGED_EVENT,
   notifyParkPreferencesChanged,
-} from '@/lib/auth';
-import { getCachedParkPreferences } from '@/lib/park-preferences-store';
-import { useAuthSession } from '@/lib/use-auth-session';
+} from "@/lib/auth";
+import { getCachedParkPreferences } from "@/lib/park-preferences-store";
+import { useAuthSession } from "@/lib/use-auth-session";
 
 type ParkFavoriteButtonProps = {
   parkSlug: string;
@@ -25,11 +25,11 @@ export default function ParkFavoriteButton({
   parkSlug,
   parkName,
   showLabel = false,
-  activeLabel = 'Favorited',
-  inactiveLabel = 'Add to favorites',
-  className = '',
-  activeClassName = '',
-  inactiveClassName = '',
+  activeLabel = "Favorited",
+  inactiveLabel = "Add to favorites",
+  className = "",
+  activeClassName = "",
+  inactiveClassName = "",
 }: ParkFavoriteButtonProps) {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -39,7 +39,10 @@ export default function ParkFavoriteButton({
   const { isLoading: isAuthLoading, token } = useAuthSession();
 
   useEffect(() => {
+    let cancelled = false;
+    let version = 0;
     async function syncPreference() {
+      const requestVersion = ++version;
       if (isAuthLoading) {
         return;
       }
@@ -58,16 +61,18 @@ export default function ParkFavoriteButton({
 
       try {
         const preferences = await getCachedParkPreferences();
+        if (cancelled || requestVersion !== version) return;
         const preference = preferences.find(
           (entry) => entry.parkSlug === parkSlug,
         );
         setIsFavorite(preference?.isFavorite ?? false);
         setWantsToGo(preference?.wantsToGo ?? false);
       } catch {
+        if (cancelled || requestVersion !== version) return;
         setIsFavorite(false);
         setWantsToGo(false);
       } finally {
-        setIsLoading(false);
+        if (!cancelled && requestVersion === version) setIsLoading(false);
       }
     }
 
@@ -75,16 +80,22 @@ export default function ParkFavoriteButton({
     window.addEventListener(PARK_PREFERENCES_CHANGED_EVENT, syncPreference);
 
     return () => {
-      window.removeEventListener(PARK_PREFERENCES_CHANGED_EVENT, syncPreference);
+      cancelled = true;
+      window.removeEventListener(
+        PARK_PREFERENCES_CHANGED_EVENT,
+        syncPreference,
+      );
     };
   }, [isAuthLoading, parkSlug, token]);
 
-  async function handleToggleFavorite(event: React.MouseEvent<HTMLButtonElement>) {
+  async function handleToggleFavorite(
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) {
     event.preventDefault();
     event.stopPropagation();
 
     if (!isSignedIn) {
-      toast.error('Sign in to save parks to your favorites.');
+      toast.error("Sign in to save parks to your favorites.");
       return;
     }
 
@@ -105,9 +116,7 @@ export default function ParkFavoriteButton({
       );
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : 'Failed to update favorites.',
+        error instanceof Error ? error.message : "Failed to update favorites.",
       );
     } finally {
       setIsSaving(false);
@@ -119,14 +128,26 @@ export default function ParkFavoriteButton({
   return (
     <button
       type="button"
-      aria-label={isFavorite ? `Remove ${parkName} from favorites` : `Add ${parkName} to favorites`}
+      aria-label={
+        isFavorite
+          ? `Remove ${parkName} from favorites`
+          : `Add ${parkName} to favorites`
+      }
       aria-pressed={isFavorite}
-      title={isSignedIn ? (isFavorite ? 'Remove from favorites' : 'Add to favorites') : 'Sign in to save favorites'}
+      title={
+        isSignedIn
+          ? isFavorite
+            ? "Remove from favorites"
+            : "Add to favorites"
+          : "Sign in to save favorites"
+      }
       disabled={isSaving || isLoading}
       onClick={handleToggleFavorite}
       className={`${className} ${stateClassName}`.trim()}
     >
-      <span className="text-lg leading-none">{isFavorite ? '\u2665' : '\u2661'}</span>
+      <span className="text-lg leading-none">
+        {isFavorite ? "\u2665" : "\u2661"}
+      </span>
       {showLabel ? (
         <span className="ml-2">{isFavorite ? activeLabel : inactiveLabel}</span>
       ) : null}

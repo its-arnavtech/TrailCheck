@@ -1,96 +1,51 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { FormEvent, useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
-import { getCurrentUser, signin, signup, type AuthenticatedUser } from '@/lib/api';
-import {
-  AUTH_STATE_CHANGED_EVENT,
-  clearStoredSession,
-  getStoredAuthToken,
-  getStoredAuthUser,
-  setStoredSession,
-} from '@/lib/auth';
+import Link from "next/link";
+import { FormEvent, useState } from "react";
+import toast from "react-hot-toast";
+import { signin, signup } from "@/lib/api";
+import { useAuthSession } from "@/lib/use-auth-session";
+import { clearStoredSession, setStoredSession } from "@/lib/auth";
 import {
   PASSWORD_POLICY_HINT,
   passwordMeetsPolicy,
-} from '@/lib/password-policy';
-import SavedParksPanel from '@/components/saved-parks-panel';
+} from "@/lib/password-policy";
+import SavedParksPanel from "@/components/saved-parks-panel";
 
 type AuthPanelProps = {
   compact?: boolean;
 };
 
 const allowedEmailDomains = new Set([
-  'gmail.com',
-  'googlemail.com',
-  'yahoo.com',
-  'yahoo.co.uk',
-  'outlook.com',
-  'hotmail.com',
-  'live.com',
-  'icloud.com',
-  'me.com',
-  'mac.com',
-  'aol.com',
-  'proton.me',
-  'protonmail.com',
+  "gmail.com",
+  "googlemail.com",
+  "yahoo.com",
+  "yahoo.co.uk",
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+  "icloud.com",
+  "me.com",
+  "mac.com",
+  "aol.com",
+  "proton.me",
+  "protonmail.com",
 ]);
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function AuthPanel({ compact = false }: AuthPanelProps) {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [gender, setGender] = useState<'MALE' | 'FEMALE' | 'OTHER'>('OTHER');
-  const [age, setAge] = useState('');
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [gender, setGender] = useState<"MALE" | "FEMALE" | "OTHER">("OTHER");
+  const [age, setAge] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
-  const [user, setUser] = useState<AuthenticatedUser | null>(null);
-
-  useEffect(() => {
-    async function syncAuthState() {
-      const token = getStoredAuthToken();
-      const storedUser = getStoredAuthUser();
-
-      if (!token) {
-        setUser(null);
-        setIsLoadingUser(false);
-        return;
-      }
-
-      if (storedUser) {
-        setUser(storedUser);
-      }
-
-      try {
-        const currentUser = await getCurrentUser(token);
-        setStoredSession(token, currentUser);
-        setUser(currentUser);
-      } catch {
-        clearStoredSession();
-        setUser(null);
-      } finally {
-        setIsLoadingUser(false);
-      }
-    }
-
-    syncAuthState();
-
-    function handleAuthChange() {
-      setUser(getStoredAuthUser());
-      setIsLoadingUser(false);
-    }
-
-    window.addEventListener(AUTH_STATE_CHANGED_EVENT, handleAuthChange);
-    return () =>
-      window.removeEventListener(AUTH_STATE_CHANGED_EVENT, handleAuthChange);
-  }, []);
+  const { isLoading: isLoadingUser, user } = useAuthSession();
 
   function hasAllowedEmailDomain(value: string) {
-    const domain = value.trim().toLowerCase().split('@')[1] ?? '';
+    const domain = value.trim().toLowerCase().split("@")[1] ?? "";
     return allowedEmailDomains.has(domain);
   }
 
@@ -99,34 +54,37 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
     return emailPattern.test(normalized) && hasAllowedEmailDomain(normalized);
   }
 
-  const emailIsInvalid = mode === 'signup' && email.length > 0 && !hasValidEmail(email);
+  const emailIsInvalid =
+    mode === "signup" && email.length > 0 && !hasValidEmail(email);
   const passwordIsWeak =
-    mode === 'signup' && password.length > 0 && !passwordMeetsPolicy(password);
+    mode === "signup" && password.length > 0 && !passwordMeetsPolicy(password);
   const ageIsInvalid =
-    mode === 'signup' &&
+    mode === "signup" &&
     age.length > 0 &&
     (!/^\d+$/.test(age) || Number(age) < 13 || Number(age) > 120);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (mode === 'signup' && !hasValidEmail(email)) {
-      toast.error('Please use a supported email provider such as Gmail, Yahoo, Outlook, iCloud, AOL, or Proton.');
+    if (mode === "signup" && !hasValidEmail(email)) {
+      toast.error(
+        "Please use a supported email provider such as Gmail, Yahoo, Outlook, iCloud, AOL, or Proton.",
+      );
       return;
     }
 
-    if (mode === 'signup' && !passwordMeetsPolicy(password)) {
+    if (mode === "signup" && !passwordMeetsPolicy(password)) {
       toast.error(PASSWORD_POLICY_HINT);
       return;
     }
 
-    if (mode === 'signup' && password !== confirmPassword) {
-      toast.error('Passwords do not match.');
+    if (mode === "signup" && password !== confirmPassword) {
+      toast.error("Passwords do not match.");
       return;
     }
 
-    if (mode === 'signup' && ageIsInvalid) {
-      toast.error('Age must be a whole number between 13 and 120.');
+    if (mode === "signup" && ageIsInvalid) {
+      toast.error("Age must be a whole number between 13 and 120.");
       return;
     }
 
@@ -134,28 +92,26 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
 
     try {
       const response =
-        mode === 'signup'
+        mode === "signup"
           ? await signup({ email, password, gender, age: Number(age) })
           : await signin({ email, password });
 
       setStoredSession(response.access_token, response.user);
-      setUser(response.user);
-      setPassword('');
-      setConfirmPassword('');
-      setAge('');
-      setGender('OTHER');
+      setPassword("");
+      setConfirmPassword("");
+      setAge("");
+      setGender("OTHER");
       toast.success(
-        mode === 'signup'
-          ? 'Account created. You are now signed in.'
-          : 'Signed in successfully.',
+        mode === "signup"
+          ? "Account created. You are now signed in."
+          : "Signed in successfully.",
       );
     } catch (error) {
       const rawMessage =
-        error instanceof Error ? error.message : 'Authentication failed.';
+        error instanceof Error ? error.message : "Authentication failed.";
       const message =
-        mode === 'signup' &&
-        rawMessage.toLowerCase().includes('already exists')
-          ? 'This user already exists'
+        mode === "signup" && rawMessage.toLowerCase().includes("already exists")
+          ? "This user already exists"
           : rawMessage;
       toast.error(message);
     } finally {
@@ -165,17 +121,18 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
 
   function handleSignOut() {
     clearStoredSession();
-    setUser(null);
-    setPassword('');
-    setConfirmPassword('');
-    setAge('');
-    setGender('OTHER');
-    toast.success('Signed out.');
+    setPassword("");
+    setConfirmPassword("");
+    setAge("");
+    setGender("OTHER");
+    toast.success("Signed out.");
   }
 
   if (isLoadingUser) {
     return (
-      <div className={`${compact ? 'py-1 text-white/72' : 'glass-panel topo-ring rounded-[1.75rem] p-5 text-sm text-white/88'}`}>
+      <div
+        className={`${compact ? "py-1 text-ink/72" : "glass-panel topo-ring rounded-[1.75rem] p-5 text-sm text-ink/88"}`}
+      >
         Checking sign-in status...
       </div>
     );
@@ -186,31 +143,44 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
       <div
         className={`${
           compact
-            ? 'text-[var(--foreground)]'
-            : 'glass-panel topo-ring rounded-[1.75rem] p-5 text-white'
-        } ${compact ? 'py-1' : ''}`}
+            ? "text-[var(--foreground)]"
+            : "glass-panel topo-ring rounded-[1.75rem] p-5 text-ink"
+        } ${compact ? "py-1" : ""}`}
       >
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]/62">
           Signed In
         </p>
-        <h3 className="mt-3 text-3xl text-white" data-display="true">
+        <h3 className="mt-3 text-3xl text-ink" data-display="true">
           {user.email}
         </h3>
         <p className="mt-3 text-sm leading-7 opacity-80">
-          You can submit protected trail reports and save parks to favorites or want-to-go lists with this account.
+          Save the places you love and share useful updates from your time on
+          the trail.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-[1.1rem] border border-white/10 bg-white/6 px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.18em] text-white/42">Access</p>
-            <p className="mt-2 text-sm font-semibold text-white">Protected reports</p>
+          <div className="rounded-[1.1rem] border border-ink/10 bg-[var(--surface-muted)] px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.18em] text-ink/42">
+              Access
+            </p>
+            <p className="mt-2 text-sm font-semibold text-ink">
+              Protected reports
+            </p>
           </div>
-          <div className="rounded-[1.1rem] border border-white/10 bg-white/6 px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.18em] text-white/42">Saved</p>
-            <p className="mt-2 text-sm font-semibold text-white">Favorites + wish list</p>
+          <div className="rounded-[1.1rem] border border-ink/10 bg-[var(--surface-muted)] px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.18em] text-ink/42">
+              Saved
+            </p>
+            <p className="mt-2 text-sm font-semibold text-ink">
+              Favorites + wish list
+            </p>
           </div>
-          <div className="rounded-[1.1rem] border border-white/10 bg-white/6 px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.18em] text-white/42">Mode</p>
-            <p className="mt-2 text-sm font-semibold text-white">Trail dashboard</p>
+          <div className="rounded-[1.1rem] border border-ink/10 bg-[var(--surface-muted)] px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.18em] text-ink/42">
+              Mode
+            </p>
+            <p className="mt-2 text-sm font-semibold text-ink">
+              Trail dashboard
+            </p>
           </div>
         </div>
         <button
@@ -218,8 +188,8 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
           onClick={handleSignOut}
           className={`mt-4 flex w-full items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold transition ${
             compact
-              ? 'bg-[var(--accent-strong)] text-slate-950 hover:brightness-110'
-              : 'bg-[linear-gradient(135deg,#6d8f80,#c8ddcf)] text-slate-950 hover:brightness-105'
+              ? "bg-[var(--accent-strong)] text-white hover:brightness-110"
+              : "bg-[var(--accent)] text-white hover:brightness-105"
           }`}
         >
           Sign out
@@ -231,44 +201,46 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
 
   return (
     <div
-        className={`${
-          compact
-            ? 'text-[var(--foreground)]'
-            : 'glass-panel topo-ring rounded-[1.75rem] p-5 text-white'
-        } ${compact ? 'py-1' : ''}`}
-      >
+      className={`${
+        compact
+          ? "text-[var(--foreground)]"
+          : "glass-panel topo-ring rounded-[1.75rem] p-5 text-ink"
+      } ${compact ? "py-1" : ""}`}
+    >
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--accent-strong)]/62">
             Account
           </p>
-          <h3 className="mt-3 text-3xl text-white" data-display="true">
-            {compact ? 'Sign in to report' : 'Join the TrailCheck network'}
+          <h3 className="mt-3 text-3xl text-ink" data-display="true">
+            {compact ? "Sign in to report" : "Make yourself at home."}
           </h3>
         </div>
-        <div className="flex rounded-full border border-current/15 bg-white/6 p-1 text-xs">
+        <div className="flex shrink-0 whitespace-nowrap rounded-full border border-current/15 bg-[var(--surface-muted)] p-1 text-xs">
           <button
             type="button"
-            onClick={() => setMode('signin')}
+            onClick={() => setMode("signin")}
+            aria-pressed={mode === "signin"}
             className={`rounded-full px-3 py-1 font-semibold transition ${
-              mode === 'signin'
+              mode === "signin"
                 ? compact
-                  ? 'bg-[var(--accent-soft)] text-[var(--accent-strong)]'
-                  : 'bg-[linear-gradient(135deg,#6d8f80,#c8ddcf)] text-slate-950'
-                : 'opacity-70'
+                  ? "bg-[var(--accent-soft)] text-[var(--accent-strong)]"
+                  : "bg-[var(--accent)] text-white"
+                : "opacity-70"
             }`}
           >
             Sign in
           </button>
           <button
             type="button"
-            onClick={() => setMode('signup')}
+            onClick={() => setMode("signup")}
+            aria-pressed={mode === "signup"}
             className={`rounded-full px-3 py-1 font-semibold transition ${
-              mode === 'signup'
+              mode === "signup"
                 ? compact
-                  ? 'bg-[var(--accent-soft)] text-[var(--accent-strong)]'
-                  : 'bg-[linear-gradient(135deg,#6d8f80,#c8ddcf)] text-slate-950'
-                : 'opacity-70'
+                  ? "bg-[var(--accent-soft)] text-[var(--accent-strong)]"
+                  : "bg-[var(--accent)] text-white"
+                : "opacity-70"
             }`}
           >
             Sign up
@@ -277,9 +249,9 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
       </div>
 
       <p className="mt-3 text-sm leading-7 opacity-80">
-        {mode === 'signup'
-          ? 'Create an account to keep report submissions authenticated.'
-          : 'Use your account to access protected reporting routes.'}
+        {mode === "signup"
+          ? "Keep your favorite places close. Share what you find."
+          : "Save your favorite parks and share trail updates."}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-3">
@@ -287,67 +259,73 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
           type="email"
           autoComplete="email"
           placeholder="Email address"
+          aria-label="Email address"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
             compact
-              ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
-              : 'border-white/10 bg-[rgba(6,12,16,0.42)] text-white placeholder:text-white/34 focus:border-white/28 focus:ring-4 focus:ring-white/10'
+              ? "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100"
+              : "border-ink/10 bg-white text-ink placeholder:text-ink/34 focus:border-ink/28 focus:ring-4 focus:ring-white/10"
           }`}
           required
         />
         <input
           type="password"
-          autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+          autoComplete={mode === "signup" ? "new-password" : "current-password"}
           placeholder="Password"
+          aria-label="Password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
             compact
-              ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
-              : 'border-white/10 bg-[rgba(6,12,16,0.42)] text-white placeholder:text-white/34 focus:border-white/28 focus:ring-4 focus:ring-white/10'
+              ? "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100"
+              : "border-ink/10 bg-white text-ink placeholder:text-ink/34 focus:border-ink/28 focus:ring-4 focus:ring-white/10"
           }`}
-          minLength={mode === 'signup' ? 12 : 8}
+          minLength={mode === "signup" ? 12 : 8}
           required
         />
-        {mode === 'signin' ? (
+        {mode === "signin" ? (
           <div className="flex justify-end">
             <Link
               href="/auth/forgot-password"
               className={`text-sm font-medium underline underline-offset-4 transition ${
                 compact
-                  ? 'text-[var(--accent-strong)] hover:opacity-80'
-                  : 'text-white/88 hover:text-white'
+                  ? "text-[var(--accent-strong)] hover:opacity-80"
+                  : "text-ink/88 hover:text-ink"
               }`}
             >
-              Forgot password? Contact support
+              Forgot password?
             </Link>
           </div>
         ) : null}
-        {mode === 'signup' ? (
+        {mode === "signup" ? (
           <input
             type="password"
             autoComplete="new-password"
             placeholder="Re-enter password"
+            aria-label="Confirm password"
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
             className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
               compact
-                ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
-                : 'border-white/10 bg-[rgba(6,12,16,0.42)] text-white placeholder:text-white/34 focus:border-white/28 focus:ring-4 focus:ring-white/10'
+                ? "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100"
+                : "border-ink/10 bg-white text-ink placeholder:text-ink/34 focus:border-ink/28 focus:ring-4 focus:ring-white/10"
             }`}
             minLength={12}
             required
           />
         ) : null}
-        {mode === 'signup' ? (
+        {mode === "signup" ? (
           <select
+            aria-label="Gender"
             value={gender}
-            onChange={(event) => setGender(event.target.value as 'MALE' | 'FEMALE' | 'OTHER')}
+            onChange={(event) =>
+              setGender(event.target.value as "MALE" | "FEMALE" | "OTHER")
+            }
             className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
               compact
-                ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
-                : 'border-white/10 bg-[rgba(6,12,16,0.42)] text-white focus:border-white/28 focus:ring-4 focus:ring-white/10'
+                ? "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--ink-on-light)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100"
+                : "border-ink/10 bg-white text-ink focus:border-ink/28 focus:ring-4 focus:ring-white/10"
             }`}
             required
           >
@@ -356,21 +334,22 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
             <option value="OTHER">Other</option>
           </select>
         ) : null}
-        {mode === 'signup' ? (
+        {mode === "signup" ? (
           <input
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
             placeholder="Age"
+            aria-label="Age"
             value={age}
             onChange={(event) => {
-              const nextValue = event.target.value.replace(/\D/g, '');
+              const nextValue = event.target.value.replace(/\D/g, "");
               setAge(nextValue);
             }}
             className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${
               compact
-                ? 'border-[var(--border)] bg-white/80 text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100'
-                : 'border-white/10 bg-[rgba(6,12,16,0.42)] text-white placeholder:text-white/34 focus:border-white/28 focus:ring-4 focus:ring-white/10'
+                ? "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--ink-on-light)] placeholder:text-[var(--ink-on-light-muted)] focus:border-[var(--accent)] focus:ring-4 focus:ring-emerald-100"
+                : "border-ink/10 bg-white text-ink placeholder:text-ink/34 focus:border-ink/28 focus:ring-4 focus:ring-white/10"
             }`}
             required
           />
@@ -379,7 +358,7 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
           type="submit"
           disabled={
             isSubmitting ||
-            (mode === 'signup' &&
+            (mode === "signup" &&
               ((confirmPassword.length > 0 && password !== confirmPassword) ||
                 emailIsInvalid ||
                 passwordIsWeak ||
@@ -388,24 +367,24 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
           }
           className={`w-full rounded-2xl px-4 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
             compact
-              ? 'bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] text-white hover:brightness-105'
-              : 'bg-[linear-gradient(135deg,#6d8f80,#c8ddcf)] text-slate-950 hover:brightness-105'
+              ? "bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] text-ink hover:brightness-105"
+              : "bg-[var(--accent)] text-white hover:brightness-105"
           }`}
         >
           {isSubmitting
-            ? mode === 'signup'
-              ? 'Creating account...'
-              : 'Signing in...'
-            : mode === 'signup'
-              ? 'Create account'
-              : 'Sign in'}
+            ? mode === "signup"
+              ? "Creating account..."
+              : "Signing in..."
+            : mode === "signup"
+              ? "Create account"
+              : "Sign in"}
         </button>
-        {mode === 'signup' ? (
+        {mode === "signup" ? (
           <div
             className={`rounded-2xl border px-4 py-3 text-sm ${
               compact
-                ? 'border-[var(--border)] bg-white/72 text-[var(--ink-on-light)]'
-                : 'border-white/10 bg-white/6 text-white'
+                ? "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--ink-on-light)]"
+                : "border-ink/10 bg-[var(--surface-muted)] text-ink"
             }`}
           >
             <ul className="list-disc space-y-1 pl-5">
@@ -413,13 +392,14 @@ export default function AuthPanel({ compact = false }: AuthPanelProps) {
               <li>{PASSWORD_POLICY_HINT}</li>
             </ul>
             {emailIsInvalid || passwordIsWeak || ageIsInvalid ? (
-              <div className="mt-3 space-y-1 font-medium text-rose-300">
+              <div className="mt-3 space-y-1 font-medium text-rose-800">
                 {emailIsInvalid ? (
-                  <p>Email is not valid. Use a supported provider such as Gmail, Yahoo, Outlook, iCloud, AOL, or Proton.</p>
+                  <p>
+                    Email is not valid. Use a supported provider such as Gmail,
+                    Yahoo, Outlook, iCloud, AOL, or Proton.
+                  </p>
                 ) : null}
-                {passwordIsWeak ? (
-                  <p>{PASSWORD_POLICY_HINT}</p>
-                ) : null}
+                {passwordIsWeak ? <p>{PASSWORD_POLICY_HINT}</p> : null}
                 {ageIsInvalid ? (
                   <p>Age must be a whole number between 13 and 120.</p>
                 ) : null}
